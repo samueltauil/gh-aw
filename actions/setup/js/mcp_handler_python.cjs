@@ -8,6 +8,7 @@
  */
 
 const { execFile } = require("child_process");
+const { MAX_BUFFER_SIZE } = require("./constants.cjs");
 
 /**
  * Create a Python script handler function that executes a .py file.
@@ -42,7 +43,7 @@ function createPythonHandler(server, toolName, scriptPath, timeoutSeconds = 60) 
           env: process.env,
           cwd: process.env.GITHUB_WORKSPACE || process.cwd(),
           timeout: timeoutSeconds * 1000, // Convert to milliseconds
-          maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+          maxBuffer: MAX_BUFFER_SIZE, // 10MB buffer
         },
         (error, stdout, stderr) => {
           // Log stdout and stderr

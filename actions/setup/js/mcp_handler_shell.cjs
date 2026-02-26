@@ -11,6 +11,7 @@ const fs = require("fs");
 const path = require("path");
 const { execFile } = require("child_process");
 const os = require("os");
+const { MAX_BUFFER_SIZE } = require("./constants.cjs");
 
 /**
  * Create a shell script handler function that executes a .sh file.
@@ -57,7 +58,7 @@ function createShellHandler(server, toolName, scriptPath, timeoutSeconds = 60) {
           env,
           cwd: process.env.GITHUB_WORKSPACE || process.cwd(),
           timeout: timeoutSeconds * 1000, // Convert to milliseconds
-          maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+          maxBuffer: MAX_BUFFER_SIZE, // 10MB buffer
         },
         (error, stdout, stderr) => {
           // Log stdout and stderr

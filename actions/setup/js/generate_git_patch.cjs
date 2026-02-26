@@ -7,6 +7,7 @@ const path = require("path");
 const { getBaseBranch } = require("./get_base_branch.cjs");
 const { getErrorMessage } = require("./error_helpers.cjs");
 const { execGitSync } = require("./git_helpers.cjs");
+const { GIT_PATCH_MAX_BUFFER_SIZE } = require("./constants.cjs");
 
 /**
  * Debug logging helper - logs to stderr when DEBUG env var matches
@@ -166,7 +167,7 @@ function generateGitPatch(branchName, options = {}) {
 
         if (commitCount > 0) {
           // Generate patch from the determined base to the branch
-          const patchContent = execGitSync(["format-patch", `${baseRef}..${branchName}`, "--stdout"], { cwd });
+          const patchContent = execGitSync(["format-patch", `${baseRef}..${branchName}`, "--stdout"], { cwd, maxBuffer: GIT_PATCH_MAX_BUFFER_SIZE });
 
           if (patchContent && patchContent.trim()) {
             fs.writeFileSync(patchPath, patchContent, "utf8");
@@ -235,7 +236,7 @@ function generateGitPatch(branchName, options = {}) {
 
             if (commitCount > 0) {
               // Generate patch from GITHUB_SHA to HEAD
-              const patchContent = execGitSync(["format-patch", `${githubSha}..HEAD`, "--stdout"], { cwd });
+              const patchContent = execGitSync(["format-patch", `${githubSha}..HEAD`, "--stdout"], { cwd, maxBuffer: GIT_PATCH_MAX_BUFFER_SIZE });
 
               if (patchContent && patchContent.trim()) {
                 fs.writeFileSync(patchPath, patchContent, "utf8");
@@ -293,7 +294,7 @@ function generateGitPatch(branchName, options = {}) {
               }
 
               if (baseCommit) {
-                const patchContent = execGitSync(["format-patch", `${baseCommit}..${branchName}`, "--stdout"], { cwd });
+                const patchContent = execGitSync(["format-patch", `${baseCommit}..${branchName}`, "--stdout"], { cwd, maxBuffer: GIT_PATCH_MAX_BUFFER_SIZE });
 
                 if (patchContent && patchContent.trim()) {
                   fs.writeFileSync(patchPath, patchContent, "utf8");

@@ -8,6 +8,7 @@
  */
 
 const { execFile } = require("child_process");
+const { MAX_BUFFER_SIZE } = require("./constants.cjs");
 
 /**
  * Create a JavaScript handler function that executes a .cjs file in a separate Node.js process.
@@ -42,7 +43,7 @@ function createJavaScriptHandler(server, toolName, scriptPath, timeoutSeconds = 
           env: process.env,
           cwd: process.env.GITHUB_WORKSPACE || process.cwd(),
           timeout: timeoutSeconds * 1000, // Convert to milliseconds
-          maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+          maxBuffer: MAX_BUFFER_SIZE, // 10MB buffer
         },
         (error, stdout, stderr) => {
           // Log stdout and stderr

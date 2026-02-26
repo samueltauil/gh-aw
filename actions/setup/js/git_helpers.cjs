@@ -3,6 +3,7 @@
 
 const { spawnSync } = require("child_process");
 const { ERR_SYSTEM } = require("./error_codes.cjs");
+const { MAX_BUFFER_SIZE } = require("./constants.cjs");
 
 /**
  * Safely execute git command using spawnSync with args array to prevent shell injection
@@ -29,6 +30,7 @@ function execGitSync(args, options = {}) {
 
   const result = spawnSync("git", args, {
     encoding: "utf8",
+    maxBuffer: MAX_BUFFER_SIZE,
     ...options,
   });
 
