@@ -64,10 +64,6 @@ func (c *Compiler) validateStrictPermissions(frontmatter map[string]any) error {
 
 	// Parse permissions using the PermissionsParser
 	permissions := NewPermissionsParserFromValue(permissionsValue).ToPermissions()
-	if permissions == nil {
-		strictModeValidationLog.Printf("No permissions to validate, validation passed")
-		return nil
-	}
 
 	// Check for write permissions on sensitive scopes using the shared policy helper
 	sensitiveScopes := []PermissionScope{
