@@ -114,7 +114,7 @@ export default defineConfig({
 
 		// Patterns unhyphenated → hyphenated slugs
 		'/patterns/centralrepoops/': '/patterns/central-repo-ops/',
-		'/patterns/chatops/': '/patterns/chat-ops/',
+		'/patterns/chatops/': '/gh-aw/patterns/chat-ops/',
 		'/patterns/dailyops/': '/patterns/daily-ops/',
 		'/patterns/dataops/': '/patterns/data-ops/',
 		'/patterns/dispatchops/': '/patterns/dispatch-ops/',
