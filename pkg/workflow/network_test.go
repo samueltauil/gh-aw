@@ -129,6 +129,42 @@ This workflow has empty network permissions (deny all).`
 		if len(workflowData.NetworkPermissions.Allowed) != 0 {
 			t.Errorf("Expected 0 allowed domains, got %d", len(workflowData.NetworkPermissions.Allowed))
 		}
+
+		// allowed: [] must set AllowedExplicitlySet so engine defaults are suppressed
+		if !workflowData.NetworkPermissions.AllowedExplicitlySet {
+			t.Error("Expected AllowedExplicitlySet=true for network: { allowed: [] }")
+		}
+	})
+
+	t.Run("Empty network object without allowed key", func(t *testing.T) {
+		yamlContent := `---
+on: push
+engine:
+  id: claude
+  model: claude-3-5-sonnet-20241022
+network: {}
+strict: false
+---
+
+# Test Workflow
+This workflow has an empty network object with no allowed key.`
+
+		filePath, cleanup := createTempWorkflowFile(yamlContent)
+		defer cleanup()
+
+		workflowData, err := compiler.ParseWorkflowFile(filePath)
+		if err != nil {
+			t.Fatalf("Failed to parse workflow: %v", err)
+		}
+
+		if workflowData.NetworkPermissions == nil {
+			t.Fatal("Expected network permissions to be present for network: {}")
+		}
+
+		// network: {} must NOT set AllowedExplicitlySet — engine defaults should still apply
+		if workflowData.NetworkPermissions.AllowedExplicitlySet {
+			t.Error("Expected AllowedExplicitlySet=false for network: {}")
+		}
 	})
 
 	t.Run("Network permissions with single domain", func(t *testing.T) {

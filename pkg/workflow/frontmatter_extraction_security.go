@@ -32,6 +32,8 @@ func (c *Compiler) extractNetworkPermissions(frontmatter map[string]any) *Networ
 
 			// Extract allowed domains if present
 			if allowed, hasAllowed := networkObj["allowed"]; hasAllowed {
+				// Mark that allowed was explicitly set (even if empty), so engine defaults are suppressed
+				permissions.AllowedExplicitlySet = true
 				if allowedSlice, ok := allowed.([]any); ok {
 					for _, domain := range allowedSlice {
 						if domainStr, ok := domain.(string); ok {

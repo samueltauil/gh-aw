@@ -227,9 +227,10 @@ func getDomainsFromRuntimes(runtimes map[string]any) []string {
 //     - python
 //     Processes the Allowed list, expanding ecosystem identifiers.
 //
-//  5. Empty Allowed list (deny-all):
+//  5. Empty Allowed list (deny-all user domains):
 //     network: {}  OR  network: { allowed: [] }
-//     Returns empty slice (no network access).
+//     Returns empty slice (no user-specified domains; engine defaults may still apply via mergeDomainsWithNetworkToolsAndRuntimes).
+//     To suppress engine defaults entirely, use network: { allowed: [] } which sets AllowedExplicitlySet=true.
 //
 // The returned list is sorted and deduplicated.
 //
@@ -471,9 +472,14 @@ func mergeDomainsWithNetworkAndTools(defaultDomains []string, network *NetworkPe
 func mergeDomainsWithNetworkToolsAndRuntimes(defaultDomains []string, network *NetworkPermissions, tools map[string]any, runtimes map[string]any) string {
 	domainMap := make(map[string]bool)
 
-	// Add default domains
-	for _, domain := range defaultDomains {
-		domainMap[domain] = true
+	// Add default engine domains unless the workflow author explicitly set allowed: []
+	// to suppress them. network: {} (no allowed key) keeps defaults; network: { allowed: [] }
+	// (AllowedExplicitlySet=true with an empty list) skips them.
+	explicitEmptyAllowlist := network != nil && network.AllowedExplicitlySet && len(network.Allowed) == 0
+	if !explicitEmptyAllowlist {
+		for _, domain := range defaultDomains {
+			domainMap[domain] = true
+		}
 	}
 
 	// Add NetworkPermissions domains (if specified)

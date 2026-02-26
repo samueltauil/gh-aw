@@ -363,9 +363,21 @@ func TestGetCodexAllowedDomains(t *testing.T) {
 			Allowed: []string{},
 		}
 		result := GetCodexAllowedDomains(network)
-		// Empty allowed list should still return Codex defaults
+		// Empty allowed list (AllowedExplicitlySet=false, i.e. network: {}) should still return Codex defaults
 		if result != "172.30.0.1,api.openai.com,host.docker.internal,openai.com" {
 			t.Errorf("Expected '172.30.0.1,api.openai.com,host.docker.internal,openai.com', got %q", result)
+		}
+	})
+
+	t.Run("explicit empty allowlist suppresses engine defaults", func(t *testing.T) {
+		network := &NetworkPermissions{
+			Allowed:              []string{},
+			AllowedExplicitlySet: true,
+		}
+		result := GetCodexAllowedDomains(network)
+		// network: { allowed: [] } must produce an empty domain list (no engine defaults)
+		if result != "" {
+			t.Errorf("Expected empty string for explicit empty allowlist, got %q", result)
 		}
 	})
 }
@@ -931,6 +943,30 @@ func TestGetCopilotAllowedDomainsWithToolsAndRuntimes(t *testing.T) {
 		// Should still contain Copilot defaults
 		if !strings.Contains(result, "api.githubcopilot.com") {
 			t.Error("Expected api.githubcopilot.com in result")
+		}
+	})
+
+	t.Run("explicit empty allowlist suppresses copilot engine defaults", func(t *testing.T) {
+		// network: { allowed: [] } should produce no engine default domains
+		network := &NetworkPermissions{
+			Allowed:              []string{},
+			AllowedExplicitlySet: true,
+		}
+
+		result := GetCopilotAllowedDomainsWithToolsAndRuntimes(network, nil, nil)
+
+		// Should NOT contain any Copilot infrastructure domain
+		if strings.Contains(result, "api.github.com") {
+			t.Error("Expected api.github.com to be absent when allowed: [] is explicit")
+		}
+		if strings.Contains(result, "github.com") {
+			t.Error("Expected github.com to be absent when allowed: [] is explicit")
+		}
+		if strings.Contains(result, "raw.githubusercontent.com") {
+			t.Error("Expected raw.githubusercontent.com to be absent when allowed: [] is explicit")
+		}
+		if result != "" {
+			t.Errorf("Expected empty domain list for explicit empty allowlist, got %q", result)
 		}
 	})
 }
