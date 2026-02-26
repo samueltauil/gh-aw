@@ -257,6 +257,68 @@ func TestGenerateMaintenanceWorkflow_DeletesExistingFile(t *testing.T) {
 	}
 }
 
+func TestGenerateMaintenanceWorkflow_ForkCheckPresent(t *testing.T) {
+	workflowDataList := []*WorkflowData{
+		{
+			Name: "test-workflow",
+			SafeOutputs: &SafeOutputsConfig{
+				CreateIssues: &CreateIssuesConfig{
+					Expires: 48,
+				},
+			},
+		},
+	}
+
+	for _, mode := range []ActionMode{ActionModeDev, ActionModeRelease} {
+		t.Run(string(mode), func(t *testing.T) {
+			tmpDir := t.TempDir()
+			err := GenerateMaintenanceWorkflow(workflowDataList, tmpDir, "v1.0.0", mode, "v0.47.4", false)
+			if err != nil {
+				t.Fatalf("Unexpected error: %v", err)
+			}
+			content, err := os.ReadFile(filepath.Join(tmpDir, "agentics-maintenance.yml"))
+			if err != nil {
+				t.Fatalf("Expected maintenance workflow to be generated: %v", err)
+			}
+			contentStr := string(content)
+
+			// Verify fork-detection step is present with the correct notice message
+			skipStepName := "name: Skip in forked repositories"
+			if !strings.Contains(contentStr, skipStepName) {
+				t.Errorf("Expected fork-detection step %q to be present in generated workflow", skipStepName)
+			}
+			noticeMsg := "::notice::Agentic maintenance is skipped in forked repositories"
+			if !strings.Contains(contentStr, noticeMsg) {
+				t.Errorf("Expected notice message %q to be present in generated workflow", noticeMsg)
+			}
+
+			// Verify the skip step appears before the Setup Scripts step
+			skipStepIdx := strings.Index(contentStr, skipStepName)
+			setupStepIdx := strings.Index(contentStr, "name: Setup Scripts")
+			if skipStepIdx < 0 || setupStepIdx < 0 || skipStepIdx >= setupStepIdx {
+				t.Errorf("Expected fork-detection step to appear before the Setup Scripts step")
+			}
+
+			// Verify fork condition on the skip step
+			forkCondition := "if: ${{ github.event.repository.fork }}"
+			if !strings.Contains(contentStr, forkCondition) {
+				t.Errorf("Expected fork condition %q to be present in generated workflow", forkCondition)
+			}
+
+			// Verify all work steps are guarded with !fork condition.
+			// The condition must appear once per work step in close-expired-entities job:
+			//   Setup Scripts, Close expired discussions, Close expired issues, Close expired pull requests (4 steps)
+			// Plus checkout (dev mode only): 5 steps in dev, 4 in release
+			notForkCondition := "if: ${{ !github.event.repository.fork }}"
+			count := strings.Count(contentStr, notForkCondition)
+			expectedMin := 4 // At minimum: Setup Scripts + 3 close steps
+			if count < expectedMin {
+				t.Errorf("Expected at least %d occurrences of %q, got %d", expectedMin, notForkCondition, count)
+			}
+		})
+	}
+}
+
 func TestGenerateMaintenanceWorkflow_ActionTag(t *testing.T) {
 	workflowDataList := []*WorkflowData{
 		{

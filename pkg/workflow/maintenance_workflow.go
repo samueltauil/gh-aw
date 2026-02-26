@@ -146,6 +146,10 @@ jobs:
       issues: write
       pull-requests: write
     steps:
+      - name: Skip in forked repositories
+        if: ${{ github.event.repository.fork }}
+        run: echo "::notice::Agentic maintenance is skipped in forked repositories. This workflow requires secrets that are only available in the original repository."
+
 `)
 
 	// Get the setup action reference (local or remote based on mode)
@@ -159,6 +163,7 @@ jobs:
 	// Add checkout step only in dev mode (for local action paths)
 	if actionMode == ActionModeDev {
 		yaml.WriteString(`      - name: Checkout actions folder
+        if: ${{ !github.event.repository.fork }}
         uses: ` + GetActionPin("actions/checkout") + `
         with:
           sparse-checkout: |
@@ -170,11 +175,13 @@ jobs:
 
 	// Add setup step with the resolved action reference
 	yaml.WriteString(`      - name: Setup Scripts
+        if: ${{ !github.event.repository.fork }}
         uses: ` + setupActionRef + `
         with:
           destination: /opt/gh-aw/actions
 
       - name: Close expired discussions
+        if: ${{ !github.event.repository.fork }}
         uses: ` + GetActionPin("actions/github-script") + `
         with:
           script: |
@@ -187,6 +194,7 @@ jobs:
             await main();
 
       - name: Close expired issues
+        if: ${{ !github.event.repository.fork }}
         uses: ` + GetActionPin("actions/github-script") + `
         with:
           script: |
@@ -199,6 +207,7 @@ jobs:
             await main();
 
       - name: Close expired pull requests
+        if: ${{ !github.event.repository.fork }}
         uses: ` + GetActionPin("actions/github-script") + `
         with:
           script: |
@@ -218,6 +227,7 @@ jobs:
 		// Add compile-workflows job
 		yaml.WriteString(`
   compile-workflows:
+    if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-slim
     permissions:
       contents: read
@@ -263,6 +273,7 @@ jobs:
             await main();
 
   zizmor-scan:
+    if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-slim
     needs: compile-workflows
     permissions:
@@ -286,6 +297,7 @@ jobs:
           echo "✓ Zizmor security scan completed"
 
   secret-validation:
+    if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-slim
     permissions:
       contents: read

@@ -48,7 +48,12 @@ jobs:
       issues: write
       pull-requests: write
     steps:
+      - name: Skip in forked repositories
+        if: ${{ github.event.repository.fork }}
+        run: echo "::notice::Agentic maintenance is skipped in forked repositories. This workflow requires secrets that are only available in the original repository."
+
       - name: Checkout actions folder
+        if: ${{ !github.event.repository.fork }}
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           sparse-checkout: |
@@ -56,11 +61,13 @@ jobs:
           persist-credentials: false
 
       - name: Setup Scripts
+        if: ${{ !github.event.repository.fork }}
         uses: ./actions/setup
         with:
           destination: /opt/gh-aw/actions
 
       - name: Close expired discussions
+        if: ${{ !github.event.repository.fork }}
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
@@ -70,6 +77,7 @@ jobs:
             await main();
 
       - name: Close expired issues
+        if: ${{ !github.event.repository.fork }}
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
@@ -79,6 +87,7 @@ jobs:
             await main();
 
       - name: Close expired pull requests
+        if: ${{ !github.event.repository.fork }}
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
@@ -88,6 +97,7 @@ jobs:
             await main();
 
   compile-workflows:
+    if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-slim
     permissions:
       contents: read
@@ -128,6 +138,7 @@ jobs:
             await main();
 
   zizmor-scan:
+    if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-slim
     needs: compile-workflows
     permissions:
@@ -151,6 +162,7 @@ jobs:
           echo "✓ Zizmor security scan completed"
 
   secret-validation:
+    if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-slim
     permissions:
       contents: read
