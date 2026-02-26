@@ -183,7 +183,7 @@ func (c *Compiler) parseCommentsConfig(outputMap map[string]any) *AddCommentsCon
 	}
 
 	// Validate target-repo (wildcard "*" is not allowed)
-	if validateTargetRepoSlug(config.TargetRepoSlug, addCommentLog) {
+	if err := validateTargetRepoSlug(config.TargetRepoSlug, addCommentLog); err != nil {
 		return nil // Invalid configuration, return nil to cause validation error
 	}
 

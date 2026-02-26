@@ -276,3 +276,19 @@ func (p *Permissions) RenderToYAML() string {
 
 	return strings.Join(lines, "\n")
 }
+
+// findWriteScopesForPolicy returns the subset of the given scopes that have write-level access.
+// This is a shared helper for write-permission policy checks across validation functions.
+func findWriteScopesForPolicy(permissions *Permissions, scopes []PermissionScope) []PermissionScope {
+	if permissions == nil {
+		return nil
+	}
+	var writeScopes []PermissionScope
+	for _, scope := range scopes {
+		level, exists := permissions.Get(scope)
+		if exists && level == PermissionWrite {
+			writeScopes = append(writeScopes, scope)
+		}
+	}
+	return writeScopes
+}

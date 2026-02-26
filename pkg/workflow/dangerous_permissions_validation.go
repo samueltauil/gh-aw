@@ -62,27 +62,16 @@ func findWritePermissions(permissions *Permissions) []PermissionScope {
 		return nil
 	}
 
-	var writePerms []PermissionScope
-
-	// Check all permission scopes
+	// Collect scopes to check, excluding id-token and metadata
+	var scopes []PermissionScope
 	for _, scope := range GetAllPermissionScopes() {
-		// Skip id-token as it's safe and used for OIDC authentication
-		if scope == PermissionIdToken {
+		if scope == PermissionIdToken || scope == PermissionMetadata {
 			continue
 		}
-
-		// Skip metadata as it's a built-in read-only permission
-		if scope == PermissionMetadata {
-			continue
-		}
-
-		level, exists := permissions.Get(scope)
-		if exists && level == PermissionWrite {
-			writePerms = append(writePerms, scope)
-		}
+		scopes = append(scopes, scope)
 	}
 
-	return writePerms
+	return findWriteScopesForPolicy(permissions, scopes)
 }
 
 // formatDangerousPermissionsError formats an error message for write permissions violations

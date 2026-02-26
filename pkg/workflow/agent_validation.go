@@ -153,8 +153,7 @@ func (c *Compiler) validateWebSearchSupport(tools map[string]any, engine CodingA
 
 	// web-search is specified, check if the engine supports it
 	if !engine.SupportsWebSearch() {
-		fmt.Fprintln(os.Stderr, console.FormatWarningMessage(fmt.Sprintf("Engine '%s' does not support the web-search tool. See https://github.github.com/gh-aw/guides/web-search/ for alternatives.", engine.GetID())))
-		c.IncrementWarningCount()
+		c.emitWarning(fmt.Sprintf("Engine '%s' does not support the web-search tool. See https://github.github.com/gh-aw/guides/web-search/ for alternatives.", engine.GetID()))
 	}
 }
 

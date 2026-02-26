@@ -2,11 +2,9 @@ package workflow
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
-	"github.com/github/gh-aw/pkg/console"
 	"github.com/github/gh-aw/pkg/logger"
 	"github.com/github/gh-aw/pkg/parser"
 	"github.com/goccy/go-yaml"
@@ -638,8 +636,7 @@ func (c *Compiler) extractCommandConfig(frontmatter map[string]any) (commandName
 			if hasCommand {
 				// Show deprecation warning if using old field name
 				if isDeprecated {
-					fmt.Fprintln(os.Stderr, console.FormatWarningMessage("The 'command:' trigger field is deprecated. Please use 'slash_command:' instead."))
-					c.IncrementWarningCount()
+					c.emitWarning("The 'command:' trigger field is deprecated. Please use 'slash_command:' instead.")
 				}
 
 				// Check if command is a string (shorthand format)

@@ -13,7 +13,6 @@
 //   - validateExpressionSizes() - Validates expression size limits (21KB max)
 //   - validateContainerImages() - Validates Docker images exist
 //   - validateRuntimePackages() - Validates npm, pip, uv packages
-//   - collectPackagesFromWorkflow() - Generic package collection helper
 //
 // # Validation Patterns
 //
@@ -95,7 +94,7 @@ func (c *Compiler) validateContainerImages(workflowData *WorkflowData) error {
 	}
 
 	runtimeValidationLog.Printf("Validating container images for %d tools", len(workflowData.Tools))
-	var errors []string
+	collector := NewErrorCollector(false)
 	for toolName, toolConfig := range workflowData.Tools {
 		if config, ok := toolConfig.(map[string]any); ok {
 			// Get the MCP configuration to extract container info
@@ -122,7 +121,7 @@ func (c *Compiler) validateContainerImages(workflowData *WorkflowData) error {
 
 				// Validate the container image exists using docker
 				if err := validateDockerImage(containerImage, c.verbose); err != nil {
-					errors = append(errors, fmt.Sprintf("tool '%s': %v", toolName, err))
+					_ = collector.Add(fmt.Errorf("tool '%s': %w", toolName, err))
 				} else if c.verbose {
 					fmt.Fprintln(os.Stderr, console.FormatInfoMessage("✓ Container image validated: "+containerImage))
 				}
@@ -130,12 +129,12 @@ func (c *Compiler) validateContainerImages(workflowData *WorkflowData) error {
 		}
 	}
 
-	if len(errors) > 0 {
+	if collector.HasErrors() {
 		return NewValidationError(
 			"container.images",
-			fmt.Sprintf("%d images failed validation", len(errors)),
+			fmt.Sprintf("%d images failed validation", collector.Count()),
 			"container image validation failed",
-			fmt.Sprintf("Fix the following container image issues:\n\n%s\n\nEnsure:\n1. Container images exist and are accessible\n2. Registry URLs are correct\n3. Image tags are specified\n4. You have pull permissions for private images", strings.Join(errors, "\n")),
+			fmt.Sprintf("Fix the following container image issues:\n\n%s\n\nEnsure:\n1. Container images exist and are accessible\n2. Registry URLs are correct\n3. Image tags are specified\n4. You have pull permissions for private images", collector.Error().Error()),
 		)
 	}
 
@@ -149,7 +148,7 @@ func (c *Compiler) validateRuntimePackages(workflowData *WorkflowData) error {
 	requirements := DetectRuntimeRequirements(workflowData)
 	runtimeValidationLog.Printf("Validating runtime packages: found %d runtime requirements", len(requirements))
 
-	var errors []string
+	collector := NewErrorCollector(false)
 	for _, req := range requirements {
 		switch req.Runtime.ID {
 		case "node":
@@ -157,100 +156,35 @@ func (c *Compiler) validateRuntimePackages(workflowData *WorkflowData) error {
 			runtimeValidationLog.Print("Validating npx packages")
 			if err := c.validateNpxPackages(workflowData); err != nil {
 				runtimeValidationLog.Printf("Npx package validation failed: %v", err)
-				errors = append(errors, err.Error())
+				_ = collector.Add(err)
 			}
 		case "python":
 			// Validate pip packages used in the workflow
 			runtimeValidationLog.Print("Validating pip packages")
 			if err := c.validatePipPackages(workflowData); err != nil {
 				runtimeValidationLog.Printf("Pip package validation failed: %v", err)
-				errors = append(errors, err.Error())
+				_ = collector.Add(err)
 			}
 		case "uv":
 			// Validate uv packages used in the workflow
 			runtimeValidationLog.Print("Validating uv packages")
 			if err := c.validateUvPackages(workflowData); err != nil {
 				runtimeValidationLog.Printf("Uv package validation failed: %v", err)
-				errors = append(errors, err.Error())
+				_ = collector.Add(err)
 			}
 		}
 	}
 
-	if len(errors) > 0 {
-		runtimeValidationLog.Printf("Runtime package validation completed with %d errors", len(errors))
+	if collector.HasErrors() {
+		runtimeValidationLog.Printf("Runtime package validation completed with %d errors", collector.Count())
 		return NewValidationError(
 			"runtime.packages",
-			fmt.Sprintf("%d package validation errors", len(errors)),
+			fmt.Sprintf("%d package validation errors", collector.Count()),
 			"runtime package validation failed",
-			fmt.Sprintf("Fix the following package issues:\n\n%s\n\nEnsure:\n1. Package names are spelled correctly\n2. Packages exist in their respective registries (npm, PyPI)\n3. Package managers (npm, pip, uv) are installed\n4. Network access is available for registry checks", strings.Join(errors, "\n")),
+			fmt.Sprintf("Fix the following package issues:\n\n%s\n\nEnsure:\n1. Package names are spelled correctly\n2. Packages exist in their respective registries (npm, PyPI)\n3. Package managers (npm, pip, uv) are installed\n4. Network access is available for registry checks", collector.Error().Error()),
 		)
 	}
 
 	runtimeValidationLog.Print("Runtime package validation passed")
 	return nil
-}
-
-// collectPackagesFromWorkflow is a generic helper that collects packages from workflow data
-// using the provided extractor function. It deduplicates packages and optionally extracts
-// from MCP tool configurations when toolCommand is provided.
-func collectPackagesFromWorkflow(
-	workflowData *WorkflowData,
-	extractor func(string) []string,
-	toolCommand string,
-) []string {
-	runtimeValidationLog.Printf("Collecting packages from workflow: toolCommand=%s", toolCommand)
-	var packages []string
-	seen := make(map[string]bool)
-
-	// Extract from custom steps
-	if workflowData.CustomSteps != "" {
-		pkgs := extractor(workflowData.CustomSteps)
-		for _, pkg := range pkgs {
-			if !seen[pkg] {
-				packages = append(packages, pkg)
-				seen[pkg] = true
-			}
-		}
-	}
-
-	// Extract from MCP server configurations (if toolCommand is provided)
-	if toolCommand != "" && workflowData.Tools != nil {
-		for _, toolConfig := range workflowData.Tools {
-			// Handle structured MCP config with command and args fields
-			if config, ok := toolConfig.(map[string]any); ok {
-				if command, hasCommand := config["command"]; hasCommand {
-					if cmdStr, ok := command.(string); ok && cmdStr == toolCommand {
-						// Extract package from args, skipping flags
-						if args, hasArgs := config["args"]; hasArgs {
-							if argsSlice, ok := args.([]any); ok {
-								for _, arg := range argsSlice {
-									if pkgStr, ok := arg.(string); ok {
-										// Skip flags (arguments starting with - or --)
-										if !strings.HasPrefix(pkgStr, "-") && !seen[pkgStr] {
-											packages = append(packages, pkgStr)
-											seen[pkgStr] = true
-											break // Only take the first non-flag argument
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			} else if cmdStr, ok := toolConfig.(string); ok {
-				// Handle string-format MCP tool (e.g., "npx -y package")
-				// Use the extractor function to parse the command string
-				pkgs := extractor(cmdStr)
-				for _, pkg := range pkgs {
-					if !seen[pkg] {
-						packages = append(packages, pkg)
-						seen[pkg] = true
-					}
-				}
-			}
-		}
-	}
-
-	runtimeValidationLog.Printf("Collected %d unique packages", len(packages))
-	return packages
 }

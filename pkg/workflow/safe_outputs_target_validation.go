@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -158,4 +159,16 @@ func isGitHubExpression(s string) bool {
 	// The closing marker must come after the opening marker
 	// and there must be something between them
 	return openIndex >= 0 && closeIndex > openIndex+3
+}
+
+// validateTargetRepoSlug validates that a target-repo slug is not a wildcard.
+// Returns an error if the value equals "*", which is not allowed for safe outputs.
+func validateTargetRepoSlug(targetRepoSlug string, log *logger.Logger) error {
+	if targetRepoSlug == "*" {
+		if log != nil {
+			log.Print("Invalid target-repo: wildcard '*' is not allowed")
+		}
+		return errors.New("target-repo wildcard '*' is not allowed for safe outputs")
+	}
+	return nil
 }

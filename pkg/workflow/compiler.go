@@ -54,6 +54,12 @@ func formatCompilerMessage(filePath string, msgType string, message string) stri
 	})
 }
 
+// emitWarning prints a warning message to stderr and increments the warning count.
+func (c *Compiler) emitWarning(msg string) {
+	fmt.Fprintln(os.Stderr, console.FormatWarningMessage(msg))
+	c.IncrementWarningCount()
+}
+
 // CompileWorkflow compiles a workflow markdown file into a GitHub Actions YAML file.
 // It reads the file from disk, parses frontmatter and markdown sections, and generates
 // the corresponding workflow YAML. Returns the compiled workflow data or an error.
@@ -202,8 +208,7 @@ func (c *Compiler) validateWorkflowData(workflowData *WorkflowData, markdownPath
 
 	// Emit warning for sandbox.agent: false (disables agent sandbox firewall)
 	if isAgentSandboxDisabled(workflowData) {
-		fmt.Fprintln(os.Stderr, console.FormatWarningMessage("⚠️  WARNING: Agent sandbox disabled (sandbox.agent: false). This removes firewall protection. The AI agent will have direct network access without firewall filtering. The MCP gateway remains enabled. Only use this for testing or in controlled environments where you trust the AI agent completely."))
-		c.IncrementWarningCount()
+		c.emitWarning("⚠️  WARNING: Agent sandbox disabled (sandbox.agent: false). This removes firewall protection. The AI agent will have direct network access without firewall filtering. The MCP gateway remains enabled. Only use this for testing or in controlled environments where you trust the AI agent completely.")
 	}
 
 	// Validate: threat detection requires sandbox.agent to be enabled (detection runs inside AWF)
@@ -213,20 +218,17 @@ func (c *Compiler) validateWorkflowData(workflowData *WorkflowData, markdownPath
 
 	// Emit experimental warning for safe-inputs feature
 	if IsSafeInputsEnabled(workflowData.SafeInputs, workflowData) {
-		fmt.Fprintln(os.Stderr, console.FormatWarningMessage("Using experimental feature: safe-inputs"))
-		c.IncrementWarningCount()
+		c.emitWarning("Using experimental feature: safe-inputs")
 	}
 
 	// Emit experimental warning for plugins feature
 	if workflowData.PluginInfo != nil && len(workflowData.PluginInfo.Plugins) > 0 {
-		fmt.Fprintln(os.Stderr, console.FormatWarningMessage("Using experimental feature: plugins"))
-		c.IncrementWarningCount()
+		c.emitWarning("Using experimental feature: plugins")
 	}
 
 	// Emit experimental warning for rate-limit feature
 	if workflowData.RateLimit != nil {
-		fmt.Fprintln(os.Stderr, console.FormatWarningMessage("Using experimental feature: rate-limit"))
-		c.IncrementWarningCount()
+		c.emitWarning("Using experimental feature: rate-limit")
 	}
 
 	// Validate workflow_run triggers have branch restrictions
@@ -419,8 +421,7 @@ func (c *Compiler) generateAndValidateYAML(workflowData *WorkflowData, markdownP
 			return "", formatCompilerError(markdownPath, "error", fmt.Sprintf("repository feature validation failed: %v", err), err)
 		}
 	} else if c.verbose {
-		fmt.Fprintln(os.Stderr, console.FormatWarningMessage("Schema validation available but skipped (use SetSkipValidation(false) to enable)"))
-		c.IncrementWarningCount()
+		c.emitWarning("Schema validation available but skipped (use SetSkipValidation(false) to enable)")
 	}
 
 	return yamlContent, nil

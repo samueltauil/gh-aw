@@ -3,6 +3,7 @@
 // This file contains domain-specific validation functions for firewall configuration:
 //   - validateFirewallConfig() - Validates the overall firewall configuration
 //   - ValidateLogLevel() - Validates firewall log-level values
+//   - validateNetworkFirewallConfig() - Validates firewall configuration dependencies
 //
 // These validation functions are organized in a dedicated file following the validation
 // architecture pattern where domain-specific validation belongs in domain validation files.
@@ -14,6 +15,7 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/github/gh-aw/pkg/constants"
 	"github.com/github/gh-aw/pkg/logger"
 )
 
@@ -58,4 +60,36 @@ func ValidateLogLevel(level string) error {
 	}
 	firewallValidationLog.Printf("Invalid log-level: %s", level)
 	return fmt.Errorf("invalid log-level '%s', must be one of: %v", level, valid)
+}
+
+// validateNetworkFirewallConfig validates network firewall configuration dependencies
+// Returns an error if the configuration is invalid
+func validateNetworkFirewallConfig(networkPermissions *NetworkPermissions) error {
+	if networkPermissions == nil {
+		return nil
+	}
+
+	firewallConfig := networkPermissions.Firewall
+	if firewallConfig == nil {
+		return nil
+	}
+
+	firewallValidationLog.Print("Validating network firewall configuration")
+
+	// Validate allow-urls requires ssl-bump
+	if len(firewallConfig.AllowURLs) > 0 && !firewallConfig.SSLBump {
+		firewallValidationLog.Printf("Validation error: allow-urls specified without ssl-bump: %d URLs", len(firewallConfig.AllowURLs))
+		return NewValidationError(
+			"network.firewall.allow-urls",
+			"requires ssl-bump: true",
+			"allow-urls requires ssl-bump: true to function. SSL Bump enables HTTPS content inspection, which is necessary for URL path filtering",
+			"Enable SSL Bump in your firewall configuration:\n\nnetwork:\n  firewall:\n    ssl-bump: true\n    allow-urls:\n      - \"https://github.com/githubnext/*\"\n\nSee: "+string(constants.DocsNetworkURL),
+		)
+	}
+
+	if len(firewallConfig.AllowURLs) > 0 {
+		firewallValidationLog.Printf("Validated allow-urls: %d URLs with ssl-bump enabled", len(firewallConfig.AllowURLs))
+	}
+
+	return nil
 }

@@ -68,7 +68,7 @@ func (c *Compiler) validateNpxPackages(workflowData *WorkflowData) error {
 		)
 	}
 
-	var errors []string
+	collector := NewErrorCollector(false)
 	for _, pkg := range packages {
 		npmValidationLog.Printf("Validating npm package: %s", pkg)
 
@@ -78,7 +78,7 @@ func (c *Compiler) validateNpxPackages(workflowData *WorkflowData) error {
 
 		if err != nil {
 			npmValidationLog.Printf("Package validation failed for %s: %v", pkg, err)
-			errors = append(errors, fmt.Sprintf("npx package '%s' not found on npm registry: %s", pkg, strings.TrimSpace(string(output))))
+			_ = collector.Add(fmt.Errorf("npx package '%s' not found on npm registry: %s", pkg, strings.TrimSpace(string(output))))
 		} else {
 			npmValidationLog.Printf("Package validated successfully: %s", pkg)
 			if c.verbose {
@@ -87,13 +87,13 @@ func (c *Compiler) validateNpxPackages(workflowData *WorkflowData) error {
 		}
 	}
 
-	if len(errors) > 0 {
-		npmValidationLog.Printf("npx package validation failed with %d errors", len(errors))
+	if collector.HasErrors() {
+		npmValidationLog.Printf("npx package validation failed with %d errors", collector.Count())
 		return NewValidationError(
 			"npx.packages",
-			fmt.Sprintf("%d packages not found", len(errors)),
+			fmt.Sprintf("%d packages not found", collector.Count()),
 			"npx packages not found on npm registry",
-			fmt.Sprintf("Fix package names or verify they exist on npm:\n\n%s\n\nCheck package availability:\n$ npm view <package-name>\n\nSearch for similar packages:\n$ npm search <keyword>", strings.Join(errors, "\n")),
+			fmt.Sprintf("Fix package names or verify they exist on npm:\n\n%s\n\nCheck package availability:\n$ npm view <package-name>\n\nSearch for similar packages:\n$ npm search <keyword>", collector.Error().Error()),
 		)
 	}
 

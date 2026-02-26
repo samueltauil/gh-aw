@@ -120,7 +120,7 @@ func (c *Compiler) parseCloseEntityConfig(outputMap map[string]any, params Close
 	}
 
 	// Validate target-repo (wildcard "*" is not allowed)
-	if validateTargetRepoSlug(config.TargetRepoSlug, logger) {
+	if err := validateTargetRepoSlug(config.TargetRepoSlug, logger); err != nil {
 		logger.Printf("Invalid target-repo slug for %s", params.ConfigKey)
 		return nil
 	}

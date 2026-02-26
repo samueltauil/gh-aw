@@ -3,9 +3,7 @@ package workflow
 import (
 	"errors"
 	"fmt"
-	"os"
 
-	"github.com/github/gh-aw/pkg/console"
 	"github.com/github/gh-aw/pkg/logger"
 )
 
@@ -79,8 +77,7 @@ func (c *Compiler) checkNetworkSupport(engine CodingAgentEngine, networkPermissi
 	}
 
 	// In non-strict mode, emit a warning
-	fmt.Fprintln(os.Stderr, console.FormatWarningMessage(message))
-	c.IncrementWarningCount()
+	c.emitWarning(message)
 
 	return nil
 }
@@ -107,8 +104,7 @@ func (c *Compiler) checkFirewallDisable(engine CodingAgentEngine, networkPermiss
 			}
 
 			// In non-strict mode, emit a warning
-			fmt.Fprintln(os.Stderr, console.FormatWarningMessage(message))
-			c.IncrementWarningCount()
+			c.emitWarning(message)
 		}
 
 		// Also check if engine doesn't support firewall in strict mode when there are no restrictions

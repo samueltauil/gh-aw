@@ -307,7 +307,7 @@ func (c *Compiler) parsePullRequestsConfig(outputMap map[string]any) *CreatePull
 	}
 
 	// Validate target-repo (wildcard "*" is not allowed)
-	if validateTargetRepoSlug(config.TargetRepoSlug, createPRLog) {
+	if err := validateTargetRepoSlug(config.TargetRepoSlug, createPRLog); err != nil {
 		return nil // Invalid configuration, return nil to cause validation error
 	}
 

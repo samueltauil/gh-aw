@@ -14,6 +14,7 @@
 //   - ValidatePositiveInt() - Validates that a value is a positive integer
 //   - ValidateNonNegativeInt() - Validates that a value is a non-negative integer
 //   - validateMountStringFormat() - Parses and validates a "source:dest:mode" mount string
+//   - isValidFullSHA() - Checks if a string is a valid 40-character hexadecimal SHA
 //
 // # Design Rationale
 //
@@ -31,6 +32,7 @@ package workflow
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -39,6 +41,16 @@ import (
 )
 
 var validationHelpersLog = logger.New("workflow:validation_helpers")
+
+var shaRegex = regexp.MustCompile("^[0-9a-f]{40}$")
+
+// isValidFullSHA checks if a string is a valid 40-character hexadecimal SHA
+func isValidFullSHA(s string) bool {
+	if len(s) != 40 {
+		return false
+	}
+	return shaRegex.MatchString(s)
+}
 
 // validateIntRange validates that a value is within the specified inclusive range [min, max].
 // It returns an error if the value is outside the range, with a descriptive message
@@ -166,6 +178,25 @@ func validateMountStringFormat(mount string) (source, dest, mode string, err err
 	return parts[0], parts[1], parts[2], nil
 }
 
+// validateMountStrings validates a list of mount strings against the expected format.
+// It returns a slice of human-readable error strings describing any invalid mounts.
+// The docsURL is included in error messages to help users find documentation.
+// Both sandbox and MCP mount validation share this core loop.
+func validateMountStrings(mounts []string, docsURL string) []string {
+	var errs []string
+	for i, mount := range mounts {
+		source, dest, mode, err := validateMountStringFormat(mount)
+		if err != nil {
+			if source == "" && dest == "" && mode == "" {
+				errs = append(errs, fmt.Sprintf("mounts[%d] %q must follow 'source:destination:mode' format. See: %s", i, mount, docsURL))
+			} else {
+				errs = append(errs, fmt.Sprintf("mounts[%d] mode must be 'ro' or 'rw', got %q. See: %s", i, mode, docsURL))
+			}
+		}
+	}
+	return errs
+}
+
 // formatList formats a list of strings as a comma-separated list with natural language conjunction
 func formatList(items []string) string {
 	if len(items) == 0 {
@@ -178,17 +209,4 @@ func formatList(items []string) string {
 		return items[0] + " and " + items[1]
 	}
 	return fmt.Sprintf("%s, and %s", formatList(items[:len(items)-1]), items[len(items)-1])
-}
-
-// validateTargetRepoSlug validates that a target-repo slug is not a wildcard.
-// Returns true if the value is invalid (i.e., equals "*").
-// This helper is used when the target-repo has already been parsed into a struct field.
-func validateTargetRepoSlug(targetRepoSlug string, log *logger.Logger) bool {
-	if targetRepoSlug == "*" {
-		if log != nil {
-			log.Print("Invalid target-repo: wildcard '*' is not allowed")
-		}
-		return true // Return true to indicate validation error
-	}
-	return false
 }
