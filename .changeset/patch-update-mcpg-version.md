@@ -2,4 +2,4 @@
 "gh-aw": patch
 ---
 
-Update gh-aw-mcpg to v0.0.113 for improved MCP gateway functionality
+Ensure gh-aw-mcpg is pinned to v0.1.5 and recompile stale workflow lock files
