@@ -358,24 +358,13 @@ func TestGetCodexAllowedDomains(t *testing.T) {
 		}
 	})
 
-	t.Run("empty allowed list returns only defaults", func(t *testing.T) {
+	t.Run("empty allowed list with ExplicitlyDefined suppresses engine defaults", func(t *testing.T) {
 		network := &NetworkPermissions{
-			Allowed: []string{},
+			Allowed:           []string{},
+			ExplicitlyDefined: true,
 		}
 		result := GetCodexAllowedDomains(network)
-		// Empty allowed list (AllowedExplicitlySet=false, i.e. network: {}) should still return Codex defaults
-		if result != "172.30.0.1,api.openai.com,host.docker.internal,openai.com" {
-			t.Errorf("Expected '172.30.0.1,api.openai.com,host.docker.internal,openai.com', got %q", result)
-		}
-	})
-
-	t.Run("explicit empty allowlist suppresses engine defaults", func(t *testing.T) {
-		network := &NetworkPermissions{
-			Allowed:              []string{},
-			AllowedExplicitlySet: true,
-		}
-		result := GetCodexAllowedDomains(network)
-		// network: { allowed: [] } must produce an empty domain list (no engine defaults)
+		// network: {} or network: { allowed: [] } must produce an empty domain list (no engine defaults)
 		if result != "" {
 			t.Errorf("Expected empty string for explicit empty allowlist, got %q", result)
 		}
@@ -947,10 +936,10 @@ func TestGetCopilotAllowedDomainsWithToolsAndRuntimes(t *testing.T) {
 	})
 
 	t.Run("explicit empty allowlist suppresses copilot engine defaults", func(t *testing.T) {
-		// network: { allowed: [] } should produce no engine default domains
+		// network: {} or network: { allowed: [] } should produce no engine default domains
 		network := &NetworkPermissions{
-			Allowed:              []string{},
-			AllowedExplicitlySet: true,
+			Allowed:           []string{},
+			ExplicitlyDefined: true,
 		}
 
 		result := GetCopilotAllowedDomainsWithToolsAndRuntimes(network, nil, nil)

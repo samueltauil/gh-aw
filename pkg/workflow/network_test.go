@@ -130,9 +130,8 @@ This workflow has empty network permissions (deny all).`
 			t.Errorf("Expected 0 allowed domains, got %d", len(workflowData.NetworkPermissions.Allowed))
 		}
 
-		// allowed: [] must set AllowedExplicitlySet so engine defaults are suppressed
-		if !workflowData.NetworkPermissions.AllowedExplicitlySet {
-			t.Error("Expected AllowedExplicitlySet=true for network: { allowed: [] }")
+		if !workflowData.NetworkPermissions.ExplicitlyDefined {
+			t.Error("Expected ExplicitlyDefined=true for network: { allowed: [] }")
 		}
 	})
 
@@ -161,9 +160,9 @@ This workflow has an empty network object with no allowed key.`
 			t.Fatal("Expected network permissions to be present for network: {}")
 		}
 
-		// network: {} must NOT set AllowedExplicitlySet — engine defaults should still apply
-		if workflowData.NetworkPermissions.AllowedExplicitlySet {
-			t.Error("Expected AllowedExplicitlySet=false for network: {}")
+		// network: {} must also set ExplicitlyDefined — engine defaults should be suppressed
+		if !workflowData.NetworkPermissions.ExplicitlyDefined {
+			t.Error("Expected ExplicitlyDefined=true for network: {}")
 		}
 	})
 

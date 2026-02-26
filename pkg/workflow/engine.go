@@ -52,23 +52,18 @@ type EngineConfig struct {
 //     - example.com   # Literal domain
 //     Result: NetworkPermissions{Allowed: ["defaults", "github", "example.com"], ExplicitlyDefined: true}
 //
-//  3. Empty object - keep engine default domains:
-//     network: {}
-//     Result: NetworkPermissions{Allowed: [], ExplicitlyDefined: true, AllowedExplicitlySet: false}
-//
-//  4. Explicit empty allowlist - deny all engine-default domains:
-//     network: { allowed: [] }
-//     Result: NetworkPermissions{Allowed: [], ExplicitlyDefined: true, AllowedExplicitlySet: true}
+//  3. Empty object or explicit empty allowlist - deny all engine-default domains:
+//     network: {}  OR  network: { allowed: [] }
+//     Result: NetworkPermissions{Allowed: [], ExplicitlyDefined: true}
 //     Engine default domains (e.g. api.github.com, github.com) are NOT added to the allowlist.
 //
 // Ecosystem identifiers in the Allowed list are expanded to their corresponding domain lists.
 // See GetAllowedDomains() for the list of supported ecosystem identifiers.
 type NetworkPermissions struct {
-	Allowed              []string        `yaml:"allowed,omitempty"`  // List of allowed domains or ecosystem identifiers (e.g., "defaults", "github", "python")
-	Blocked              []string        `yaml:"blocked,omitempty"`  // List of blocked domains (takes precedence over allowed)
-	Firewall             *FirewallConfig `yaml:"firewall,omitempty"` // AWF firewall configuration (see firewall.go)
-	ExplicitlyDefined    bool            `yaml:"-"`                  // Internal flag: true if network field was explicitly set in frontmatter
-	AllowedExplicitlySet bool            `yaml:"-"`                  // Internal flag: true if the allowed key was present (even when empty), suppresses engine default domains
+	Allowed           []string        `yaml:"allowed,omitempty"`  // List of allowed domains or ecosystem identifiers (e.g., "defaults", "github", "python")
+	Blocked           []string        `yaml:"blocked,omitempty"`  // List of blocked domains (takes precedence over allowed)
+	Firewall          *FirewallConfig `yaml:"firewall,omitempty"` // AWF firewall configuration (see firewall.go)
+	ExplicitlyDefined bool            `yaml:"-"`                  // Internal flag: true if network field was explicitly set in frontmatter
 }
 
 // EngineNetworkConfig combines engine configuration with top-level network permissions
