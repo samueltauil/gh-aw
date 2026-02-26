@@ -126,6 +126,16 @@ export default defineConfig({
 		'/patterns/specops/': '/patterns/spec-ops/',
 		'/patterns/taskops/': '/patterns/task-ops/',
 		'/patterns/trialops/': '/patterns/trial-ops/',
+
+		// Patterns with /gh-aw/ base prefix that has wrong slug
+		'/gh-aw/patterns/chatops/': '/patterns/chat-ops/',
+
+		// Patterns missing /gh-aw/ base prefix → correct paths with base
+		'/patterns/daily-ops/': 'https://github.github.com/gh-aw/patterns/daily-ops/',
+		'/patterns/data-ops/': 'https://github.github.com/gh-aw/patterns/data-ops/',
+		'/patterns/issue-ops/': 'https://github.github.com/gh-aw/patterns/issue-ops/',
+		'/patterns/project-ops/': 'https://github.github.com/gh-aw/patterns/project-ops/',
+		'/patterns/multi-repo-ops/': 'https://github.github.com/gh-aw/patterns/multi-repo-ops/',
 	},
 	integrations: [
 		mermaid(),
