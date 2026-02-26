@@ -19,10 +19,7 @@ imports:
   - shared/gh.md
   - shared/reporting.md
 network:
-  allowed:
-    - defaults
-    - github
-    - playwright
+  allowed: []
 tools:
   cache-memory: true
   github:

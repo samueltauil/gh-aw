@@ -30,10 +30,7 @@ imports:
   - shared/go-make.md
   - shared/github-mcp-app.md
 network:
-  allowed:
-    - defaults
-    - github
-    - playwright
+  allowed: []
 sandbox:
   mcp:
     container: "ghcr.io/github/gh-aw-mcpg"

@@ -20,9 +20,7 @@ imports:
   - shared/gh.md
   - shared/reporting.md
 network:
-  allowed:
-    - defaults
-    - github
+  allowed: []
 tools:
   cache-memory: true
   github:

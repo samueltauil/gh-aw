@@ -15,10 +15,7 @@ permissions:
   issues: read
   actions: read
 network:
-  allowed:
-    - defaults
-    - node
-    - github
+  allowed: []
 tools:
   github:
   bash:

@@ -21,11 +21,7 @@ imports:
   - shared/reporting.md
   - shared/github-queries-safe-input.md
 network:
-  allowed:
-    - defaults
-    - node
-    - github
-    - playwright
+  allowed: []
 tools:
   agentic-workflows:
   cache-memory: true

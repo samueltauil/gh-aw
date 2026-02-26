@@ -16,9 +16,7 @@ strict: true
 tools:
   github:
 network:
-  allowed:
-    - defaults
-    - github
+  allowed: []
 safe-outputs:
   assign-to-agent:
     target: "*"

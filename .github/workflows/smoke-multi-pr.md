@@ -15,9 +15,7 @@ permissions:
 engine: copilot
 strict: true
 network:
-  allowed:
-    - defaults
-    - node
+  allowed: []
 tools:
   edit:
   bash:

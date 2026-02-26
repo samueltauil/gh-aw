@@ -26,10 +26,7 @@ runtimes:
   dotnet:
     version: "8.0"
 network:
-  allowed:
-    - defaults
-    - github
-    - node
+  allowed: []
 tools:
   bash:
     - "*"

@@ -16,9 +16,7 @@ permissions:
 engine: copilot
 strict: true
 network:
-  allowed:
-    - defaults
-    - node
+  allowed: []
 safe-outputs:
   create-issue:
     expires: 2h
