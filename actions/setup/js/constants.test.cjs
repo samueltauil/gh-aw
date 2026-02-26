@@ -21,8 +21,8 @@ describe("constants", () => {
     expect(MAX_BUFFER_SIZE).toBe(megabytes(10));
   });
 
-  it("GIT_PATCH_MAX_BUFFER_SIZE should be 200MB", () => {
-    expect(GIT_PATCH_MAX_BUFFER_SIZE).toBe(megabytes(200));
+  it("GIT_PATCH_MAX_BUFFER_SIZE should be 50MB", () => {
+    expect(GIT_PATCH_MAX_BUFFER_SIZE).toBe(megabytes(50));
   });
 
   it("GIT_PATCH_MAX_BUFFER_SIZE should be larger than MAX_BUFFER_SIZE", () => {
