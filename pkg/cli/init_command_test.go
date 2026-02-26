@@ -766,3 +766,140 @@ func TestInitCommandWithCodespacesNoArgs(t *testing.T) {
 		t.Error("Expected .gitattributes to be created")
 	}
 }
+
+// TestIsForkedRepo tests that IsForkedRepo returns a boolean without error.
+// When gh CLI is not available or the repo is not a GitHub repo, it should
+// return false without error (non-blocking behavior).
+func TestIsForkedRepo(t *testing.T) {
+	t.Parallel()
+
+	isFork, err := IsForkedRepo()
+
+	// IsForkedRepo should never return an error - it handles gh CLI failures gracefully
+	if err != nil {
+		t.Errorf("IsForkedRepo() returned unexpected error: %v", err)
+	}
+
+	// Log the result for diagnostic purposes
+	t.Logf("IsForkedRepo() returned: %v (gh CLI may not be available in test environment)", isFork)
+}
+
+// TestParseForkStatus tests the fork status parsing logic with table-driven cases.
+func TestParseForkStatus(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		output   string
+		expected bool
+	}{
+		{name: "true output", output: "true", expected: true},
+		{name: "true with newline", output: "true\n", expected: true},
+		{name: "false output", output: "false", expected: false},
+		{name: "false with newline", output: "false\n", expected: false},
+		{name: "empty output", output: "", expected: false},
+		{name: "whitespace only", output: "   ", expected: false},
+		{name: "mixed case", output: "True", expected: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := parseForkStatus(tt.output)
+			if got != tt.expected {
+				t.Errorf("parseForkStatus(%q) = %v, want %v", tt.output, got, tt.expected)
+			}
+		})
+	}
+}
+
+// TestPrintForkWarning tests that printForkWarning writes the expected secrets
+// and feature restriction information to stderr.
+func TestPrintForkWarning(t *testing.T) {
+	t.Parallel()
+
+	// Capture stderr by replacing os.Stderr temporarily
+	origStderr := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("Failed to create pipe: %v", err)
+	}
+	os.Stderr = w
+
+	printForkWarning()
+
+	// Restore stderr and read captured output
+	w.Close()
+	os.Stderr = origStderr
+
+	var buf strings.Builder
+	readBuf := make([]byte, 4096)
+	for {
+		n, readErr := r.Read(readBuf)
+		if n > 0 {
+			buf.Write(readBuf[:n])
+		}
+		if readErr != nil {
+			break
+		}
+	}
+	r.Close()
+	output := buf.String()
+
+	// Verify the warning contains required secrets
+	requiredSecrets := []string{
+		"ANTHROPIC_API_KEY",
+		"OPENAI_API_KEY",
+		"GH_AW_GITHUB_TOKEN",
+		"GH_AW_COPILOT_TOKEN",
+		"GH_AW_GITHUB_MCP_SERVER_TOKEN",
+	}
+	for _, secret := range requiredSecrets {
+		if !strings.Contains(output, secret) {
+			t.Errorf("printForkWarning() output missing required secret: %s", secret)
+		}
+	}
+
+	// Verify feature restriction mention
+	if !strings.Contains(output, "workflow_run") {
+		t.Error("printForkWarning() output missing workflow_run restriction mention")
+	}
+
+	// Verify it mentions fork
+	if !strings.Contains(output, "fork") {
+		t.Error("printForkWarning() output does not mention 'fork'")
+	}
+}
+
+// TestInitRepositoryNonForkUnaffected verifies that InitRepository succeeds in a non-fork repo
+// (the default for a fresh git repo) without any fork-related errors.
+func TestInitRepositoryNonForkUnaffected(t *testing.T) {
+	tmpDir := testutil.TempDir(t, "test-*")
+
+	originalDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get current directory: %v", err)
+	}
+	defer func() {
+		_ = os.Chdir(originalDir)
+	}()
+
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("Failed to change to temp directory: %v", err)
+	}
+
+	// Initialize git repo
+	if err := exec.Command("git", "init").Run(); err != nil {
+		t.Skip("Git not available")
+	}
+
+	// Configure git
+	exec.Command("git", "config", "user.name", "Test User").Run()
+	exec.Command("git", "config", "user.email", "test@example.com").Run()
+
+	// InitRepository should succeed regardless of fork detection outcome
+	// (fork detection failure is non-fatal)
+	err = InitRepository(InitOptions{Verbose: false, MCP: false, CodespaceRepos: []string{}, CodespaceEnabled: false, Completions: false, Push: false, CreatePR: false, RootCmd: nil})
+	if err != nil {
+		t.Fatalf("InitRepository() failed: %v", err)
+	}
+}

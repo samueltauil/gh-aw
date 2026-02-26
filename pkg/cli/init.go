@@ -66,6 +66,11 @@ func InitRepository(opts InitOptions) error {
 	}
 	initLog.Print("Verified git repository")
 
+	// Check if the repository is a fork and warn the user
+	if isFork, _ := IsForkedRepo(); isFork {
+		printForkWarning()
+	}
+
 	// Configure .gitattributes
 	initLog.Print("Configuring .gitattributes")
 	if err := ensureGitAttributes(); err != nil {
@@ -335,4 +340,18 @@ func ensureMaintenanceWorkflow(verbose bool) error {
 	}
 
 	return nil
+}
+
+// printForkWarning prints a warning message when the current repository is a fork,
+// listing the secrets that must be configured and features that are restricted.
+func printForkWarning() {
+	fmt.Fprintln(os.Stderr, console.FormatWarningMessage("This repository is a fork. You must configure your own copies of all required secrets:"))
+	fmt.Fprintln(os.Stderr, "  - ANTHROPIC_API_KEY or OPENAI_API_KEY  (AI engine access)")
+	fmt.Fprintln(os.Stderr, "  - GH_AW_GITHUB_TOKEN                   (GitHub access token)")
+	fmt.Fprintln(os.Stderr, "  - GH_AW_COPILOT_TOKEN                  (Copilot access token)")
+	fmt.Fprintln(os.Stderr, "  - GH_AW_GITHUB_MCP_SERVER_TOKEN        (GitHub MCP server token)")
+	fmt.Fprintln(os.Stderr, "")
+	fmt.Fprintln(os.Stderr, "  Note: workflow_run cross-fork triggers are blocked by GitHub Actions")
+	fmt.Fprintln(os.Stderr, "  for security reasons. Some features may be restricted in fork contexts.")
+	fmt.Fprintln(os.Stderr, "")
 }

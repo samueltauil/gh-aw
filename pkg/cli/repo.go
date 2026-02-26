@@ -125,3 +125,23 @@ func GetCurrentRepoSlug() (string, error) {
 func SplitRepoSlug(slug string) (owner, repo string, err error) {
 	return repoutil.SplitRepoSlug(slug)
 }
+
+// IsForkedRepo returns true if the current repository is a fork.
+// Returns false without error if fork status cannot be determined (e.g., gh CLI unavailable).
+func IsForkedRepo() (bool, error) {
+	repoLog.Print("Checking if current repository is a fork")
+	output, err := workflow.RunGH("Checking fork status...", "repo", "view", "--json", "isFork", "--jq", ".isFork")
+	if err != nil {
+		repoLog.Printf("Could not determine fork status (gh CLI may be unavailable): %v", err)
+		return false, nil
+	}
+	isFork := parseForkStatus(string(output))
+	repoLog.Printf("Repository fork status: %v", isFork)
+	return isFork, nil
+}
+
+// parseForkStatus parses the output of `gh repo view --json isFork --jq .isFork`.
+// Returns true only when the output is exactly "true" (trimming whitespace).
+func parseForkStatus(output string) bool {
+	return strings.TrimSpace(output) == "true"
+}
