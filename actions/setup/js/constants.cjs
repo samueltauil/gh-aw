@@ -36,11 +36,11 @@ function megabytes(mb) {
 const MAX_BUFFER_SIZE = megabytes(10);
 
 /**
- * Maximum buffer size for git patch operations (200MB)
+ * Maximum buffer size for git patch operations (50MB)
  * Handles large commits with binary files such as images.
  * @type {number}
  */
-const GIT_PATCH_MAX_BUFFER_SIZE = megabytes(200);
+const GIT_PATCH_MAX_BUFFER_SIZE = megabytes(50);
 
 module.exports = {
   AGENT_OUTPUT_FILENAME,
