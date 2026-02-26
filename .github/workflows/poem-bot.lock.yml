@@ -1352,7 +1352,7 @@ jobs:
         run: |
           set -o pipefail
           # shellcheck disable=SC1003
-          sudo -E awf --env-all --container-workdir "${GITHUB_WORKSPACE}" --allow-domains "api.business.githubcopilot.com,api.enterprise.githubcopilot.com,api.github.com,api.githubcopilot.com,api.individual.githubcopilot.com,github.com,host.docker.internal,raw.githubusercontent.com,registry.npmjs.org,telemetry.enterprise.githubcopilot.com" --log-level info --proxy-logs-dir /tmp/gh-aw/sandbox/firewall/logs --enable-host-access --image-tag 0.23.0 --skip-pull --enable-api-proxy \
+          sudo -E awf --env-all --container-workdir "${GITHUB_WORKSPACE}" --allow-domains "" --log-level info --proxy-logs-dir /tmp/gh-aw/sandbox/firewall/logs --enable-host-access --image-tag 0.23.0 --skip-pull --enable-api-proxy \
             -- /bin/bash -c '/usr/local/bin/copilot --add-dir /tmp/gh-aw/ --log-level all --log-dir /tmp/gh-aw/sandbox/agent/logs/ --add-dir "${GITHUB_WORKSPACE}" --disable-builtin-mcps --allow-tool github --allow-tool safeoutputs --allow-tool '\''shell(cat)'\'' --allow-tool '\''shell(date)'\'' --allow-tool '\''shell(echo)'\'' --allow-tool '\''shell(git add:*)'\'' --allow-tool '\''shell(git branch:*)'\'' --allow-tool '\''shell(git checkout:*)'\'' --allow-tool '\''shell(git commit:*)'\'' --allow-tool '\''shell(git merge:*)'\'' --allow-tool '\''shell(git rm:*)'\'' --allow-tool '\''shell(git status)'\'' --allow-tool '\''shell(git switch:*)'\'' --allow-tool '\''shell(git)'\'' --allow-tool '\''shell(grep)'\'' --allow-tool '\''shell(head)'\'' --allow-tool '\''shell(ls)'\'' --allow-tool '\''shell(pwd)'\'' --allow-tool '\''shell(sort)'\'' --allow-tool '\''shell(tail)'\'' --allow-tool '\''shell(uniq)'\'' --allow-tool '\''shell(wc)'\'' --allow-tool '\''shell(yq)'\'' --allow-tool write --add-dir /tmp/gh-aw/cache-memory/ --allow-all-paths --prompt "$(cat /tmp/gh-aw/aw-prompts/prompt.txt)"' 2>&1 | tee -a /tmp/gh-aw/agent-stdio.log
         env:
           COPILOT_AGENT_RUNNER_TYPE: STANDALONE
@@ -1439,7 +1439,6 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_SAFE_OUTPUTS: ${{ env.GH_AW_SAFE_OUTPUTS }}
-          GH_AW_ALLOWED_DOMAINS: "api.business.githubcopilot.com,api.enterprise.githubcopilot.com,api.github.com,api.githubcopilot.com,api.individual.githubcopilot.com,github.com,host.docker.internal,raw.githubusercontent.com,registry.npmjs.org,telemetry.enterprise.githubcopilot.com"
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_API_URL: ${{ github.api_url }}
           GH_AW_COMMAND: poem-bot
@@ -1916,7 +1915,6 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           GH_AW_AGENT_OUTPUT: ${{ env.GH_AW_AGENT_OUTPUT }}
-          GH_AW_ALLOWED_DOMAINS: "api.business.githubcopilot.com,api.enterprise.githubcopilot.com,api.github.com,api.githubcopilot.com,api.individual.githubcopilot.com,github.com,host.docker.internal,raw.githubusercontent.com,registry.npmjs.org,telemetry.enterprise.githubcopilot.com"
           GITHUB_SERVER_URL: ${{ github.server_url }}
           GITHUB_API_URL: ${{ github.api_url }}
           GH_AW_SAFE_OUTPUTS_HANDLER_CONFIG: "{\"add_comment\":{\"max\":3,\"target\":\"*\"},\"add_labels\":{\"allowed\":[\"poetry\",\"creative\",\"automation\",\"ai-generated\",\"epic\",\"haiku\",\"sonnet\",\"limerick\"],\"max\":5},\"close_pull_request\":{\"max\":2,\"required_labels\":[\"poetry\",\"automation\"],\"required_title_prefix\":\"[🎨 POETRY]\",\"target\":\"*\"},\"create_agent_session\":{\"base\":\"main\",\"max\":1},\"create_discussion\":{\"category\":\"audits\",\"close_older_discussions\":true,\"expires\":24,\"fallback_to_issue\":true,\"labels\":[\"poetry\",\"automation\",\"ai-generated\"],\"max\":2,\"title_prefix\":\"[📜 POETRY] \"},\"create_issue\":{\"expires\":48,\"group\":true,\"labels\":[\"poetry\",\"automation\",\"ai-generated\"],\"max\":2,\"title_prefix\":\"[🎭 POEM-BOT] \"},\"create_pull_request\":{\"base_branch\":\"${{ github.base_ref || github.ref_name }}\",\"draft\":false,\"expires\":48,\"labels\":[\"poetry\",\"automation\",\"creative-writing\"],\"max\":1,\"max_patch_size\":1024,\"reviewers\":[\"copilot\"],\"title_prefix\":\"[🎨 POETRY] \"},\"create_pull_request_review_comment\":{\"max\":2,\"side\":\"RIGHT\"},\"link_sub_issue\":{\"max\":3,\"parent_required_labels\":[\"poetry\",\"epic\"],\"parent_title_prefix\":\"[🎭 POEM-BOT]\",\"sub_required_labels\":[\"poetry\"],\"sub_title_prefix\":\"[🎭 POEM-BOT]\"},\"missing_data\":{},\"missing_tool\":{},\"push_to_pull_request_branch\":{\"base_branch\":\"${{ github.base_ref || github.ref_name }}\",\"if_no_changes\":\"warn\",\"max_patch_size\":1024},\"update_issue\":{\"allow_body\":true,\"allow_status\":true,\"allow_title\":true,\"max\":2,\"target\":\"*\"}}"

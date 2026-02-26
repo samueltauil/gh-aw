@@ -296,6 +296,80 @@ func TestFirewallArgsInCopilotEngine(t *testing.T) {
 		}
 	})
 
+	t.Run("network: {} produces empty allow-domains", func(t *testing.T) {
+		workflowData := &WorkflowData{
+			Name: "test-workflow",
+			EngineConfig: &EngineConfig{
+				ID: "copilot",
+			},
+			NetworkPermissions: &NetworkPermissions{
+				ExplicitlyDefined: true, // network: {} — no allowed key
+				Allowed:           []string{},
+				Firewall: &FirewallConfig{
+					Enabled: true,
+				},
+			},
+		}
+
+		engine := NewCopilotEngine()
+		steps := engine.GetExecutionSteps(workflowData, "test.log")
+
+		if len(steps) == 0 {
+			t.Fatal("Expected at least one execution step")
+		}
+
+		stepContent := strings.Join(steps[0], "\n")
+
+		// --allow-domains flag must be present with an empty value
+		if !strings.Contains(stepContent, `--allow-domains ""`) {
+			t.Errorf("Expected '--allow-domains \"\"' (no domains) for network: {}, got:\n%s", stepContent)
+		}
+
+		// No engine default domain should appear
+		for _, domain := range []string{"api.github.com", "github.com", "raw.githubusercontent.com"} {
+			if strings.Contains(stepContent, domain) {
+				t.Errorf("Expected %q to be absent in allow-domains for network: {}, got:\n%s", domain, stepContent)
+			}
+		}
+	})
+
+	t.Run("network: { allowed: [] } produces empty allow-domains", func(t *testing.T) {
+		workflowData := &WorkflowData{
+			Name: "test-workflow",
+			EngineConfig: &EngineConfig{
+				ID: "copilot",
+			},
+			NetworkPermissions: &NetworkPermissions{
+				ExplicitlyDefined: true, // network: { allowed: [] } — explicit empty list
+				Allowed:           []string{},
+				Firewall: &FirewallConfig{
+					Enabled: true,
+				},
+			},
+		}
+
+		engine := NewCopilotEngine()
+		steps := engine.GetExecutionSteps(workflowData, "test.log")
+
+		if len(steps) == 0 {
+			t.Fatal("Expected at least one execution step")
+		}
+
+		stepContent := strings.Join(steps[0], "\n")
+
+		// --allow-domains flag must be present with an empty value
+		if !strings.Contains(stepContent, `--allow-domains ""`) {
+			t.Errorf("Expected '--allow-domains \"\"' (no domains) for network: { allowed: [] }, got:\n%s", stepContent)
+		}
+
+		// No engine default domain should appear
+		for _, domain := range []string{"api.github.com", "github.com", "raw.githubusercontent.com"} {
+			if strings.Contains(stepContent, domain) {
+				t.Errorf("Expected %q to be absent in allow-domains for network: { allowed: [] }, got:\n%s", domain, stepContent)
+			}
+		}
+	})
+
 	t.Run("AWF command does not include allow-urls without ssl-bump", func(t *testing.T) {
 		workflowData := &WorkflowData{
 			Name: "test-workflow",

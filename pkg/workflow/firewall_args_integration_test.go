@@ -233,4 +233,103 @@ Test workflow with SSL bump and allow-urls configuration.
 			t.Error("Compiled workflow should contain '--log-level debug'")
 		}
 	})
+
+	t.Run("network: {} suppresses engine default domains in compiled allow-domains", func(t *testing.T) {
+		tmpDir := testutil.TempDir(t, "test-*")
+		workflowsDir := filepath.Join(tmpDir, ".github", "workflows")
+		if err := os.MkdirAll(workflowsDir, 0755); err != nil {
+			t.Fatalf("Failed to create workflows directory: %v", err)
+		}
+
+		workflowContent := `---
+on: workflow_dispatch
+permissions:
+  contents: read
+engine: copilot
+network: {}
+---
+
+# Test Workflow
+
+Test workflow with explicit empty network object.
+`
+		workflowPath := filepath.Join(workflowsDir, "test-empty-network.md")
+		if err := os.WriteFile(workflowPath, []byte(workflowContent), 0644); err != nil {
+			t.Fatalf("Failed to write workflow file: %v", err)
+		}
+
+		compiler := NewCompilerWithVersion("test-empty-network")
+		compiler.SetSkipValidation(true)
+		if err := compiler.CompileWorkflow(workflowPath); err != nil {
+			t.Fatalf("Failed to compile workflow: %v", err)
+		}
+
+		lockContent, err := os.ReadFile(filepath.Join(workflowsDir, "test-empty-network.lock.yml"))
+		if err != nil {
+			t.Fatalf("Failed to read compiled workflow: %v", err)
+		}
+		lockYAML := string(lockContent)
+
+		// --allow-domains must be present but with an empty value
+		if !strings.Contains(lockYAML, `--allow-domains ""`) {
+			t.Errorf("Expected '--allow-domains \"\"' for network: {}, got lock YAML:\n%s", lockYAML)
+		}
+
+		// No engine default domain should appear in allow-domains
+		for _, domain := range []string{"api.github.com", "github.com", "raw.githubusercontent.com"} {
+			if strings.Contains(lockYAML, domain) {
+				t.Errorf("Expected %q to be absent for network: {}, got lock YAML:\n%s", domain, lockYAML)
+			}
+		}
+	})
+
+	t.Run("network: { allowed: [] } suppresses engine default domains in compiled allow-domains", func(t *testing.T) {
+		tmpDir := testutil.TempDir(t, "test-*")
+		workflowsDir := filepath.Join(tmpDir, ".github", "workflows")
+		if err := os.MkdirAll(workflowsDir, 0755); err != nil {
+			t.Fatalf("Failed to create workflows directory: %v", err)
+		}
+
+		workflowContent := `---
+on: workflow_dispatch
+permissions:
+  contents: read
+engine: copilot
+network:
+  allowed: []
+---
+
+# Test Workflow
+
+Test workflow with explicit empty allowed list.
+`
+		workflowPath := filepath.Join(workflowsDir, "test-empty-allowed.md")
+		if err := os.WriteFile(workflowPath, []byte(workflowContent), 0644); err != nil {
+			t.Fatalf("Failed to write workflow file: %v", err)
+		}
+
+		compiler := NewCompilerWithVersion("test-empty-allowed")
+		compiler.SetSkipValidation(true)
+		if err := compiler.CompileWorkflow(workflowPath); err != nil {
+			t.Fatalf("Failed to compile workflow: %v", err)
+		}
+
+		lockContent, err := os.ReadFile(filepath.Join(workflowsDir, "test-empty-allowed.lock.yml"))
+		if err != nil {
+			t.Fatalf("Failed to read compiled workflow: %v", err)
+		}
+		lockYAML := string(lockContent)
+
+		// --allow-domains must be present but with an empty value
+		if !strings.Contains(lockYAML, `--allow-domains ""`) {
+			t.Errorf("Expected '--allow-domains \"\"' for network: { allowed: [] }, got lock YAML:\n%s", lockYAML)
+		}
+
+		// No engine default domain should appear in allow-domains
+		for _, domain := range []string{"api.github.com", "github.com", "raw.githubusercontent.com"} {
+			if strings.Contains(lockYAML, domain) {
+				t.Errorf("Expected %q to be absent for network: { allowed: [] }, got lock YAML:\n%s", domain, lockYAML)
+			}
+		}
+	})
 }
