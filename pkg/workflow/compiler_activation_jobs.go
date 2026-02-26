@@ -467,19 +467,25 @@ func (c *Compiler) buildActivationJob(data *WorkflowData, preActivationJobCreate
 
 	// Add secret validation step before context variable validation.
 	// This validates that the required engine secrets are available before any other checks.
+	// Skip if a GitHub App is configured — the App provides authentication, making
+	// engine-specific secret validation unnecessary.
 	engine, err := c.getAgenticEngine(data.AI)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get agentic engine: %w", err)
 	}
-	secretValidationStep := engine.GetSecretValidationStep(data)
-	if len(secretValidationStep) > 0 {
-		for _, line := range secretValidationStep {
-			steps = append(steps, line+"\n")
-		}
-		outputs["secret_verification_result"] = "${{ steps.validate-secret.outputs.verification_result }}"
-		compilerActivationJobsLog.Printf("Added validate-secret step to activation job")
+	if hasGitHubAppConfigured(data) {
+		compilerActivationJobsLog.Printf("Skipped validate-secret step (GitHub App configured)")
 	} else {
-		compilerActivationJobsLog.Printf("Skipped validate-secret step (engine does not require secret validation)")
+		secretValidationStep := engine.GetSecretValidationStep(data)
+		if len(secretValidationStep) > 0 {
+			for _, line := range secretValidationStep {
+				steps = append(steps, line+"\n")
+			}
+			outputs["secret_verification_result"] = "${{ steps.validate-secret.outputs.verification_result }}"
+			compilerActivationJobsLog.Printf("Added validate-secret step to activation job")
+		} else {
+			compilerActivationJobsLog.Printf("Skipped validate-secret step (engine does not require secret validation)")
+		}
 	}
 
 	// Add context variable validation step to ensure numeric fields contain only integers

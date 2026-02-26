@@ -453,6 +453,9 @@ func GetToolBinsEnvArg() []string {
 //   - Gemini engine: Adds step unless custom command is set
 //   - Custom engine: Never adds this step (uses BaseEngine default which returns empty)
 //
+// The step is always skipped when a GitHub App is configured (tools.github.app),
+// since the App provides authentication, making engine-specific secret validation unnecessary.
+//
 // Parameters:
 //   - engine: The agentic engine to check
 //   - data: The workflow data (needed for GetSecretValidationStep)
@@ -460,6 +463,10 @@ func GetToolBinsEnvArg() []string {
 // Returns:
 //   - bool: true if the engine provides a validate-secret step, false otherwise
 func EngineHasValidateSecretStep(engine CodingAgentEngine, data *WorkflowData) bool {
+	// Skip if GitHub App is configured — the App provides authentication
+	if hasGitHubAppConfigured(data) {
+		return false
+	}
 	step := engine.GetSecretValidationStep(data)
 	return len(step) > 0
 }

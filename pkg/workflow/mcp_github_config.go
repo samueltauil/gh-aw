@@ -90,6 +90,12 @@ func hasGitHubApp(githubTool any) bool {
 	return false
 }
 
+// hasGitHubAppConfigured checks if a GitHub App is configured in the workflow's parsed tools.
+// This works for both direct configuration and app info provided via imports.
+func hasGitHubAppConfigured(data *WorkflowData) bool {
+	return data != nil && data.ParsedTools != nil && data.ParsedTools.GitHub != nil && data.ParsedTools.GitHub.App != nil
+}
+
 // getGitHubType extracts the mode from GitHub tool configuration (local or remote)
 func getGitHubType(githubTool any) string {
 	if toolConfig, ok := githubTool.(map[string]any); ok {
