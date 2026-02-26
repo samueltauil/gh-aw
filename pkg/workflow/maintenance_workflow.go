@@ -150,8 +150,8 @@ jobs:
 
 	// Get the setup action reference (local or remote based on mode)
 	// Use the first available WorkflowData's ActionResolver to enable SHA pinning
-	var resolver *ActionResolver
-	if len(workflowDataList) > 0 {
+	var resolver ActionSHAResolver
+	if len(workflowDataList) > 0 && workflowDataList[0].ActionResolver != nil {
 		resolver = workflowDataList[0].ActionResolver
 	}
 	setupActionRef := ResolveSetupActionReference(actionMode, version, actionTag, resolver)
