@@ -220,7 +220,25 @@ func generateSafeInputJavaScriptToolScript(toolConfig *SafeInputToolConfig) stri
 	// Indent the user's script code
 	sb.WriteString("  " + strings.ReplaceAll(toolConfig.Script, "\n", "\n  ") + "\n")
 	sb.WriteString("}\n\n")
-	sb.WriteString("module.exports = { execute };\n")
+	sb.WriteString("module.exports = { execute };\n\n")
+
+	// Self-invocation runner: reads JSON inputs from stdin, calls execute(), and prints the return value to stdout.
+	// This allows users to use `return` in their scripts and have the value sent back to the MCP handler.
+	sb.WriteString("// Invoke execute() with inputs from stdin and print the return value to stdout\n")
+	sb.WriteString("let _inputData = \"\";\n")
+	sb.WriteString("process.stdin.on(\"data\", chunk => { _inputData += chunk; });\n")
+	sb.WriteString("process.stdin.on(\"end\", async () => {\n")
+	sb.WriteString("  try {\n")
+	sb.WriteString("    const _inputs = JSON.parse(_inputData || \"{}\");\n")
+	sb.WriteString("    const _result = await execute(_inputs);\n")
+	sb.WriteString("    if (_result !== undefined) {\n")
+	sb.WriteString("      console.log(JSON.stringify(_result));\n")
+	sb.WriteString("    }\n")
+	sb.WriteString("  } catch (err) {\n")
+	sb.WriteString("    process.stderr.write((err && err.message) || String(err));\n")
+	sb.WriteString("    process.exit(1);\n")
+	sb.WriteString("  }\n")
+	sb.WriteString("});\n")
 
 	return sb.String()
 }

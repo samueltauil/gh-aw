@@ -225,6 +225,18 @@ func TestGenerateSafeInputJavaScriptToolScript(t *testing.T) {
 	if !strings.Contains(script, "module.exports") {
 		t.Error("Script should export execute function")
 	}
+
+	if !strings.Contains(script, "process.stdin.on") {
+		t.Error("Script should contain self-invocation runner that reads from stdin")
+	}
+
+	if !strings.Contains(script, "await execute(_inputs)") {
+		t.Error("Script should call execute() in the self-invocation runner")
+	}
+
+	if !strings.Contains(script, "JSON.stringify(_result)") {
+		t.Error("Script should output the return value as JSON in the self-invocation runner")
+	}
 }
 
 func TestGenerateSafeInputShellToolScript(t *testing.T) {

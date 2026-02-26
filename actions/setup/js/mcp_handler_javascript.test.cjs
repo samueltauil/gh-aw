@@ -118,6 +118,53 @@ process.exit(1);
     await expect(handler({})).rejects.toThrow();
   });
 
+  it("should execute generated module-export pattern with return value", async () => {
+    // This simulates the exact output of generateSafeInputJavaScriptToolScript:
+    // the script exports execute() AND has a self-invocation runner that calls it.
+    // The underscore-prefixed variables (_inputData, _inputs, _result) are used in
+    // the generated runner to avoid collisions with user script variable names.
+    testScriptPath = path.join(tempDir, "module-execute.cjs");
+    const jsCode = `
+// @ts-check
+// Auto-generated safe-input tool: test-tool
+
+async function execute(inputs) {
+  const { value } = inputs || {};
+  return { result: value * 2 };
+}
+
+module.exports = { execute };
+
+// Invoke execute() with inputs from stdin and print the return value to stdout
+let _inputData = "";
+process.stdin.on("data", chunk => { _inputData += chunk; });
+process.stdin.on("end", async () => {
+  try {
+    const _inputs = JSON.parse(_inputData || "{}");
+    const _result = await execute(_inputs);
+    if (_result !== undefined) {
+      console.log(JSON.stringify(_result));
+    }
+  } catch (err) {
+    process.stderr.write((err && err.message) || String(err));
+    process.exit(1);
+  }
+});
+`;
+    fs.writeFileSync(testScriptPath, jsCode);
+
+    const handler = createJavaScriptHandler(mockServer, "module-tool", testScriptPath, 60);
+    const result = await handler({ value: 21 });
+
+    expect(result).toBeDefined();
+    expect(result.content).toBeDefined();
+    expect(result.content.length).toBe(1);
+    expect(result.content[0].type).toBe("text");
+
+    const output = JSON.parse(result.content[0].text);
+    expect(output.result).toBe(42);
+  });
+
   it("should pass complex input data", async () => {
     testScriptPath = path.join(tempDir, "complex.cjs");
     const jsCode = `
