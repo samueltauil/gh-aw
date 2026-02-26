@@ -367,7 +367,69 @@ func TestFormatYAMLError(t *testing.T) {
 	}
 }
 
-// TestFormatYAMLErrorAdjustment specifically tests line number adjustment
+// TestFormatYAMLErrorTranslations verifies that FormatYAMLError translates raw goccy messages
+// to user-friendly plain English while preserving source context.
+func TestFormatYAMLErrorTranslations(t *testing.T) {
+	tests := []struct {
+		name           string
+		yamlContent    string
+		wantTranslated string // substring that MUST appear (the translated message)
+		wantNotRaw     string // substring that must NOT appear (the raw goccy message)
+	}{
+		{
+			name:           "missing colon gets user-friendly message",
+			yamlContent:    "name: Test Workflow\non push",
+			wantTranslated: "Invalid YAML syntax",
+			wantNotRaw:     "non-map value is specified",
+		},
+		{
+			name:           "extra colon gets user-friendly message",
+			yamlContent:    "invalid: yaml: syntax",
+			wantTranslated: "Invalid YAML syntax",
+			wantNotRaw:     "mapping value is not allowed in this context",
+		},
+		{
+			name:           "unclosed bracket gets user-friendly message",
+			yamlContent:    "branches: [main, dev",
+			wantTranslated: "Invalid YAML syntax",
+			wantNotRaw:     "sequence end token ']' not found",
+		},
+		{
+			name:           "unclosed double-quote gets user-friendly message",
+			yamlContent:    `name: "unclosed string`,
+			wantTranslated: "Invalid YAML syntax",
+			wantNotRaw:     "could not find end character",
+		},
+		{
+			// Source context (| markers and ^) must still be present after translation
+			name:           "source context preserved after translation",
+			yamlContent:    "name: Test Workflow\non push",
+			wantTranslated: "|",
+			wantNotRaw:     "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var result map[string]any
+			err := yaml.Unmarshal([]byte(tt.yamlContent), &result)
+			if err == nil {
+				t.Fatalf("Expected YAML parsing to fail for: %q", tt.yamlContent)
+			}
+
+			formatted := FormatYAMLError(err, 1, tt.yamlContent)
+
+			if tt.wantTranslated != "" && !strings.Contains(formatted, tt.wantTranslated) {
+				t.Errorf("Expected translated output to contain %q\nGot:\n%s", tt.wantTranslated, formatted)
+			}
+			if tt.wantNotRaw != "" && strings.Contains(formatted, tt.wantNotRaw) {
+				t.Errorf("Expected raw goccy message %q to be translated away\nGot:\n%s", tt.wantNotRaw, formatted)
+			}
+			t.Logf("Formatted:\n%s", formatted)
+		})
+	}
+}
+
 func TestFormatYAMLErrorAdjustment(t *testing.T) {
 	yamlContent := "name: test\nname: duplicate"
 

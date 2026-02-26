@@ -18,21 +18,69 @@ var (
 
 // yamlErrorTranslations maps raw goccy/go-yaml internal messages to user-friendly plain English.
 // These messages are parser internals that are not helpful to end users.
+// Patterns must match actual strings produced by goccy/go-yaml v1.19+; both singular and
+// legacy plural forms are kept for broad compatibility.
 var yamlErrorTranslations = []struct {
 	pattern     string
 	translation string
 }{
+	// Colon in wrong context (actual goccy v1.19 message uses singular "value")
 	{
-		"non-map value is specified",
-		"Invalid YAML syntax: expected 'key: value' format (did you forget a colon after the key?)",
+		"mapping value is not allowed in this context",
+		"Invalid YAML syntax: unexpected ':' — check indentation or key syntax",
 	},
+	// Legacy plural form kept for tests and older goccy versions
 	{
 		"mapping values are not allowed",
 		"Invalid YAML syntax: unexpected ':' — check your indentation",
 	},
+	// Bare key without colon OR list item in mapping context
+	{
+		"non-map value is specified",
+		"Invalid YAML syntax: expected 'key: value' format (did you forget a colon after the key?)",
+	},
+	// Plain word without colon (e.g. "engine copilot")
+	{
+		"unexpected key name",
+		"Invalid YAML syntax: expected 'key: value' format (did you forget a colon after the key?)",
+	},
+	// Generic "did not find expected" catch-all (kept for backward compatibility)
 	{
 		"did not find expected",
 		"Invalid YAML syntax: check indentation or missing key",
+	},
+	// Tab character errors; goccy v1.19 uses an actual tab char (0x09) inside single quotes
+	{
+		"found a tab character where an indentation space is expected",
+		"Invalid YAML syntax: use spaces for indentation, not tabs",
+	},
+	{
+		"tab character cannot use as a map key",
+		"Invalid YAML syntax: use spaces for indentation, not tabs",
+	},
+	// The full goccy message uses an actual tab character (0x09) inside single quotes
+	{
+		"found character '\t' that cannot start any token",
+		"Invalid YAML syntax: use spaces for indentation, not tabs",
+	},
+	// List item '-' in wrong context
+	{
+		"block sequence entries are not allowed",
+		"Invalid YAML syntax: unexpected list item '-' — check indentation",
+	},
+	// Unclosed sequences/brackets
+	{
+		"sequence end token ']' not found",
+		"Invalid YAML syntax: unclosed bracket — add ']' to close the list",
+	},
+	// Unclosed string quotes
+	{
+		"could not find end character of double-quoted text",
+		`Invalid YAML syntax: unclosed double quote — add '"' to close the string`,
+	},
+	{
+		"could not find end character of single-quoted text",
+		"Invalid YAML syntax: unclosed single quote — add \"'\" to close the string",
 	},
 }
 

@@ -136,6 +136,44 @@ engine: invalid-engine-name
 	require.Error(t, err, "Invalid engine should cause error")
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "invalid-engine-name")
+	// The error should include precise location (line:col) pointing to the engine field
+	assert.Contains(t, err.Error(), ":3:", "Error should include the line number of the engine field")
+}
+
+// TestSetupEngineAndImports_InvalidEngine_HasPreciseLocation verifies that the engine
+// validation error includes precise file location (line/column) pointing to the engine field.
+func TestSetupEngineAndImports_InvalidEngine_HasPreciseLocation(t *testing.T) {
+	tmpDir := testutil.TempDir(t, "engine-location")
+
+	// engine: is on line 3 of the document (after opening --- on line 1, on: push on line 2)
+	testContent := `---
+on: push
+engine: not-a-real-engine
+permissions:
+  contents: read
+---
+
+# Test Workflow
+`
+
+	testFile := filepath.Join(tmpDir, "location-test.md")
+	require.NoError(t, os.WriteFile(testFile, []byte(testContent), 0644))
+
+	compiler := NewCompiler()
+	content := []byte(testContent)
+
+	frontmatterResult, err := parser.ExtractFrontmatterFromContent(string(content))
+	require.NoError(t, err)
+
+	result, err := compiler.setupEngineAndImports(frontmatterResult, testFile, content, tmpDir)
+	require.Error(t, err, "Invalid engine should cause error")
+	assert.Nil(t, result)
+
+	errMsg := err.Error()
+	// Error must point to line 3 where engine: appears in the document
+	assert.Contains(t, errMsg, ":3:", "Error should point to line 3 where the engine field is")
+	// Error must still contain the invalid engine name
+	assert.Contains(t, errMsg, "not-a-real-engine", "Error should mention the invalid engine name")
 }
 
 // TestSetupEngineAndImports_StrictModeHandling tests strict mode state management

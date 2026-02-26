@@ -18,6 +18,56 @@ var (
 	sourceLinePattern    = regexp.MustCompile(`(?m)^(>?\s*)(\d+)(\s*\|)`)
 )
 
+// yamlParserMessageTranslations maps raw goccy/go-yaml parser jargon to user-friendly plain English.
+// Applied as substring replacements within the formatted yaml.FormatError() output.
+// Patterns must match the actual strings produced by goccy/go-yaml v1.19+.
+var yamlParserMessageTranslations = []struct {
+	pattern     string
+	translation string
+}{
+	// Colon in wrong context (e.g. "key: value: extra")
+	{"mapping value is not allowed in this context",
+		"Invalid YAML syntax: unexpected ':' — check indentation or key syntax"},
+	// Bare key without colon (e.g. "on push") OR list item in mapping context
+	{"non-map value is specified",
+		"Invalid YAML syntax: expected 'key: value' format (did you forget a colon after the key?)"},
+	// Plain word on its own without colon (e.g. "engine copilot")
+	{"unexpected key name",
+		"Invalid YAML syntax: expected 'key: value' format (did you forget a colon after the key?)"},
+	// Tab indentation error from goccy v1.19 (actual tab byte 0x09 in single quotes)
+	{"found a tab character where an indentation space is expected",
+		"Invalid YAML syntax: use spaces for indentation, not tabs"},
+	{"tab character cannot use as a map key",
+		"Invalid YAML syntax: use spaces for indentation, not tabs"},
+	// The full goccy message uses an actual tab character (0x09) inside single quotes
+	{"found character '\t' that cannot start any token",
+		"Invalid YAML syntax: use spaces for indentation, not tabs"},
+	// List item ('-') in wrong context
+	{"block sequence entries are not allowed",
+		"Invalid YAML syntax: unexpected list item '-' — check indentation"},
+	// Unclosed sequences/brackets
+	{"sequence end token ']' not found",
+		"Invalid YAML syntax: unclosed bracket — add ']' to close the list"},
+	// Unclosed string quotes
+	{"could not find end character of double-quoted text",
+		`Invalid YAML syntax: unclosed double quote — add '"' to close the string`},
+	{"could not find end character of single-quoted text",
+		"Invalid YAML syntax: unclosed single quote — add \"'\" to close the string"},
+}
+
+// translateYAMLFormattedOutput applies user-friendly translations to raw goccy error messages
+// within a formatted yaml.FormatError() output string, preserving the source context lines.
+// Only the first matching pattern is translated: a single goccy error has one message line,
+// so at most one translation applies.
+func translateYAMLFormattedOutput(formatted string) string {
+	for _, t := range yamlParserMessageTranslations {
+		if strings.Contains(formatted, t.pattern) {
+			return strings.Replace(formatted, t.pattern, t.translation, 1)
+		}
+	}
+	return formatted
+}
+
 // FormatYAMLError formats a YAML error with source code context using yaml.FormatError()
 // frontmatterLineOffset is the line number where the frontmatter content begins in the document (1-based)
 // Returns the formatted error string with line numbers adjusted for frontmatter position
@@ -27,6 +77,9 @@ func FormatYAMLError(err error, frontmatterLineOffset int, sourceYAML string) st
 	// Use goccy/go-yaml's native FormatError for consistent formatting with source context
 	// colored=false to avoid ANSI escape codes, inclSource=true to include source lines
 	formatted := yaml.FormatError(err, false, true)
+
+	// Translate raw parser jargon to user-friendly messages before adjusting line numbers
+	formatted = translateYAMLFormattedOutput(formatted)
 
 	// Adjust line numbers in the formatted output to account for frontmatter position
 	if frontmatterLineOffset > 1 {

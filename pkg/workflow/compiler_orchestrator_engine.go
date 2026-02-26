@@ -215,6 +215,17 @@ func (c *Compiler) setupEngineAndImports(result *parser.FrontmatterResult, clean
 	orchestratorEngineLog.Printf("Validating engine setting: %s", engineSetting)
 	if err := c.validateEngine(engineSetting); err != nil {
 		orchestratorEngineLog.Printf("Engine validation failed: %v", err)
+		// Locate the engine field in the frontmatter for a precise error position
+		frontmatterYAML := strings.Join(result.FrontmatterLines, "\n")
+		loc := parser.LocateJSONPathInYAML(frontmatterYAML, "/engine")
+		if loc.Found {
+			// loc.Line is 1-based within the frontmatter content.
+			// result.FrontmatterStart is the 1-based document line where frontmatter content begins
+			// (typically 2, since line 1 is the opening "---"), so:
+			//   docLine = (frontmatter-relative line) + (FrontmatterStart - 1)
+			docLine := loc.Line + result.FrontmatterStart - 1
+			return nil, formatCompilerErrorWithPosition(cleanPath, docLine, loc.Column, "error", err.Error(), nil)
+		}
 		return nil, err
 	}
 

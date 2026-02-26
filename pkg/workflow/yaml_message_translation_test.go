@@ -29,10 +29,45 @@ func TestTranslateYAMLMessage(t *testing.T) {
 			wantAny: []string{"Invalid YAML syntax", "indentation"},
 		},
 		{
+			// Actual goccy v1.19 singular form
+			name:    "mapping value (singular) not allowed translated",
+			input:   "mapping value is not allowed in this context",
+			wantNot: []string{"mapping value is not allowed"},
+			wantAny: []string{"Invalid YAML syntax", "indentation"},
+		},
+		{
+			// goccy "unexpected key name" for bare keys without colon
+			name:    "unexpected key name translated",
+			input:   "unexpected key name",
+			wantNot: []string{"unexpected key name"},
+			wantAny: []string{"Invalid YAML syntax", "key: value"},
+		},
+		{
 			name:    "did not find expected translated",
 			input:   "did not find expected key",
 			wantNot: []string{"did not find expected"},
 			wantAny: []string{"Invalid YAML syntax"},
+		},
+		{
+			// Tab indentation error from goccy
+			name:    "cannot start any token translated",
+			input:   "found character '	' that cannot start any token",
+			wantNot: []string{"cannot start any token"},
+			wantAny: []string{"Invalid YAML syntax", "spaces", "tabs"},
+		},
+		{
+			// Block sequence in wrong place
+			name:    "block sequence entries not allowed translated",
+			input:   "block sequence entries are not allowed in this context",
+			wantNot: []string{"block sequence entries are not allowed"},
+			wantAny: []string{"Invalid YAML syntax"},
+		},
+		{
+			// Unclosed bracket
+			name:    "sequence end token not found translated",
+			input:   "sequence end token ']' not found",
+			wantNot: []string{"sequence end token"},
+			wantAny: []string{"Invalid YAML syntax", "unclosed"},
 		},
 		{
 			name:    "unrecognized message returned unchanged",

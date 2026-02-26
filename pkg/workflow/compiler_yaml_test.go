@@ -70,7 +70,7 @@ strict: false
 Invalid YAML with bad mapping.`,
 			expectedErrorLine:   7, // Line 7 in file (line 6 in YAML content after opening ---)
 			expectedErrorColumn: 10,
-			expectedMessagePart: "mapping value is not allowed in this context",
+			expectedMessagePart: "Invalid YAML syntax",
 			description:         "invalid mapping context should be detected",
 		},
 		{
@@ -91,7 +91,7 @@ strict: false
 Invalid YAML with bad indentation.`,
 			expectedErrorLine:   4, // Line 4 in file (line 3 in YAML content after opening ---)
 			expectedErrorColumn: 11,
-			expectedMessagePart: "mapping value is not allowed in this context",
+			expectedMessagePart: "Invalid YAML syntax",
 			description:         "bad indentation should be detected",
 		},
 		{
@@ -116,7 +116,7 @@ strict: false
 Invalid YAML with unclosed quote.`,
 			expectedErrorLine:   9, // Line 9 in file (line 8 in YAML content after opening ---)
 			expectedErrorColumn: 15,
-			expectedMessagePart: "could not find end character of double-quoted text",
+			expectedMessagePart: "unclosed",
 			description:         "unclosed quote should be detected",
 		},
 		{
@@ -181,7 +181,7 @@ features:
 Invalid YAML with missing colon.`,
 			expectedErrorLine:   3, // Line 3 in file (line 2 in YAML content - permissions without colon)
 			expectedErrorColumn: 1,
-			expectedMessagePart: "unexpected key name",
+			expectedMessagePart: "Invalid YAML syntax",
 			description:         "missing colon in mapping should be detected",
 		},
 		{
@@ -208,7 +208,7 @@ Invalid YAML with missing comma in array.`,
 			content:             "---\non: push\npermissions:\n  contents: read\n\tissues: write\nengine: claude\n---\n\n# Test Workflow\n\nInvalid YAML with mixed tabs and spaces.",
 			expectedErrorLine:   5, // Line 5 in file (line 4 in YAML content - the line with tab)
 			expectedErrorColumn: 1,
-			expectedMessagePart: "found character '\t' that cannot start any token",
+			expectedMessagePart: "Invalid YAML syntax",
 			description:         "mixed tabs and spaces should be detected",
 		},
 		{
@@ -254,7 +254,7 @@ strict: false
 Invalid YAML with malformed nested structure.`,
 			expectedErrorLine:   7, // Line 7 in file (line 6 in YAML content - claude: [)
 			expectedErrorColumn: 11,
-			expectedMessagePart: "sequence end token ']' not found",
+			expectedMessagePart: "unclosed bracket",
 			description:         "invalid nested structure should be detected",
 		},
 		{
@@ -379,7 +379,7 @@ engine: copilot
 
 Test content.`,
 			expectedLineCol: "[3:10]", // Line 3 in file (line 2 in YAML content)
-			expectedInError: []string{"mapping value is not allowed"},
+			expectedInError: []string{"Invalid YAML syntax"},
 			expectPointer:   true,
 			description:     "simple syntax error shows formatted output",
 		},
@@ -416,7 +416,7 @@ engine: copilot
 
 Test content.`,
 			expectedLineCol: "[3:1]", // Line 3 in file (permissions without colon)
-			expectedInError: []string{"unexpected key name", "permissions"},
+			expectedInError: []string{"Invalid YAML syntax", "permissions"},
 			expectPointer:   true,
 			description:     "missing colon shows formatted output",
 		},

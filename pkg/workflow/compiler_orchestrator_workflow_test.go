@@ -921,7 +921,7 @@ on: [invalid: yaml
 
 # Workflow
 `,
-			expectError: "sequence end token", // Check for actual YAML error message instead of "parse frontmatter"
+			expectError: "unclosed bracket", // User-friendly translation of "sequence end token ']' not found"
 		},
 		{
 			name: "no markdown content for main workflow",
