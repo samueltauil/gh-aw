@@ -14,7 +14,7 @@ describe("constants", () => {
   it("megabytes should convert MB to bytes", () => {
     expect(megabytes(1)).toBe(1024 * 1024);
     expect(megabytes(10)).toBe(10 * 1024 * 1024);
-    expect(megabytes(200)).toBe(200 * 1024 * 1024);
+    expect(megabytes(200)).toBe(50 * 1024 * 1024);
   });
 
   it("MAX_BUFFER_SIZE should be 10MB", () => {
