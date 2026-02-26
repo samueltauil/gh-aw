@@ -128,7 +128,7 @@ export default defineConfig({
 		'/patterns/trialops/': '/patterns/trial-ops/',
 
 		// Patterns with /gh-aw/ base prefix that has wrong slug
-		'/gh-aw/patterns/chatops/': '/patterns/chat-ops/',
+		'/patterns/chatops/': '/patterns/chat-ops/',
 	},
 	integrations: [
 		mermaid(),
