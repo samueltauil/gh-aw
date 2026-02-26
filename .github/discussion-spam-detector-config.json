@@ -1,0 +1,19 @@
+{
+  "min_score_to_flag": 30,
+  "threshold_low": 10,
+  "threshold_medium": 30,
+  "threshold_high": 60,
+  "weights": {
+    "spam_external_links": 15,
+    "url_shortener": 20,
+    "binary_download_link": 20,
+    "spam_keywords": 20,
+    "promotional_contact": 15,
+    "exam_dump": 35,
+    "ai_generated": 15,
+    "non_english": 25,
+    "new_account": 10,
+    "short_body": 10,
+    "all_caps": 8
+  }
+}
