@@ -684,6 +684,10 @@ const (
 	MCPGatewayFeatureFlag FeatureFlag = "mcp-gateway"
 	// DangerousPermissionsWriteFeatureFlag is the feature flag name for allowing write permissions
 	DangerousPermissionsWriteFeatureFlag FeatureFlag = "dangerous-permissions-write"
+	// DangerouslyGitHubMCPWriteFeatureFlag is the feature flag name for allowing non-read-only GitHub MCP
+	// toolsets without requiring write permissions to be declared in the workflow.
+	// When enabled, the compiler skips the check that non-read-only GitHub toolsets require write permissions.
+	DangerouslyGitHubMCPWriteFeatureFlag FeatureFlag = "dangerously-github-MCP-write"
 	// DisableXPIAPromptFeatureFlag is the feature flag name for disabling XPIA prompt
 	DisableXPIAPromptFeatureFlag FeatureFlag = "disable-xpia-prompt"
 	// CopilotRequestsFeatureFlag is the feature flag name for enabling copilot-requests mode.

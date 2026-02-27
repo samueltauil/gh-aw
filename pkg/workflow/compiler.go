@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/github/gh-aw/pkg/console"
+	"github.com/github/gh-aw/pkg/constants"
 	"github.com/github/gh-aw/pkg/logger"
 	"github.com/github/gh-aw/pkg/stringutil"
 )
@@ -249,6 +250,9 @@ func (c *Compiler) validateWorkflowData(workflowData *WorkflowData, markdownPath
 		// Skip validation if permissions exist but GitHub tool was auto-added (not explicit)
 		if hasPermissions && !workflowData.HasExplicitGitHubTool {
 			log.Printf("Skipping permission validation: permissions exist but tools.github not explicitly configured")
+		} else if isFeatureEnabled(constants.DangerouslyGitHubMCPWriteFeatureFlag, workflowData) {
+			// Skip validation if the dangerously-github-MCP-write feature flag is enabled
+			log.Printf("Skipping GitHub MCP permissions validation: dangerously-github-MCP-write feature flag is enabled")
 		} else {
 			// Parse permissions from the workflow data
 			// WorkflowData.Permissions contains the raw YAML string (including "permissions:" prefix)

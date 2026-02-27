@@ -21,11 +21,11 @@
 #
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
-# Example workflow demonstrating proper permission provisioning and security best practices
+# Example workflow demonstrating the dangerously-github-MCP-write feature flag for non-read-only GitHub MCP toolsets
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"01d1af09922718d2833e6d0106d6a9b90b8b2fa26f127a0b8c9c33bbdbbe4ae8"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"ad44c7c71f566018ff0f0321c39db00dda366d0a4f34c5407071865a2cf427f0"}
 
-name: "Example: Properly Provisioned Permissions"
+name: "Example: Non-Read-Only GitHub MCP Without Write Permissions"
 "on":
   workflow_dispatch:
 
@@ -34,7 +34,7 @@ permissions: {}
 concurrency:
   group: "gh-aw-${{ github.workflow }}"
 
-run-name: "Example: Properly Provisioned Permissions"
+run-name: "Example: Non-Read-Only GitHub MCP Without Write Permissions"
 
 jobs:
   activation:
@@ -207,9 +207,9 @@ jobs:
     needs: activation
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      issues: write
-      pull-requests: write
+      contents: read
+      issues: read
+      pull-requests: read
     env:
       GH_AW_WORKFLOW_ID_SANITIZED: examplepermissionswarning
     outputs:
@@ -271,7 +271,7 @@ jobs:
               model: process.env.GH_AW_MODEL_AGENT_COPILOT || "",
               version: "",
               agent_version: "0.0.418",
-              workflow_name: "Example: Properly Provisioned Permissions",
+              workflow_name: "Example: Non-Read-Only GitHub MCP Without Write Permissions",
               experimental: false,
               supports_tools_allowlist: true,
               run_id: context.runId,
