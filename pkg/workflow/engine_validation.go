@@ -45,8 +45,9 @@ import (
 
 var engineValidationLog = logger.New("workflow:engine_validation")
 
-// validateEngine validates that the given engine ID is supported
-func (c *Compiler) validateEngine(engineID string) error {
+// validateEngine validates that the given engine ID is supported.
+// filePath, line, and column provide source position for error reporting.
+func (c *Compiler) validateEngine(engineID string, filePath string, line int, column int) error {
 	if engineID == "" {
 		engineValidationLog.Print("No engine ID specified, will use default")
 		return nil // Empty engine is valid (will use default)
@@ -78,22 +79,30 @@ func (c *Compiler) validateEngine(engineID string) error {
 	// Build comma-separated list of valid engines for error message
 	enginesStr := strings.Join(validEngines, ", ")
 
+	// Determine example engine: use the closest suggestion if available, otherwise default to "copilot"
+	exampleEngine := "copilot"
+	if len(suggestions) > 0 {
+		exampleEngine = suggestions[0]
+	}
+
 	// Build error message with helpful context
-	errMsg := fmt.Sprintf("invalid engine: %s. Valid engines are: %s.\n\nExample:\nengine: copilot\n\nSee: %s",
+	errMsg := fmt.Sprintf("invalid engine: %s. Valid engines are: %s.\n\nExample:\nengine: %s\n\nSee: %s",
 		engineID,
 		enginesStr,
+		exampleEngine,
 		constants.DocsEnginesURL)
 
 	// Add "did you mean" suggestion if we found a close match
 	if len(suggestions) > 0 {
-		errMsg = fmt.Sprintf("invalid engine: %s. Valid engines are: %s.\n\nDid you mean: %s?\n\nExample:\nengine: copilot\n\nSee: %s",
+		errMsg = fmt.Sprintf("invalid engine: %s. Valid engines are: %s.\n\nDid you mean: %s?\n\nExample:\nengine: %s\n\nSee: %s",
 			engineID,
 			enginesStr,
 			suggestions[0],
+			exampleEngine,
 			constants.DocsEnginesURL)
 	}
 
-	return fmt.Errorf("%s", errMsg)
+	return formatCompilerErrorWithPosition(filePath, line, column, "error", errMsg, nil)
 }
 
 // validateSingleEngineSpecification validates that only one engine field exists across all files

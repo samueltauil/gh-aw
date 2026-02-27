@@ -61,7 +61,7 @@ func TestErrorMessageQuality(t *testing.T) {
 			name: "invalid engine includes valid options and example",
 			testFunc: func() error {
 				c := NewCompiler()
-				return c.validateEngine("invalid-engine")
+				return c.validateEngine("invalid-engine", "", 1, 1)
 			},
 			shouldContain: []string{
 				"invalid engine",
@@ -258,7 +258,7 @@ func TestErrorMessageQuality(t *testing.T) {
 func TestMultipleEngineErrorMessage(t *testing.T) {
 	c := NewCompiler()
 
-	err := c.validateEngine("invalid")
+	err := c.validateEngine("invalid", "", 1, 1)
 	require.Error(t, err)
 
 	// Should explain what's wrong

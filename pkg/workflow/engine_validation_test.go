@@ -52,7 +52,7 @@ func TestValidateEngine(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			compiler := NewCompiler()
-			err := compiler.validateEngine(tt.engineID)
+			err := compiler.validateEngine(tt.engineID, "", 1, 1)
 
 			if tt.expectError && err == nil {
 				t.Error("Expected validation to fail but it succeeded")
@@ -70,7 +70,7 @@ func TestValidateEngine(t *testing.T) {
 // TestValidateEngineErrorMessageQuality verifies that error messages follow the style guide
 func TestValidateEngineErrorMessageQuality(t *testing.T) {
 	compiler := NewCompiler()
-	err := compiler.validateEngine("invalid-engine")
+	err := compiler.validateEngine("invalid-engine", "", 1, 1)
 
 	if err == nil {
 		t.Fatal("Expected validation to fail for invalid engine")
@@ -345,7 +345,7 @@ func TestValidateEngineDidYouMean(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			compiler := NewCompiler()
-			err := compiler.validateEngine(tt.invalidEngine)
+			err := compiler.validateEngine(tt.invalidEngine, "", 1, 1)
 
 			if err == nil {
 				t.Fatal("Expected validation to fail for invalid engine")

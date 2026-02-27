@@ -213,7 +213,15 @@ func (c *Compiler) setupEngineAndImports(result *parser.FrontmatterResult, clean
 
 	// Validate the engine setting
 	orchestratorEngineLog.Printf("Validating engine setting: %s", engineSetting)
-	if err := c.validateEngine(engineSetting); err != nil {
+	engineLine, engineCol := 1, 1
+	for i, fmLine := range result.FrontmatterLines {
+		trimmed := strings.TrimSpace(fmLine)
+		if strings.HasPrefix(trimmed, "engine:") || trimmed == "engine" {
+			engineLine = result.FrontmatterStart + i
+			break
+		}
+	}
+	if err := c.validateEngine(engineSetting, cleanPath, engineLine, engineCol); err != nil {
 		orchestratorEngineLog.Printf("Engine validation failed: %v", err)
 		return nil, err
 	}
