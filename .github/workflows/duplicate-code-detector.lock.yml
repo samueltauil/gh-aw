@@ -27,13 +27,13 @@
 #   Imports:
 #     - shared/mcp/serena-go.md
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"fcd0677bc45a2e116662616286ca59ac108757b01a1588e6c83c767465fc9871"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"abe5620bd6caaf355981bc59f52b3cc4752649f018ed2c5074cca826f74e07dc"}
 
 name: "Duplicate Code Detector"
 "on":
   schedule:
-  - cron: "9 3 * * *"
-    # Friendly format: daily (scattered)
+  - cron: "9 3 * * 0"
+    # Friendly format: weekly on sunday around 03:00 (scattered)
   workflow_dispatch:
 
 permissions: {}

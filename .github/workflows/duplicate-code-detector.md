@@ -3,7 +3,7 @@ name: Duplicate Code Detector
 description: Identifies duplicate code patterns across the codebase and suggests refactoring opportunities
 on:
   workflow_dispatch:
-  schedule: daily
+  schedule: weekly on sunday around 03:00
 permissions:
   contents: read
   issues: read
@@ -54,11 +54,20 @@ Activate the project in Serena:
 Identify and analyze modified files:
 - Determine files changed in the recent commits
 - **ONLY analyze .go and .cjs files** - exclude all other file types
+- **ONLY analyze files inside `pkg/` or `actions/` directories** - skip all files outside these directories (e.g., `vendor/`, `node_modules/`, root-level files)
 - **Exclude JavaScript files except .cjs** from analysis (files matching patterns: `*.js`, `*.mjs`, `*.jsx`, `*.ts`, `*.tsx`)
 - **Exclude test files** from analysis (files matching patterns: `*_test.go`, `*.test.js`, `*.test.cjs`, `*.spec.js`, `*.spec.cjs`, `*.test.ts`, `*.spec.ts`, `*_test.py`, `test_*.py`, or located in directories named `test`, `tests`, `__tests__`, or `spec`)
 - **Exclude workflow files** from analysis (files under `.github/workflows/*`)
+- **Cap at 20 files**: if more than 20 qualifying files changed, analyze only the 20 most recently touched (by commit order — the last 20 in the git diff output)
 - Use `get_symbols_overview` to understand file structure
 - Use `read_file` to examine modified file contents
+
+### 2a. Early-Exit Sample Check
+
+Before performing a full analysis, apply a quick sample check:
+- Select up to 5 files from step 2 and perform a rapid duplicate scan on those files only
+- If **zero** high-confidence duplicate patterns are found in the sample, **stop immediately** and call the `noop` tool — do not continue to the full analysis. A "high-confidence" duplicate means: >10 lines of near-identical code OR 3+ instances of the same pattern across different files.
+- Only proceed to step 3 if at least one credible duplicate candidate is found in the sample
 
 ### 3. Duplicate Detection
 
@@ -151,10 +160,12 @@ Create separate issues for each distinct duplication pattern found (maximum 3 pa
 
 ### Analysis Depth
 
+- **Directory Scope**: ONLY analyze files inside `pkg/` and `actions/` directories — do NOT traverse any directory outside these two
 - **File Type Restriction**: ONLY analyze .go and .cjs files - ignore all other file types
-- **Primary Focus**: All .go and .cjs files changed in the current push (excluding test files and workflow files)
-- **Secondary Analysis**: Check for duplication with existing .go and .cjs codebase (excluding test files and workflow files)
-- **Cross-Reference**: Look for patterns across .go and .cjs files in the repository
+- **File Cap**: Analyze at most 20 files per run; stop early if no duplicates are found in a 5-file sample (see step 2a)
+- **Primary Focus**: All .go and .cjs files changed in the current push (excluding test files and workflow files) that are within `pkg/` or `actions/`
+- **Secondary Analysis**: Check for duplication with existing .go and .cjs codebase (excluding test files and workflow files) within `pkg/` or `actions/`
+- **Cross-Reference**: Look for patterns across .go and .cjs files in the repository within `pkg/` or `actions/`
 - **Historical Context**: Consider if duplication is new or existing
 
 ## Issue Template
