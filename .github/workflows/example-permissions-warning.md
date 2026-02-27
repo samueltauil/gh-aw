@@ -4,9 +4,9 @@ timeout-minutes: 5
 on:
   workflow_dispatch:
 permissions:
-  contents: read
-  issues: read
-  pull-requests: read
+  contents: write
+  issues: write
+  pull-requests: write
 tools:
   github:
     toolsets: [repos, issues, pull_requests]

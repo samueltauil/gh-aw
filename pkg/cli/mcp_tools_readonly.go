@@ -85,10 +85,9 @@ func registerCompileTool(server *mcp.Server, execCmd execCmdFunc) error {
 		mcpLog.Printf("Failed to generate compile tool schema: %v", err)
 		return err
 	}
-	// Add elicitation default: strict defaults to true (most common case)
-	if err := AddSchemaDefault(compileSchema, "strict", true); err != nil {
-		mcpLog.Printf("Failed to add default for strict: %v", err)
-	}
+	// Remove elicitation default for strict to preserve frontmatter strict: false settings.
+	// Without a default, the LLM will omit strict (defaulting to false) and the compiler
+	// will respect the workflow's frontmatter strict setting as designed.
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name: "compile",

@@ -23,7 +23,7 @@
 #
 # Example workflow demonstrating proper permission provisioning and security best practices
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"94ffd5b85d76a2be5b3602a2babffa5a24d9e2bf59e74b4a81355902bdf06e01"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"01d1af09922718d2833e6d0106d6a9b90b8b2fa26f127a0b8c9c33bbdbbe4ae8"}
 
 name: "Example: Properly Provisioned Permissions"
 "on":
@@ -207,9 +207,9 @@ jobs:
     needs: activation
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      issues: read
-      pull-requests: read
+      contents: write
+      issues: write
+      pull-requests: write
     env:
       GH_AW_WORKFLOW_ID_SANITIZED: examplepermissionswarning
     outputs:
