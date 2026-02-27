@@ -309,7 +309,7 @@ func TestGenerateRuntimeSetupSteps(t *testing.T) {
 			expectSteps: 1,
 			checkContent: []string{
 				"Setup Python",
-				"actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+				GetActionPin("actions/setup-python"),
 				"python-version: '3.11'",
 			},
 		},
@@ -321,7 +321,7 @@ func TestGenerateRuntimeSetupSteps(t *testing.T) {
 			expectSteps: 1,
 			checkContent: []string{
 				"Setup uv",
-				"astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86",
+				GetActionPin("astral-sh/setup-uv"),
 			},
 		},
 		{
@@ -332,7 +332,7 @@ func TestGenerateRuntimeSetupSteps(t *testing.T) {
 			expectSteps: 1, // setup only - PATH inherited via AWF_HOST_PATH in chroot mode
 			checkContent: []string{
 				"Setup .NET",
-				"actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9",
+				GetActionPin("actions/setup-dotnet"),
 				"dotnet-version: '8.0'",
 			},
 		},
@@ -344,7 +344,7 @@ func TestGenerateRuntimeSetupSteps(t *testing.T) {
 			expectSteps: 1, // setup only - PATH inherited via AWF_HOST_PATH in chroot mode
 			checkContent: []string{
 				"Setup Java",
-				"actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9",
+				GetActionPin("actions/setup-java"),
 				"java-version: '21'",
 				"distribution: temurin",
 			},
@@ -403,7 +403,7 @@ func TestGenerateRuntimeSetupSteps(t *testing.T) {
 			expectSteps: 2, // setup + GOROOT capture for AWF chroot mode
 			checkContent: []string{
 				"Setup Go",
-				"actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5",
+				GetActionPin("actions/setup-go"),
 				"go-version: '1.22'",
 				"Capture GOROOT for AWF chroot mode",
 			},
@@ -416,7 +416,7 @@ func TestGenerateRuntimeSetupSteps(t *testing.T) {
 			expectSteps: 2, // setup + GOROOT capture for AWF chroot mode
 			checkContent: []string{
 				"Setup Go",
-				"actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5",
+				GetActionPin("actions/setup-go"),
 				"go-version: '1.25'",
 				"Capture GOROOT for AWF chroot mode",
 			},
@@ -429,7 +429,7 @@ func TestGenerateRuntimeSetupSteps(t *testing.T) {
 			expectSteps: 2, // setup + GOROOT capture for AWF chroot mode
 			checkContent: []string{
 				"Setup Go",
-				"actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5",
+				GetActionPin("actions/setup-go"),
 				"go-version-file: custom/go.mod",
 				"cache: true",
 				"Capture GOROOT for AWF chroot mode",
@@ -824,7 +824,7 @@ func TestGenerateRuntimeSetupStepsWithIfCondition(t *testing.T) {
 			expectSteps: 1,
 			checkContent: []string{
 				"Setup uv",
-				"astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86",
+				GetActionPin("astral-sh/setup-uv"),
 				"if: hashFiles('uv.lock') != ''",
 			},
 		},
@@ -840,7 +840,7 @@ func TestGenerateRuntimeSetupStepsWithIfCondition(t *testing.T) {
 			expectSteps: 1,
 			checkContent: []string{
 				"Setup Python",
-				"actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065",
+				GetActionPin("actions/setup-python"),
 				"python-version: '3.11'",
 				"if: hashFiles('requirements.txt') != '' || hashFiles('pyproject.toml') != ''",
 			},
