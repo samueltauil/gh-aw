@@ -378,7 +378,8 @@ async function main() {
       core.info(`Successfully pushed initial commit to ${branchName} branch`);
     } else {
       // Existing branch: use GraphQL API for verified commits
-      // Get the current HEAD OID (remote branch HEAD, since no local commit was made)
+      // HEAD equals the remote branch HEAD at this point because we just checked out the branch
+      // without making any local commits (files are staged but not committed).
       const expectedHeadOid = execGitSync(["rev-parse", "HEAD"], { stdio: "pipe" }).trim();
 
       // Get staged file changes (name-status format: <status>\t<path>)

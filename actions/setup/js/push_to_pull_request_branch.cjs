@@ -372,7 +372,7 @@ async function main(config = {}) {
         // Push the applied commits via GraphQL API for verified commits
         const lastCommit = await pushCommitsViaGraphQL(github.graphql.bind(github), `${repoParts.owner}/${repoParts.repo}`, branchName, remoteHeadBeforePatch);
         pushedCommitOid = lastCommit.oid;
-        core.info(`Changes pushed to branch via GraphQL API: ${branchName}`);
+        core.info(`Changes pushed to branch via GraphQL API: ${branchName} - ${lastCommit.url}`);
 
         // Count new commits pushed for the CI trigger decision
         if (remoteHeadBeforePatch) {

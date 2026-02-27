@@ -798,9 +798,8 @@ ${patchPreview}`;
           if (remoteBranchExists) {
             core.warning(`Remote branch ${branchName} already exists - appending random suffix`);
             const extraHex = crypto.randomBytes(4).toString("hex");
-            const oldBranch = branchName;
             branchName = `${branchName}-${extraHex}`;
-            core.info(`Renamed branch to ${branchName}`);
+            core.info(`Using new branch name: ${branchName}`);
           }
 
           // Get the base branch SHA for creating the remote branch reference and GraphQL commit
