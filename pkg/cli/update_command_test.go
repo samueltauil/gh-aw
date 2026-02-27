@@ -894,7 +894,7 @@ func TestResolveLatestRef_CommitSHA(t *testing.T) {
 	// in authenticated environments it will succeed. Either outcome is
 	// acceptable — the key invariant is that the SHA is correctly
 	// identified (tested above) and the function does not panic.
-	_, _ = resolveLatestRef("test/repo", sha, false, false)
+	_, _ = resolveLatestRef("test/repo", sha, false, false, make(map[string]string))
 }
 
 // TestResolveLatestRef_NotCommitSHA tests that non-SHA refs are handled appropriately

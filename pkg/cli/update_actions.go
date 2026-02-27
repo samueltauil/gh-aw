@@ -70,6 +70,9 @@ func UpdateActions(allowMajor, verbose, disableReleaseBump bool) error {
 
 	updateLog.Printf("Loaded %d action entries from actions-lock.json", len(actionsLock.Entries))
 
+	// Per-invocation cache: key = "repo|version", avoids repeated API calls for the same action
+	cache := make(map[string]latestReleaseResult)
+
 	// Track updates
 	var updatedActions []string
 	var failedActions []string
@@ -83,15 +86,23 @@ func UpdateActions(allowMajor, verbose, disableReleaseBump bool) error {
 		// When disableReleaseBump is set, only core actions (actions/*) bypass the --major flag.
 		effectiveAllowMajor := !disableReleaseBump || allowMajor || isCoreAction(entry.Repo)
 
-		// Check for latest release
-		latestVersion, latestSHA, err := getLatestActionRelease(entry.Repo, entry.Version, effectiveAllowMajor, verbose)
-		if err != nil {
-			if verbose {
-				fmt.Fprintln(os.Stderr, console.FormatWarningMessage(fmt.Sprintf("Failed to check %s: %v", entry.Repo, err)))
+		// Check for latest release, using the cache to avoid redundant API calls.
+		cacheKey := entry.Repo + "|" + entry.Version
+		result, cached := cache[cacheKey]
+		if !cached {
+			latestVersion, latestSHA, err := getLatestActionRelease(entry.Repo, entry.Version, effectiveAllowMajor, verbose)
+			if err != nil {
+				if verbose {
+					fmt.Fprintln(os.Stderr, console.FormatWarningMessage(fmt.Sprintf("Failed to check %s: %v", entry.Repo, err)))
+				}
+				failedActions = append(failedActions, entry.Repo)
+				continue
 			}
-			failedActions = append(failedActions, entry.Repo)
-			continue
+			result = latestReleaseResult{version: latestVersion, sha: latestSHA}
+			cache[cacheKey] = result
 		}
+		latestVersion := result.version
+		latestSHA := result.sha
 
 		// Check if update is available
 		if latestVersion == entry.Version && latestSHA == entry.SHA {
@@ -176,7 +187,7 @@ func getLatestActionRelease(repo, currentVersion string, allowMajor, verbose boo
 	updateLog.Printf("Using base repository: %s for action: %s", baseRepo, repo)
 
 	// Use gh CLI to get releases
-	output, err := workflow.RunGHCombined("Fetching releases...", "api", fmt.Sprintf("/repos/%s/releases", baseRepo), "--jq", ".[].tag_name")
+	output, err := workflow.RunGHCombined(fmt.Sprintf("Fetching releases for %s...", baseRepo), "api", fmt.Sprintf("/repos/%s/releases", baseRepo), "--jq", ".[].tag_name")
 	if err != nil {
 		// Check if this is an authentication error
 		outputStr := string(output)

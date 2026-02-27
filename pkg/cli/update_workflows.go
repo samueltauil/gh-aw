@@ -45,9 +45,12 @@ func UpdateWorkflows(workflowNames []string, allowMajor, force, verbose bool, en
 	var failedUpdates []updateFailure
 
 	// Update each workflow
+	// Per-invocation cache: key = "repo|currentRef", avoids repeated API calls for the same repo
+	releaseCache := make(map[string]string)
+
 	for _, wf := range workflows {
 		updateLog.Printf("Updating workflow: %s (source: %s)", wf.Name, wf.SourceSpec)
-		if err := updateWorkflow(wf, allowMajor, force, verbose, engineOverride, noStopAfter, stopAfter, noMerge); err != nil {
+		if err := updateWorkflow(wf, allowMajor, force, verbose, engineOverride, noStopAfter, stopAfter, noMerge, releaseCache); err != nil {
 			updateLog.Printf("Failed to update workflow %s: %v", wf.Name, err)
 			failedUpdates = append(failedUpdates, updateFailure{
 				Name:  wf.Name,
@@ -156,7 +159,7 @@ func findWorkflowsWithSource(workflowsDir string, filterNames []string, verbose 
 }
 
 // resolveLatestRef resolves the latest ref for a workflow source
-func resolveLatestRef(repo, currentRef string, allowMajor, verbose bool) (string, error) {
+func resolveLatestRef(repo, currentRef string, allowMajor, verbose bool, releaseCache map[string]string) (string, error) {
 	updateLog.Printf("Resolving latest ref: repo=%s, currentRef=%s, allowMajor=%v", repo, currentRef, allowMajor)
 
 	if verbose {
@@ -166,7 +169,7 @@ func resolveLatestRef(repo, currentRef string, allowMajor, verbose bool) (string
 	// Check if current ref is a tag (looks like a semantic version)
 	if isSemanticVersionTag(currentRef) {
 		updateLog.Print("Current ref is semantic version tag, resolving latest release")
-		return resolveLatestRelease(repo, currentRef, allowMajor, verbose)
+		return resolveLatestRelease(repo, currentRef, allowMajor, verbose, releaseCache)
 	}
 
 	// Check if current ref is a commit SHA (40-character hex string)
@@ -256,15 +259,22 @@ func getLatestBranchCommitSHA(repo, branch string) (string, error) {
 }
 
 // resolveLatestRelease resolves the latest compatible release for a workflow source
-func resolveLatestRelease(repo, currentRef string, allowMajor, verbose bool) (string, error) {
+func resolveLatestRelease(repo, currentRef string, allowMajor, verbose bool, releaseCache map[string]string) (string, error) {
 	updateLog.Printf("Resolving latest release for repo %s (current: %s, allowMajor=%v)", repo, currentRef, allowMajor)
 
 	if verbose {
 		fmt.Fprintln(os.Stderr, console.FormatVerboseMessage(fmt.Sprintf("Checking for latest release (current: %s, allow major: %v)", currentRef, allowMajor)))
 	}
 
+	// Check cache before making an API call
+	cacheKey := repo + "|" + currentRef
+	if cached, ok := releaseCache[cacheKey]; ok {
+		updateLog.Printf("Cache hit for %s (current: %s): %s", repo, currentRef, cached)
+		return cached, nil
+	}
+
 	// Get all releases using gh CLI
-	output, err := workflow.RunGH("Fetching releases...", "api", fmt.Sprintf("/repos/%s/releases", repo), "--jq", ".[].tag_name")
+	output, err := workflow.RunGH(fmt.Sprintf("Fetching releases for %s...", repo), "api", fmt.Sprintf("/repos/%s/releases", repo), "--jq", ".[].tag_name")
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch releases: %w", err)
 	}
@@ -282,6 +292,7 @@ func resolveLatestRelease(repo, currentRef string, allowMajor, verbose bool) (st
 		if verbose {
 			fmt.Fprintln(os.Stderr, console.FormatInfoMessage("Current version is not valid, using latest release: "+latestRelease))
 		}
+		releaseCache[cacheKey] = latestRelease
 		return latestRelease, nil
 	}
 
@@ -315,11 +326,12 @@ func resolveLatestRelease(repo, currentRef string, allowMajor, verbose bool) (st
 		fmt.Fprintln(os.Stderr, console.FormatInfoMessage("Found newer release: "+latestCompatible))
 	}
 
+	releaseCache[cacheKey] = latestCompatible
 	return latestCompatible, nil
 }
 
 // updateWorkflow updates a single workflow from its source
-func updateWorkflow(wf *workflowWithSource, allowMajor, force, verbose bool, engineOverride string, noStopAfter bool, stopAfter string, noMerge bool) error {
+func updateWorkflow(wf *workflowWithSource, allowMajor, force, verbose bool, engineOverride string, noStopAfter bool, stopAfter string, noMerge bool, releaseCache map[string]string) error {
 	updateLog.Printf("Updating workflow: name=%s, source=%s, force=%v, noMerge=%v", wf.Name, wf.SourceSpec, force, noMerge)
 
 	if verbose {
@@ -341,7 +353,7 @@ func updateWorkflow(wf *workflowWithSource, allowMajor, force, verbose bool, eng
 	}
 
 	// Resolve latest ref
-	latestRef, err := resolveLatestRef(sourceSpec.Repo, currentRef, allowMajor, verbose)
+	latestRef, err := resolveLatestRef(sourceSpec.Repo, currentRef, allowMajor, verbose, releaseCache)
 	if err != nil {
 		return fmt.Errorf("failed to resolve latest ref: %w", err)
 	}
