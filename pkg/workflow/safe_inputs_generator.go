@@ -175,9 +175,10 @@ startHttpServer(configPath, {
 }
 
 // generateSafeInputJavaScriptToolScript generates the JavaScript tool file for a safe-input tool
-// The user's script code is automatically wrapped in a function with module.exports,
-// so users can write simple code without worrying about exports.
-// Input parameters are destructured and available as local variables.
+// The generated script is a standalone Node.js file that:
+// - Reads inputs as JSON from stdin
+// - Executes the user's script code (which may use `return` to return a value)
+// - Prints the result as JSON to stdout
 func generateSafeInputJavaScriptToolScript(toolConfig *SafeInputToolConfig) string {
 	safeInputsLog.Printf("Generating JavaScript tool script: tool=%s, input_count=%d", toolConfig.Name, len(toolConfig.Inputs))
 	var sb strings.Builder
@@ -198,8 +199,14 @@ func generateSafeInputJavaScriptToolScript(toolConfig *SafeInputToolConfig) stri
 		fmt.Fprintf(&sb, " * @param {%s} inputs.%s - %s\n", param.Type, paramName, param.Description)
 	}
 	sb.WriteString(" * @returns {Promise<any>} Tool result\n")
-	sb.WriteString(" */\n")
-	sb.WriteString("async function execute(inputs) {\n")
+	sb.WriteString(" */\n\n")
+
+	// Read inputs from stdin (JSON format)
+	sb.WriteString("let _inputData = '';\n")
+	sb.WriteString("process.stdin.on('data', chunk => { _inputData += chunk; });\n")
+	sb.WriteString("process.stdin.on('end', async () => {\n")
+	sb.WriteString("  let inputs = {};\n")
+	sb.WriteString("  try { inputs = JSON.parse(_inputData) || {}; } catch (e) { inputs = {}; }\n\n")
 
 	// Destructure inputs to make parameters available as local variables
 	if len(toolConfig.Inputs) > 0 {
@@ -217,10 +224,17 @@ func generateSafeInputJavaScriptToolScript(toolConfig *SafeInputToolConfig) stri
 		fmt.Fprintf(&sb, "  const { %s } = inputs || {};\n\n", strings.Join(paramNames, ", "))
 	}
 
-	// Indent the user's script code
-	sb.WriteString("  " + strings.ReplaceAll(toolConfig.Script, "\n", "\n  ") + "\n")
-	sb.WriteString("}\n\n")
-	sb.WriteString("module.exports = { execute };\n")
+	// Wrap user's script in an async IIFE so `return` works, then print the result as JSON
+	sb.WriteString("  try {\n")
+	sb.WriteString("    const _result = await (async () => {\n")
+	sb.WriteString("      " + strings.ReplaceAll(toolConfig.Script, "\n", "\n      ") + "\n")
+	sb.WriteString("    })();\n")
+	sb.WriteString("    process.stdout.write(JSON.stringify(_result !== undefined ? _result : {}));\n")
+	sb.WriteString("  } catch (e) {\n")
+	sb.WriteString("    process.stderr.write(String(e && e.stack ? e.stack : e));\n")
+	sb.WriteString("    process.exit(1);\n")
+	sb.WriteString("  }\n")
+	sb.WriteString("});\n")
 
 	return sb.String()
 }

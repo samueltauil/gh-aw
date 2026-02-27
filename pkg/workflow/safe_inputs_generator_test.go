@@ -222,8 +222,12 @@ func TestGenerateSafeInputJavaScriptToolScript(t *testing.T) {
 		t.Error("Script should contain the tool script")
 	}
 
-	if !strings.Contains(script, "module.exports") {
-		t.Error("Script should export execute function")
+	if !strings.Contains(script, "process.stdin") {
+		t.Error("Script should read inputs from stdin")
+	}
+
+	if !strings.Contains(script, "process.stdout.write") {
+		t.Error("Script should write result to stdout")
 	}
 }
 

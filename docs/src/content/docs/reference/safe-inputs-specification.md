@@ -477,13 +477,27 @@ safe-inputs:
 
 #### 6.1.3 Code Wrapping
 
-Implementation code is wrapped as:
+Implementation code is wrapped as a standalone Node.js script:
 
 ```javascript
-async function execute(inputs) {
-  const { param1, param2 } = inputs;
-  // User code here
-}
+let _inputData = '';
+process.stdin.on('data', chunk => { _inputData += chunk; });
+process.stdin.on('end', async () => {
+  let inputs = {};
+  try { inputs = JSON.parse(_inputData) || {}; } catch (e) { inputs = {}; }
+
+  const { param1, param2 } = inputs || {};
+
+  try {
+    const _result = await (async () => {
+      // User code here
+    })();
+    process.stdout.write(JSON.stringify(_result !== undefined ? _result : {}));
+  } catch (e) {
+    process.stderr.write(String(e && e.message ? e.message : e));
+    process.exit(1);
+  }
+});
 ```
 
 #### 6.1.4 Example
