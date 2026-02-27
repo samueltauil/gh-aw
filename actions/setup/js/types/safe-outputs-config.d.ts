@@ -204,6 +204,7 @@ interface UploadAssetConfig extends SafeOutputConfig {
   branch?: string;
   "max-size"?: number;
   "allowed-exts"?: string[];
+  lfs?: boolean;
 }
 
 /**

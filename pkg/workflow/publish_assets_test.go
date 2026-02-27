@@ -47,6 +47,34 @@ func TestParseUploadAssetConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "upload-asset config with lfs disabled",
+			input: map[string]any{
+				"upload-asset": map[string]any{
+					"lfs": false,
+				},
+			},
+			expected: &UploadAssetsConfig{
+				BranchName:  "assets/${{ github.workflow }}",
+				MaxSizeKB:   10240,
+				AllowedExts: []string{".png", ".jpg", ".jpeg"},
+				LFS:         boolPtr(false),
+			},
+		},
+		{
+			name: "upload-asset config with lfs explicitly enabled",
+			input: map[string]any{
+				"upload-asset": map[string]any{
+					"lfs": true,
+				},
+			},
+			expected: &UploadAssetsConfig{
+				BranchName:  "assets/${{ github.workflow }}",
+				MaxSizeKB:   10240,
+				AllowedExts: []string{".png", ".jpg", ".jpeg"},
+				LFS:         boolPtr(true),
+			},
+		},
+		{
 			name:     "no upload-asset config",
 			input:    map[string]any{},
 			expected: nil,
@@ -87,6 +115,10 @@ func TestParseUploadAssetConfig(t *testing.T) {
 
 			if len(result.AllowedExts) != len(tt.expected.AllowedExts) {
 				t.Errorf("AllowedExts length: expected %d, got %d", len(tt.expected.AllowedExts), len(result.AllowedExts))
+			}
+
+			if (result.LFS == nil) != (tt.expected.LFS == nil) || (result.LFS != nil && *result.LFS != *tt.expected.LFS) {
+				t.Errorf("LFS: expected %+v, got %+v", tt.expected.LFS, result.LFS)
 			}
 		})
 	}
@@ -170,5 +202,66 @@ func TestUploadAssetsJobUsesFileInput(t *testing.T) {
 
 	if !strings.Contains(stepsStr, "GH_AW_ASSETS_ALLOWED_EXTS") {
 		t.Error("Expected GH_AW_ASSETS_ALLOWED_EXTS environment variable")
+	}
+
+	if !strings.Contains(stepsStr, "GH_AW_ASSETS_LFS: true") {
+		t.Error("Expected GH_AW_ASSETS_LFS to default to true")
+	}
+}
+
+func TestUploadAssetsJobLFSEnvVar(t *testing.T) {
+	c := NewCompiler()
+
+	tests := []struct {
+		name        string
+		lfs         *bool
+		expectedLFS string
+	}{
+		{
+			name:        "LFS enabled by default (nil)",
+			lfs:         nil,
+			expectedLFS: "GH_AW_ASSETS_LFS: true",
+		},
+		{
+			name:        "LFS explicitly enabled",
+			lfs:         boolPtr(true),
+			expectedLFS: "GH_AW_ASSETS_LFS: true",
+		},
+		{
+			name:        "LFS disabled",
+			lfs:         boolPtr(false),
+			expectedLFS: "GH_AW_ASSETS_LFS: false",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data := &WorkflowData{
+				Name: "Test Workflow",
+				SafeOutputs: &SafeOutputsConfig{
+					UploadAssets: &UploadAssetsConfig{
+						BranchName:  "assets/test",
+						MaxSizeKB:   10240,
+						AllowedExts: []string{".png"},
+						LFS:         tt.lfs,
+					},
+				},
+			}
+
+			job, err := c.buildUploadAssetsJob(data, "agent", false)
+			if err != nil {
+				t.Fatalf("Failed to build upload assets job: %v", err)
+			}
+
+			var stepsStrSb strings.Builder
+			for _, step := range job.Steps {
+				stepsStrSb.WriteString(step)
+			}
+			stepsStr := stepsStrSb.String()
+
+			if !strings.Contains(stepsStr, tt.expectedLFS) {
+				t.Errorf("Expected %q in steps, got:\n%s", tt.expectedLFS, stepsStr)
+			}
+		})
 	}
 }

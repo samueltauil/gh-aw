@@ -71,6 +71,10 @@ async function main() {
   const normalizedBranchName = normalizeBranchName(branchName);
   core.info(`Using assets branch: ${normalizedBranchName}`);
 
+  // Get LFS setting from environment variable (default: enabled)
+  const useLFS = process.env.GH_AW_ASSETS_LFS !== "false";
+  core.info(`Git LFS: ${useLFS ? "enabled" : "disabled"}`);
+
   const result = loadAgentOutput();
   if (!result.success) {
     core.setOutput("upload_count", "0");
@@ -117,6 +121,16 @@ async function main() {
       await exec.exec("git", ["clean", "-fdx"]);
     }
 
+    // Initialize Git LFS if enabled
+    if (useLFS) {
+      try {
+        await exec.exec("git", ["lfs", "install"]);
+      } catch (lfsError) {
+        core.setFailed(`${ERR_CONFIG}: Failed to initialize Git LFS. Ensure Git LFS is installed on the runner. ` + `To disable Git LFS, set 'lfs: false' in the upload-asset configuration. ` + `Error: ${getErrorMessage(lfsError)}`);
+        return;
+      }
+    }
+
     // Process each asset
     for (const asset of uploadItems) {
       const { fileName, sha, size, targetFileName } = asset;
@@ -152,6 +166,11 @@ async function main() {
       try {
         fs.copyFileSync(assetSourcePath, targetFileName);
 
+        // Configure Git LFS tracking for this file if LFS is enabled
+        if (useLFS) {
+          await exec.exec("git", ["lfs", "track", targetFileName]);
+        }
+
         // Add to git
         await exec.exec("git", ["add", targetFileName]);
 
@@ -167,6 +186,10 @@ async function main() {
 
     // Commit and push if there are changes (skip if staged)
     if (hasChanges) {
+      // Stage .gitattributes if Git LFS was used (git lfs track modifies it)
+      if (useLFS) {
+        await exec.exec("git", ["add", ".gitattributes"]);
+      }
       const commitMessage = `[skip-ci] Add ${uploadCount} asset(s)`;
       await exec.exec(`git`, [`commit`, `-m`, commitMessage]);
       if (isStaged) {

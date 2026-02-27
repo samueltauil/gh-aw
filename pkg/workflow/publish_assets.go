@@ -16,6 +16,7 @@ type UploadAssetsConfig struct {
 	BranchName           string   `yaml:"branch,omitempty"`       // Branch name (default: "assets/${{ github.workflow }}")
 	MaxSizeKB            int      `yaml:"max-size,omitempty"`     // Maximum file size in KB (default: 10240 = 10MB)
 	AllowedExts          []string `yaml:"allowed-exts,omitempty"` // Allowed file extensions (default: common non-executable types)
+	LFS                  *bool    `yaml:"lfs,omitempty"`          // When false, disables Git LFS. Default (nil or true) enables Git LFS.
 }
 
 // parseUploadAssetConfig handles upload-asset configuration
@@ -63,9 +64,17 @@ func (c *Compiler) parseUploadAssetConfig(outputMap map[string]any) *UploadAsset
 				}
 			}
 
+			// Parse lfs (default: true, set to false to disable)
+			if lfs, exists := configMap["lfs"]; exists {
+				if lfsBool, ok := lfs.(bool); ok {
+					config.LFS = &lfsBool
+				}
+			}
+
 			// Parse common base fields with default max of 0 (no limit)
 			c.parseBaseSafeOutputConfig(configMap, &config.BaseSafeOutputConfig, 0)
-			publishAssetsLog.Printf("Parsed upload-asset config: branch=%s, max_size_kb=%d, allowed_exts=%d", config.BranchName, config.MaxSizeKB, len(config.AllowedExts))
+			lfsEnabled := config.LFS == nil || *config.LFS
+			publishAssetsLog.Printf("Parsed upload-asset config: branch=%s, max_size_kb=%d, allowed_exts=%d, lfs=%v", config.BranchName, config.MaxSizeKB, len(config.AllowedExts), lfsEnabled)
 		} else if configData == nil {
 			// Handle null case: create config with defaults
 			publishAssetsLog.Print("Using default upload-asset configuration")
@@ -127,6 +136,8 @@ func (c *Compiler) buildUploadAssetsJob(data *WorkflowData, mainJobName string, 
 	customEnvVars = append(customEnvVars, fmt.Sprintf("          GH_AW_ASSETS_BRANCH: %q\n", data.SafeOutputs.UploadAssets.BranchName))
 	customEnvVars = append(customEnvVars, fmt.Sprintf("          GH_AW_ASSETS_MAX_SIZE_KB: %d\n", data.SafeOutputs.UploadAssets.MaxSizeKB))
 	customEnvVars = append(customEnvVars, fmt.Sprintf("          GH_AW_ASSETS_ALLOWED_EXTS: %q\n", strings.Join(data.SafeOutputs.UploadAssets.AllowedExts, ",")))
+	lfsEnabled := data.SafeOutputs.UploadAssets.LFS == nil || *data.SafeOutputs.UploadAssets.LFS
+	customEnvVars = append(customEnvVars, fmt.Sprintf("          GH_AW_ASSETS_LFS: %v\n", lfsEnabled))
 
 	// Add standard environment variables (metadata + staged/target repo)
 	customEnvVars = append(customEnvVars, c.buildStandardSafeOutputEnvVars(data, "")...) // No target repo for upload assets

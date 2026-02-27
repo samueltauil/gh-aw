@@ -6483,6 +6483,11 @@
                 "github-token": {
                   "$ref": "#/$defs/github_token",
                   "description": "GitHub token to use for this specific output type. Overrides global github-token if specified."
+                },
+                "lfs": {
+                  "type": "boolean",
+                  "description": "When false, disables Git LFS for asset uploads. Default (true) stores assets using Git LFS.",
+                  "default": true
                 }
               },
               "additionalProperties": false
