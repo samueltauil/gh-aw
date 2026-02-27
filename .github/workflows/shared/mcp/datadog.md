@@ -11,6 +11,18 @@ mcp-servers:
       - search_datadog_slos
       - search_datadog_metrics
       - get_datadog_metric
+      - analyze_datadog_logs
+      - search_datadog_logs
+      - search_datadog_events
+      - search_datadog_monitors
+      - search_datadog_incidents
+      - get_datadog_incident
+      - search_datadog_hosts
+      - search_datadog_services
+      - search_datadog_spans
+      - get_datadog_trace
+      - search_datadog_notebooks
+      - search_datadog_rum_events
 ---
 
 <!--
@@ -19,22 +31,41 @@ Datadog MCP Server
 Observability and monitoring platform integration
 
 Provides comprehensive access to Datadog monitoring, logs, metrics, and incidents
-Documentation: https://github.com/GeLi2001/datadog-mcp-server
+Documentation: https://docs.datadoghq.com/bits_ai/mcp_server/
 
-This shared configuration provides Datadog MCP server integration for monitoring, 
-observability, and log analysis via HTTP API.
+This shared configuration provides the official Datadog MCP server integration for
+monitoring, observability, and log analysis via HTTP API.
 
 Available tools:
-  - get-monitors: Fetch monitors with optional filtering by group states and tags
-  - get-monitor: Get details of a specific monitor by ID
-  - get-dashboards: List all dashboards in your Datadog account
-  - get-dashboard: Get a specific dashboard by ID with its full definition
-  - get-metrics: List available metrics in your Datadog account
-  - get-metric-metadata: Get metadata for a specific metric (unit, type, description)
-  - get-events: Fetch events within a specified time range
-  - get-incidents: List incidents with optional filtering and pagination
-  - search-logs: Search logs with advanced query filtering, time ranges, and sorting
-  - aggregate-logs: Perform analytics and aggregations on log data with grouping
+  Logs & Events:
+  - analyze_datadog_logs: SQL-like pattern analysis on logs
+  - search_datadog_logs: Raw log retrieval with query filtering and time ranges
+  - search_datadog_events: Event querying within a time range
+  - search_datadog_rum_events: Real User Monitoring (frontend) event search
+
+  Metrics & Dashboards:
+  - get_datadog_metric: Metric time series data retrieval
+  - search_datadog_metrics: List and search available metrics
+  - search_datadog_dashboards: Find and view dashboards
+
+  APM (Tracing):
+  - get_datadog_trace: Retrieve a trace by ID
+  - search_datadog_spans: Span-level trace analytics
+
+  Incidents & Monitoring:
+  - search_datadog_incidents: List and query incidents
+  - get_datadog_incident: Get details of a specific incident
+  - search_datadog_monitors: Query and view monitor status
+
+  Infrastructure & Services:
+  - search_datadog_hosts: Host inventory and status
+  - search_datadog_services: Service listing and dependency mapping
+
+  Notebooks:
+  - search_datadog_notebooks: Investigative notebook lookup
+
+  SLOs:
+  - search_datadog_slos: Search and view Service Level Objectives
 #
 Setup:
   1. Create Datadog API Keys:
@@ -65,7 +96,8 @@ Example Usage:
 #
 Connection Type:
   This configuration uses HTTP MCP server type, connecting directly to the 
-  Datadog MCP API endpoint. Authentication is handled via HTTP headers.
+  official Datadog MCP API endpoint. Authentication is handled via HTTP headers.
+  The server is in official preview; organizations must be allowlisted.
 #
 Troubleshooting:
   403 Forbidden Errors - Verify that:
@@ -73,6 +105,7 @@ Troubleshooting:
   - The keys have necessary permissions to access requested resources
   - You're using the correct endpoint for your region
   - Your Datadog account has access to the requested data
+  - Your organization is allowlisted for the Datadog MCP preview
 #
 Usage:
   imports:

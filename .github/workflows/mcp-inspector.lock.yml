@@ -42,7 +42,7 @@
 #     - shared/mcp/tavily.md
 #     - shared/reporting.md
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"a47d738441d992624473007ef6642d81da6062c254d4f043ac1438370a169ef4"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"4f29cd4b09516b38be93ed415c08113c87da73bd273b40fa9b06eef42be4e17c"}
 
 name: "MCP Inspector Agent"
 "on":
@@ -859,7 +859,19 @@ jobs:
                   "search_datadog_dashboards",
                   "search_datadog_slos",
                   "search_datadog_metrics",
-                  "get_datadog_metric"
+                  "get_datadog_metric",
+                  "analyze_datadog_logs",
+                  "search_datadog_logs",
+                  "search_datadog_events",
+                  "search_datadog_monitors",
+                  "search_datadog_incidents",
+                  "get_datadog_incident",
+                  "search_datadog_hosts",
+                  "search_datadog_services",
+                  "search_datadog_spans",
+                  "get_datadog_trace",
+                  "search_datadog_notebooks",
+                  "search_datadog_rum_events"
                 ],
                 "env": {
                   "DD_API_KEY": "\${DD_API_KEY}",
