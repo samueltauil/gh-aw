@@ -19,6 +19,7 @@ const { generateFooterWithMessages } = require("./messages_footer.cjs");
 const { normalizeBranchName } = require("./normalize_branch_name.cjs");
 const { pushExtraEmptyCommit } = require("./extra_empty_commit.cjs");
 const { getBaseBranch } = require("./get_base_branch.cjs");
+const { pushCommitsViaGraphQL, createVerifiedCommit } = require("./graphql_commit.cjs");
 
 /**
  * @typedef {import('./types/handler-factory').HandlerFactoryFunction} HandlerFactoryFunction
@@ -642,8 +643,22 @@ async function main(config = {}) {
           core.info(`Renamed branch to ${branchName}`);
         }
 
-        await exec.exec(`git push origin ${branchName}`);
-        core.info("Changes pushed to branch");
+        // Get the base branch SHA for creating the remote branch reference and GraphQL commits
+        const { stdout: baseBranchShaOut } = await exec.getExecOutput("git", ["rev-parse", `origin/${baseBranch}`]);
+        const baseBranchSha = baseBranchShaOut.trim();
+
+        // Create the remote branch via REST API (must exist before GraphQL commits)
+        await github.rest.git.createRef({
+          owner: repoParts.owner,
+          repo: repoParts.repo,
+          ref: `refs/heads/${branchName}`,
+          sha: baseBranchSha,
+        });
+        core.info(`Created remote branch: ${branchName}`);
+
+        // Push the applied commits via GraphQL for verified commits
+        await pushCommitsViaGraphQL(github.graphql.bind(github), `${repoParts.owner}/${repoParts.repo}`, branchName, baseBranchSha);
+        core.info("Changes pushed to branch via GraphQL API");
 
         // Count new commits on PR branch relative to base, used to restrict
         // the extra empty CI-trigger commit to exactly 1 new commit.
@@ -769,10 +784,6 @@ ${patchPreview}`;
         core.info("allow-empty is enabled - will create branch and push with empty commit");
         // Push the branch with an empty commit to allow PR creation
         try {
-          // Create an empty commit to ensure there's a commit difference
-          await exec.exec(`git commit --allow-empty -m "Initialize"`);
-          core.info("Created empty commit");
-
           // Check if remote branch already exists (optional precheck)
           let remoteBranchExists = false;
           try {
@@ -789,23 +800,29 @@ ${patchPreview}`;
             const extraHex = crypto.randomBytes(4).toString("hex");
             const oldBranch = branchName;
             branchName = `${branchName}-${extraHex}`;
-            // Rename local branch
-            await exec.exec(`git branch -m ${oldBranch} ${branchName}`);
             core.info(`Renamed branch to ${branchName}`);
           }
 
-          await exec.exec(`git push origin ${branchName}`);
-          core.info("Empty branch pushed successfully");
+          // Get the base branch SHA for creating the remote branch reference and GraphQL commit
+          const { stdout: baseBranchShaOut } = await exec.getExecOutput("git", ["rev-parse", `origin/${baseBranch}`]);
+          const baseBranchSha = baseBranchShaOut.trim();
+
+          // Create the remote branch via REST API (must exist before GraphQL commits)
+          await github.rest.git.createRef({
+            owner: repoParts.owner,
+            repo: repoParts.repo,
+            ref: `refs/heads/${branchName}`,
+            sha: baseBranchSha,
+          });
+          core.info(`Created remote branch: ${branchName}`);
+
+          // Create an empty verified commit via GraphQL to ensure a commit difference
+          await createVerifiedCommit(github.graphql.bind(github), `${repoParts.owner}/${repoParts.repo}`, branchName, baseBranchSha, "Initialize", null, [], []);
+          core.info("Empty branch pushed successfully via GraphQL API");
 
           // Count new commits (will be 1 from the Initialize commit)
-          try {
-            const { stdout: countStr } = await exec.getExecOutput("git", ["rev-list", "--count", `origin/${baseBranch}..HEAD`]);
-            newCommitCount = parseInt(countStr.trim(), 10);
-            core.info(`${newCommitCount} new commit(s) on branch relative to origin/${baseBranch}`);
-          } catch {
-            // Non-fatal - newCommitCount stays 0, extra empty commit will be skipped
-            core.info("Could not count new commits - extra empty commit will be skipped");
-          }
+          newCommitCount = 1;
+          core.info(`1 new commit on branch relative to origin/${baseBranch}`);
         } catch (pushError) {
           const error = `Failed to push empty branch: ${pushError instanceof Error ? pushError.message : String(pushError)}`;
           core.error(error);

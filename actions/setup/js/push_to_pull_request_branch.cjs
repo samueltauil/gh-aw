@@ -10,6 +10,7 @@ const { normalizeBranchName } = require("./normalize_branch_name.cjs");
 const { pushExtraEmptyCommit } = require("./extra_empty_commit.cjs");
 const { detectForkPR } = require("./pr_helpers.cjs");
 const { resolveTargetRepoConfig, resolveAndValidateRepo } = require("./repo_helpers.cjs");
+const { pushCommitsViaGraphQL } = require("./graphql_commit.cjs");
 
 /**
  * @typedef {import('./types/handler-factory').HandlerFactoryFunction} HandlerFactoryFunction
@@ -326,6 +327,7 @@ async function main(config = {}) {
     // to branches with exactly one new commit (security: prevents use of CI trigger
     // token on multi-commit branches where workflow files may have been modified).
     let newCommitCount = 0;
+    let pushedCommitOid = null;
     if (hasChanges) {
       core.info("Applying patch...");
       try {
@@ -367,9 +369,10 @@ async function main(config = {}) {
         await exec.exec(`git am --3way ${patchFilePath}`);
         core.info("Patch applied successfully");
 
-        // Push the applied commits to the branch
-        await exec.exec(`git push origin ${branchName}`);
-        core.info(`Changes committed and pushed to branch: ${branchName}`);
+        // Push the applied commits via GraphQL API for verified commits
+        const lastCommit = await pushCommitsViaGraphQL(github.graphql.bind(github), `${repoParts.owner}/${repoParts.repo}`, branchName, remoteHeadBeforePatch);
+        pushedCommitOid = lastCommit.oid;
+        core.info(`Changes pushed to branch via GraphQL API: ${branchName}`);
 
         // Count new commits pushed for the CI trigger decision
         if (remoteHeadBeforePatch) {
@@ -433,11 +436,18 @@ async function main(config = {}) {
     }
 
     // Get commit SHA and push URL
-    const commitShaRes = await exec.getExecOutput("git", ["rev-parse", "HEAD"]);
-    if (commitShaRes.exitCode !== 0) {
-      return { success: false, error: "Failed to get commit SHA" };
+    // Use the verified commit OID from the GraphQL API when available,
+    // otherwise fall back to the local git HEAD (e.g. for the no-changes path)
+    let commitSha;
+    if (pushedCommitOid) {
+      commitSha = pushedCommitOid;
+    } else {
+      const commitShaRes = await exec.getExecOutput("git", ["rev-parse", "HEAD"]);
+      if (commitShaRes.exitCode !== 0) {
+        return { success: false, error: "Failed to get commit SHA" };
+      }
+      commitSha = commitShaRes.stdout.trim();
     }
-    const commitSha = commitShaRes.stdout.trim();
 
     // Get repository base URL and construct URLs
     // For cross-repo scenarios, use repoParts (the target repo) not context.repo (the workflow repo)

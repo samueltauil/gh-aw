@@ -8,6 +8,7 @@ const { getErrorMessage } = require("./error_helpers.cjs");
 const { globPatternToRegex } = require("./glob_pattern_helpers.cjs");
 const { execGitSync } = require("./git_helpers.cjs");
 const { parseAllowedRepos, validateRepo } = require("./repo_helpers.cjs");
+const { createVerifiedCommit } = require("./graphql_commit.cjs");
 
 /**
  * Push repo-memory changes to git branch
@@ -135,6 +136,7 @@ async function main() {
 
   // Checkout or create the memory branch
   core.info(`Checking out branch: ${branchName}...`);
+  let isNewBranch = false;
   try {
     const repoUrl = `https://x-access-token:${ghToken}@${serverHost}/${targetRepo}.git`;
 
@@ -145,6 +147,7 @@ async function main() {
       core.info(`Checked out existing branch: ${branchName}`);
     } catch (fetchError) {
       // Branch doesn't exist, create orphan branch
+      isNewBranch = true;
       core.info(`Branch ${branchName} does not exist, creating orphan branch...`);
       execGitSync(["checkout", "--orphan", branchName], { stdio: "inherit" });
       // Use --ignore-unmatch to avoid failure when directory is empty
@@ -361,32 +364,55 @@ async function main() {
     return;
   }
 
-  // Commit changes
+  // Commit changes via GraphQL API for verified commits
+  // For new orphan branches (first commit), git push is required to initialize the branch;
+  // subsequent commits to existing branches use the GraphQL API for verified commits.
+  core.info(`Committing and pushing changes to ${branchName}...`);
   try {
-    execGitSync(["commit", "-m", `Update repo memory from workflow run ${githubRunId}`], { stdio: "inherit" });
+    if (isNewBranch) {
+      // Initial commit on a new orphan branch: use git commit + push to create the branch
+      core.info("New branch detected - using git push for initial branch creation");
+      execGitSync(["commit", "-m", `Initialize repo memory from workflow run ${githubRunId}`], { stdio: "inherit" });
+      const repoUrl = `https://x-access-token:${ghToken}@${serverHost}/${targetRepo}.git`;
+      execGitSync(["push", repoUrl, `HEAD:${branchName}`], { stdio: "inherit" });
+      core.info(`Successfully pushed initial commit to ${branchName} branch`);
+    } else {
+      // Existing branch: use GraphQL API for verified commits
+      // Get the current HEAD OID (remote branch HEAD, since no local commit was made)
+      const expectedHeadOid = execGitSync(["rev-parse", "HEAD"], { stdio: "pipe" }).trim();
+
+      // Get staged file changes (name-status format: <status>\t<path>)
+      const stagedStatus = execGitSync(["diff", "--cached", "--name-status"], { stdio: "pipe" });
+
+      const additions = [];
+      const deletions = [];
+
+      for (const line of stagedStatus
+        .trim()
+        .split("\n")
+        .filter(l => l.trim())) {
+        const [status, filePath] = line.split("\t");
+        if (status === "D") {
+          deletions.push({ path: filePath });
+        } else {
+          // Added (A) or Modified (M): read file content from working directory
+          const fullPath = path.join(destMemoryPath, filePath);
+          const contents = fs.readFileSync(fullPath).toString("base64");
+          additions.push({ path: filePath, contents });
+        }
+      }
+
+      // Create a separate Octokit instance authenticated with GH_TOKEN for cross-repo support
+      const { getOctokit } = await import("@actions/github");
+      const octokit = getOctokit(ghToken);
+
+      const commit = await createVerifiedCommit(octokit.graphql.bind(octokit), targetRepo, branchName, expectedHeadOid, `Update repo memory from workflow run ${githubRunId}`, null, additions, deletions);
+
+      core.info(`Successfully committed changes to ${branchName} branch via GraphQL API`);
+      core.info(`Commit: ${commit.url}`);
+    }
   } catch (error) {
     core.setFailed(`Failed to commit changes: ${getErrorMessage(error)}`);
-    return;
-  }
-
-  // Pull with merge strategy (ours wins on conflicts)
-  core.info(`Pulling latest changes from ${branchName}...`);
-  try {
-    const repoUrl = `https://x-access-token:${ghToken}@${serverHost}/${targetRepo}.git`;
-    execGitSync(["pull", "--no-rebase", "-X", "ours", repoUrl, branchName], { stdio: "inherit" });
-  } catch (error) {
-    // Pull might fail if branch doesn't exist yet or on conflicts - this is acceptable
-    core.warning(`Pull failed (this may be expected): ${getErrorMessage(error)}`);
-  }
-
-  // Push changes
-  core.info(`Pushing changes to ${branchName}...`);
-  try {
-    const repoUrl = `https://x-access-token:${ghToken}@${serverHost}/${targetRepo}.git`;
-    execGitSync(["push", repoUrl, `HEAD:${branchName}`], { stdio: "inherit" });
-    core.info(`Successfully pushed changes to ${branchName} branch`);
-  } catch (error) {
-    core.setFailed(`Failed to push changes: ${getErrorMessage(error)}`);
     return;
   }
 }

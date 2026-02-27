@@ -150,7 +150,23 @@ describe("push_to_pull_request_branch.cjs", () => {
     global.context = mockContext;
     global.github = mockGithub;
 
-    // Clear module cache
+    // Clear module cache.
+    // Inject a mock for graphql_commit.cjs into require.cache so that when
+    // push_to_pull_request_branch.cjs requires it, it gets the mock (not the real module).
+    // This is necessary because the test uses require() (CJS), which bypasses vi.mock().
+    const graphqlCommitPath = require.resolve("./graphql_commit.cjs");
+    delete require.cache[graphqlCommitPath];
+    require.cache[graphqlCommitPath] = {
+      id: graphqlCommitPath,
+      filename: graphqlCommitPath,
+      loaded: true,
+      exports: {
+        pushCommitsViaGraphQL: vi.fn().mockResolvedValue({ oid: "graphql-oid-abc123", url: "https://github.com/test-owner/test-repo/commit/graphql-oid-abc123" }),
+        createVerifiedCommit: vi.fn().mockResolvedValue({ oid: "graphql-oid-abc123", url: "https://github.com/test-owner/test-repo/commit/graphql-oid-abc123" }),
+        readFileAtCommit: vi.fn(),
+      },
+    };
+
     delete require.cache[require.resolve("./push_to_pull_request_branch.cjs")];
     delete require.cache[require.resolve("./staged_preview.cjs")];
     delete require.cache[require.resolve("./update_activation_comment.cjs")];
@@ -177,6 +193,8 @@ describe("push_to_pull_request_branch.cjs", () => {
     delete global.exec;
     delete global.context;
     delete global.github;
+    // Remove injected graphql_commit.cjs mock so it doesn't leak between test files
+    delete require.cache[require.resolve("./graphql_commit.cjs")];
     vi.clearAllMocks();
   });
 
@@ -571,7 +589,7 @@ index 0000000..abc1234
       expect(mockCore.info).toHaveBeenCalledWith("Investigating patch failure...");
     });
 
-    it("should handle git push rejection (concurrent changes)", async () => {
+    it("should handle GraphQL push failure (concurrent changes)", async () => {
       const patchPath = createPatchFile();
 
       // Set up successful operations until push
@@ -582,13 +600,16 @@ index 0000000..abc1234
       mockExec.getExecOutput.mockResolvedValueOnce({ exitCode: 0, stdout: "before-sha\n", stderr: "" });
 
       mockExec.exec.mockResolvedValueOnce(0); // git am
-      mockExec.exec.mockRejectedValueOnce(new Error("! [rejected] feature-branch -> feature-branch (non-fast-forward)"));
+
+      // Simulate GraphQL push failure (e.g., expectedHeadOid mismatch)
+      const { pushCommitsViaGraphQL } = require("./graphql_commit.cjs");
+      pushCommitsViaGraphQL.mockRejectedValueOnce(new Error("Expected head SHA doesn't match"));
 
       const module = await loadModule();
       const handler = await module.main({});
       const result = await handler({ patch_path: patchPath }, {});
 
-      // The error happens during push, which currently shows in patch apply failure
+      // The error happens during push, which shows in patch apply failure
       expect(result.success).toBe(false);
     });
 
@@ -615,8 +636,6 @@ index 0000000..abc1234
       mockExec.exec.mockResolvedValueOnce(0); // checkout
       mockExec.getExecOutput.mockResolvedValueOnce({ exitCode: 0, stdout: "new-sha-456\n", stderr: "" });
       mockExec.exec.mockResolvedValueOnce(0); // git am
-      mockExec.exec.mockResolvedValueOnce(0); // git push
-      mockExec.getExecOutput.mockResolvedValueOnce({ exitCode: 0, stdout: "final-sha\n", stderr: "" });
       mockExec.getExecOutput.mockResolvedValueOnce({ exitCode: 0, stdout: "1\n", stderr: "" }); // commit count
 
       const module = await loadModule();
