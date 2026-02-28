@@ -5,8 +5,6 @@ package workflow
 import (
 	"strings"
 	"testing"
-
-	"github.com/github/gh-aw/pkg/constants"
 )
 
 // TestValidateStrictFirewall_LLMGatewaySupport tests the LLM gateway validation in strict mode
@@ -261,53 +259,6 @@ func TestValidateStrictFirewall_LLMGatewaySupport(t *testing.T) {
 			t.Errorf("Expected no error for wildcard (skips all validation), got: %v", err)
 		}
 	})
-}
-
-// TestSupportsLLMGateway tests the SupportsLLMGateway method for each engine
-func TestSupportsLLMGateway(t *testing.T) {
-	registry := NewEngineRegistry()
-
-	tests := []struct {
-		engineID     string
-		expectedPort int
-		description  string
-	}{
-		{
-			engineID:     "codex",
-			expectedPort: constants.CodexLLMGatewayPort,
-			description:  "Codex engine uses dedicated port for LLM gateway",
-		},
-		{
-			engineID:     "claude",
-			expectedPort: constants.ClaudeLLMGatewayPort,
-			description:  "Claude engine uses dedicated port for LLM gateway",
-		},
-		{
-			engineID:     "copilot",
-			expectedPort: constants.CopilotLLMGatewayPort,
-			description:  "Copilot engine uses dedicated port for LLM gateway",
-		},
-		{
-			engineID:     "gemini",
-			expectedPort: constants.GeminiLLMGatewayPort,
-			description:  "Gemini engine uses dedicated port for LLM gateway",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.description, func(t *testing.T) {
-			engine, err := registry.GetEngine(tt.engineID)
-			if err != nil {
-				t.Fatalf("Failed to get engine '%s': %v", tt.engineID, err)
-			}
-
-			llmGatewayPort := engine.SupportsLLMGateway()
-			if llmGatewayPort != tt.expectedPort {
-				t.Errorf("Engine '%s': expected SupportsLLMGateway() = %d, got %d",
-					tt.engineID, tt.expectedPort, llmGatewayPort)
-			}
-		})
-	}
 }
 
 // TestValidateStrictFirewall_EcosystemSuggestions tests ecosystem suggestions in warning messages

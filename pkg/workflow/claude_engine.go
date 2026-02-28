@@ -26,17 +26,11 @@ func NewClaudeEngine() *ClaudeEngine {
 			description:            "Uses Claude Code with full MCP tool support and allow-listing",
 			experimental:           false,
 			supportsToolsAllowlist: true,
-			supportsMaxTurns:       true,  // Claude supports max-turns feature
-			supportsWebFetch:       true,  // Claude has built-in WebFetch support
-			supportsWebSearch:      true,  // Claude has built-in WebSearch support
-			supportsLLMGateway:     false, // Claude does not support LLM gateway
+			supportsMaxTurns:       true, // Claude supports max-turns feature
+			supportsWebFetch:       true, // Claude has built-in WebFetch support
+			supportsWebSearch:      true, // Claude has built-in WebSearch support
 		},
 	}
-}
-
-// SupportsLLMGateway returns the LLM gateway port for Claude engine
-func (e *ClaudeEngine) SupportsLLMGateway() int {
-	return constants.ClaudeLLMGatewayPort
 }
 
 // GetModelEnvVarName returns the native environment variable name that the Claude Code CLI uses
@@ -281,8 +275,7 @@ func (e *ClaudeEngine) GetExecutionSteps(workflowData *WorkflowData, logFile str
 		allowedDomains := GetClaudeAllowedDomainsWithToolsAndRuntimes(workflowData.NetworkPermissions, workflowData.Tools, workflowData.Runtimes)
 
 		// Enable API proxy sidecar if this engine supports LLM gateway
-		llmGatewayPort := e.SupportsLLMGateway()
-		usesAPIProxy := llmGatewayPort > 0
+		usesAPIProxy := true
 
 		// Build AWF command with all configuration
 		// AWF v0.15.0+ uses chroot mode by default, providing transparent access to host binaries
