@@ -40,6 +40,10 @@ func UpdateWorkflows(workflowNames []string, allowMajor, force, verbose bool, en
 
 	fmt.Fprintln(os.Stderr, console.FormatInfoMessage(fmt.Sprintf("Found %d workflow(s) to update", len(workflows))))
 
+	// Shared cache for the entire update run to avoid redundant API calls
+	// when multiple workflows reference the same source repository.
+	cache := newReleaseCache()
+
 	// Track update results
 	var successfulUpdates []string
 	var failedUpdates []updateFailure
@@ -47,7 +51,7 @@ func UpdateWorkflows(workflowNames []string, allowMajor, force, verbose bool, en
 	// Update each workflow
 	for _, wf := range workflows {
 		updateLog.Printf("Updating workflow: %s (source: %s)", wf.Name, wf.SourceSpec)
-		if err := updateWorkflow(wf, allowMajor, force, verbose, engineOverride, noStopAfter, stopAfter, noMerge); err != nil {
+		if err := updateWorkflow(wf, allowMajor, force, verbose, engineOverride, noStopAfter, stopAfter, noMerge, cache); err != nil {
 			updateLog.Printf("Failed to update workflow %s: %v", wf.Name, err)
 			failedUpdates = append(failedUpdates, updateFailure{
 				Name:  wf.Name,
@@ -156,7 +160,7 @@ func findWorkflowsWithSource(workflowsDir string, filterNames []string, verbose 
 }
 
 // resolveLatestRef resolves the latest ref for a workflow source
-func resolveLatestRef(repo, currentRef string, allowMajor, verbose bool) (string, error) {
+func resolveLatestRef(repo, currentRef string, allowMajor, verbose bool, cache *releaseCache) (string, error) {
 	updateLog.Printf("Resolving latest ref: repo=%s, currentRef=%s, allowMajor=%v", repo, currentRef, allowMajor)
 
 	if verbose {
@@ -166,7 +170,7 @@ func resolveLatestRef(repo, currentRef string, allowMajor, verbose bool) (string
 	// Check if current ref is a tag (looks like a semantic version)
 	if isSemanticVersionTag(currentRef) {
 		updateLog.Print("Current ref is semantic version tag, resolving latest release")
-		return resolveLatestRelease(repo, currentRef, allowMajor, verbose)
+		return resolveLatestRelease(repo, currentRef, allowMajor, verbose, cache)
 	}
 
 	// Check if current ref is a commit SHA (40-character hex string)
@@ -174,7 +178,7 @@ func resolveLatestRef(repo, currentRef string, allowMajor, verbose bool) (string
 		updateLog.Printf("Current ref is a commit SHA: %s, fetching latest from default branch", currentRef)
 		// The source field only contains a pinned SHA with no branch information.
 		// Fetch the latest commit from the default branch to check for updates.
-		return resolveLatestCommitFromDefaultBranch(repo, currentRef, verbose)
+		return resolveLatestCommitFromDefaultBranch(repo, currentRef, verbose, cache)
 	}
 
 	// Otherwise, treat as branch and get latest commit
@@ -183,7 +187,7 @@ func resolveLatestRef(repo, currentRef string, allowMajor, verbose bool) (string
 	}
 
 	// Get the latest commit SHA for the branch
-	latestSHA, err := getLatestBranchCommitSHA(repo, currentRef)
+	latestSHA, err := getLatestBranchCommitSHA(repo, currentRef, cache)
 	if err != nil {
 		return "", fmt.Errorf("failed to get latest commit for branch %s: %w", currentRef, err)
 	}
@@ -200,11 +204,16 @@ func resolveLatestRef(repo, currentRef string, allowMajor, verbose bool) (string
 // the default branch of a repo. This is used when the source field is pinned
 // to a commit SHA with no branch information — in that case we can only
 // logically track the default branch.
-func resolveLatestCommitFromDefaultBranch(repo, currentSHA string, verbose bool) (string, error) {
-	// Get the default branch name
-	defaultBranch, err := getRepoDefaultBranch(repo)
-	if err != nil {
-		return "", fmt.Errorf("failed to get default branch for %s: %w", repo, err)
+func resolveLatestCommitFromDefaultBranch(repo, currentSHA string, verbose bool, cache *releaseCache) (string, error) {
+	// Get the default branch name, using the cache to avoid repeated API calls.
+	defaultBranch, ok := cache.defaultBranches[repo]
+	if !ok {
+		var err error
+		defaultBranch, err = getRepoDefaultBranch(repo)
+		if err != nil {
+			return "", fmt.Errorf("failed to get default branch for %s: %w", repo, err)
+		}
+		cache.defaultBranches[repo] = defaultBranch
 	}
 
 	updateLog.Printf("Source is pinned to commit SHA, tracking default branch %q of %s", defaultBranch, repo)
@@ -214,7 +223,7 @@ func resolveLatestCommitFromDefaultBranch(repo, currentSHA string, verbose bool)
 	fmt.Fprintln(os.Stderr, console.FormatInfoMessage(fmt.Sprintf("Source has no branch ref, tracking default branch %q", defaultBranch)))
 
 	// Get the latest commit SHA from the default branch
-	latestSHA, err := getLatestBranchCommitSHA(repo, defaultBranch)
+	latestSHA, err := getLatestBranchCommitSHA(repo, defaultBranch, cache)
 	if err != nil {
 		return "", fmt.Errorf("failed to get latest commit for default branch %s: %w", defaultBranch, err)
 	}
@@ -240,7 +249,14 @@ func getRepoDefaultBranch(repo string) (string, error) {
 }
 
 // getLatestBranchCommitSHA fetches the latest commit SHA for a given branch.
-func getLatestBranchCommitSHA(repo, branch string) (string, error) {
+// Results are cached in cache to avoid redundant API calls across workflows.
+func getLatestBranchCommitSHA(repo, branch string, cache *releaseCache) (string, error) {
+	cacheKey := makeBranchSHACacheKey(repo, branch)
+	if cached, ok := cache.branchSHAs[cacheKey]; ok {
+		updateLog.Printf("Cache hit for branch SHA: %s -> %s", cacheKey, cached)
+		return cached, nil
+	}
+
 	// URL-encode the branch name since it may contain slashes (e.g. "feature/foo")
 	output, err := workflow.RunGH("Fetching branch info...", "api", fmt.Sprintf("/repos/%s/branches/%s", repo, url.PathEscape(branch)), "--jq", ".commit.sha")
 	if err != nil {
@@ -252,12 +268,21 @@ func getLatestBranchCommitSHA(repo, branch string) (string, error) {
 		return "", fmt.Errorf("empty commit SHA returned for branch %s", branch)
 	}
 
+	cache.branchSHAs[cacheKey] = sha
 	return sha, nil
 }
 
 // resolveLatestRelease resolves the latest compatible release for a workflow source
-func resolveLatestRelease(repo, currentRef string, allowMajor, verbose bool) (string, error) {
+func resolveLatestRelease(repo, currentRef string, allowMajor, verbose bool, cache *releaseCache) (string, error) {
 	updateLog.Printf("Resolving latest release for repo %s (current: %s, allowMajor=%v)", repo, currentRef, allowMajor)
+
+	// Check cache first to avoid redundant API calls when multiple workflows
+	// reference the same source repository at the same version.
+	cacheKey := makeReleaseCacheKey(repo, currentRef, allowMajor)
+	if cached, ok := cache.releases[cacheKey]; ok {
+		updateLog.Printf("Cache hit for release: %s -> %s", cacheKey, cached)
+		return cached, nil
+	}
 
 	if verbose {
 		fmt.Fprintln(os.Stderr, console.FormatVerboseMessage(fmt.Sprintf("Checking for latest release (current: %s, allow major: %v)", currentRef, allowMajor)))
@@ -282,6 +307,7 @@ func resolveLatestRelease(repo, currentRef string, allowMajor, verbose bool) (st
 		if verbose {
 			fmt.Fprintln(os.Stderr, console.FormatInfoMessage("Current version is not valid, using latest release: "+latestRelease))
 		}
+		cache.releases[cacheKey] = latestRelease
 		return latestRelease, nil
 	}
 
@@ -315,11 +341,12 @@ func resolveLatestRelease(repo, currentRef string, allowMajor, verbose bool) (st
 		fmt.Fprintln(os.Stderr, console.FormatInfoMessage("Found newer release: "+latestCompatible))
 	}
 
+	cache.releases[cacheKey] = latestCompatible
 	return latestCompatible, nil
 }
 
 // updateWorkflow updates a single workflow from its source
-func updateWorkflow(wf *workflowWithSource, allowMajor, force, verbose bool, engineOverride string, noStopAfter bool, stopAfter string, noMerge bool) error {
+func updateWorkflow(wf *workflowWithSource, allowMajor, force, verbose bool, engineOverride string, noStopAfter bool, stopAfter string, noMerge bool, cache *releaseCache) error {
 	updateLog.Printf("Updating workflow: name=%s, source=%s, force=%v, noMerge=%v", wf.Name, wf.SourceSpec, force, noMerge)
 
 	if verbose {
@@ -341,7 +368,7 @@ func updateWorkflow(wf *workflowWithSource, allowMajor, force, verbose bool, eng
 	}
 
 	// Resolve latest ref
-	latestRef, err := resolveLatestRef(sourceSpec.Repo, currentRef, allowMajor, verbose)
+	latestRef, err := resolveLatestRef(sourceSpec.Repo, currentRef, allowMajor, verbose, cache)
 	if err != nil {
 		return fmt.Errorf("failed to resolve latest ref: %w", err)
 	}

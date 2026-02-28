@@ -894,7 +894,7 @@ func TestResolveLatestRef_CommitSHA(t *testing.T) {
 	// in authenticated environments it will succeed. Either outcome is
 	// acceptable — the key invariant is that the SHA is correctly
 	// identified (tested above) and the function does not panic.
-	_, _ = resolveLatestRef("test/repo", sha, false, false)
+	_, _ = resolveLatestRef("test/repo", sha, false, false, newReleaseCache())
 }
 
 // TestResolveLatestRef_NotCommitSHA tests that non-SHA refs are handled appropriately
@@ -999,4 +999,46 @@ func TestRunUpdateWorkflows_SpecificWorkflowNotFound(t *testing.T) {
 	err := RunUpdateWorkflows([]string{"nonexistent"}, false, false, false, "", "", false, "", false, false)
 	require.Error(t, err, "Should error when specified workflow not found")
 	assert.Contains(t, err.Error(), "no workflows found matching the specified names")
+}
+
+// TestNewReleaseCache verifies that newReleaseCache returns an initialized cache.
+func TestNewReleaseCache(t *testing.T) {
+	cache := newReleaseCache()
+	require.NotNil(t, cache, "Cache should not be nil")
+	assert.NotNil(t, cache.releases, "releases map should be initialized")
+	assert.NotNil(t, cache.branchSHAs, "branchSHAs map should be initialized")
+	assert.NotNil(t, cache.defaultBranches, "defaultBranches map should be initialized")
+	assert.Empty(t, cache.releases, "releases map should start empty")
+	assert.Empty(t, cache.branchSHAs, "branchSHAs map should start empty")
+	assert.Empty(t, cache.defaultBranches, "defaultBranches map should start empty")
+}
+
+// TestReleaseCache_CacheKeyUniqueness verifies that different inputs produce different cache keys
+// and that the same inputs hit the same cache entry.
+func TestReleaseCache_CacheKeyUniqueness(t *testing.T) {
+	cache := newReleaseCache()
+
+	// Pre-populate the cache as resolveLatestRelease would
+	cache.releases[makeReleaseCacheKey("owner/repo", "v1.0.0", false)] = "v1.5.0"
+	cache.releases[makeReleaseCacheKey("owner/repo", "v1.0.0", true)] = "v2.0.0"
+	cache.releases[makeReleaseCacheKey("owner/other", "v1.0.0", false)] = "v1.3.0"
+
+	// Same key → same result
+	assert.Equal(t, "v1.5.0", cache.releases[makeReleaseCacheKey("owner/repo", "v1.0.0", false)], "Cache hit for same inputs")
+
+	// Different allowMajor → different result
+	assert.Equal(t, "v2.0.0", cache.releases[makeReleaseCacheKey("owner/repo", "v1.0.0", true)], "Cache hit with allowMajor=true")
+
+	// Different repo → different result
+	assert.Equal(t, "v1.3.0", cache.releases[makeReleaseCacheKey("owner/other", "v1.0.0", false)], "Cache hit for different repo")
+
+	// Missing key → cache miss
+	_, ok := cache.releases[makeReleaseCacheKey("owner/repo", "v2.0.0", false)]
+	assert.False(t, ok, "Unset key should be a cache miss")
+
+	// Branch SHA cache keys
+	cache.branchSHAs[makeBranchSHACacheKey("owner/repo", "main")] = "abc123def456abc123def456abc123def456abc1"
+	assert.Equal(t, "abc123def456abc123def456abc123def456abc1", cache.branchSHAs[makeBranchSHACacheKey("owner/repo", "main")], "Branch SHA cache hit")
+	_, ok = cache.branchSHAs[makeBranchSHACacheKey("owner/repo", "develop")]
+	assert.False(t, ok, "Different branch should be a cache miss")
 }
