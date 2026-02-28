@@ -153,6 +153,18 @@ func (c *Compiler) generateMainJobSteps(yaml *strings.Builder, data *WorkflowDat
 	yaml.WriteString("      - name: Create gh-aw temp directory\n")
 	yaml.WriteString("        run: bash /opt/gh-aw/actions/create_gh_aw_tmp_dir.sh\n")
 
+	// In production mode with agentic-workflows tool, install gh-aw early so
+	// ./gh-aw is available in the workspace for custom steps. In dev mode the
+	// binary is already built from source (see generateDevModeCLIBuildSteps).
+	if !c.actionMode.IsDev() && data.CustomSteps != "" {
+		if _, hasAgenticWorkflows := data.Tools["agentic-workflows"]; hasAgenticWorkflows {
+			if !workflowHasGhAwImport(data) {
+				compilerYamlLog.Printf("Generating gh-aw workspace binary step for production mode (agentic-workflows tool enabled)")
+				c.generateGhAwWorkspaceBinaryStep(yaml)
+			}
+		}
+	}
+
 	// Add custom steps if present
 	if data.CustomSteps != "" {
 		if customStepsContainCheckout && len(runtimeSetupSteps) > 0 {
@@ -693,4 +705,42 @@ func (c *Compiler) generateDevModeCLIBuildSteps(yaml *strings.Builder) {
 	yaml.WriteString("          tags: localhost/gh-aw:dev\n")
 	yaml.WriteString("          build-args: |\n")
 	yaml.WriteString("            BINARY=dist/gh-aw-linux-amd64\n")
+}
+
+// workflowHasGhAwImport returns true if the workflow imports shared/mcp/gh-aw.md,
+// which provides its own gh-aw installation steps.
+func workflowHasGhAwImport(data *WorkflowData) bool {
+	for _, importPath := range data.ImportedFiles {
+		if strings.Contains(importPath, "shared/mcp/gh-aw.md") {
+			return true
+		}
+	}
+	return false
+}
+
+// generateGhAwWorkspaceBinaryStep generates a step that installs the gh-aw extension
+// and copies the binary to ./gh-aw in the workspace, making it available for
+// custom steps before the MCP setup phase runs.
+//
+// This step is only generated in production mode when the agentic-workflows tool
+// is enabled and there are custom steps that may need the ./gh-aw binary.
+// In dev mode, the binary is built from source by generateDevModeCLIBuildSteps instead.
+func (c *Compiler) generateGhAwWorkspaceBinaryStep(yaml *strings.Builder) {
+	effectiveToken := getEffectiveGitHubToken("")
+
+	yaml.WriteString("      - name: Install gh-aw CLI\n")
+	yaml.WriteString("        env:\n")
+	fmt.Fprintf(yaml, "          GH_TOKEN: %s\n", effectiveToken)
+	yaml.WriteString("        run: |\n")
+	yaml.WriteString("          if ! gh extension list | grep -q \"github/gh-aw\"; then\n")
+	yaml.WriteString("            gh extension install github/gh-aw\n")
+	yaml.WriteString("          fi\n")
+	yaml.WriteString("          GH_AW_BIN=$(which gh-aw 2>/dev/null || find ~/.local/share/gh/extensions/gh-aw -name 'gh-aw' -type f 2>/dev/null | head -1)\n")
+	yaml.WriteString("          if [ -n \"$GH_AW_BIN\" ] && [ -f \"$GH_AW_BIN\" ]; then\n")
+	yaml.WriteString("            cp \"$GH_AW_BIN\" ./gh-aw\n")
+	yaml.WriteString("            chmod +x ./gh-aw\n")
+	yaml.WriteString("            echo \"gh-aw binary available at ./gh-aw\"\n")
+	yaml.WriteString("          else\n")
+	yaml.WriteString("            echo \"::warning::Failed to find gh-aw binary; ./gh-aw will not be available in custom steps\"\n")
+	yaml.WriteString("          fi\n")
 }

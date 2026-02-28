@@ -426,3 +426,89 @@ func TestAgenticWorkflowsExtractToolsEdgeCases(t *testing.T) {
 		})
 	}
 }
+
+// TestGhAwWorkspaceBinaryStepGenerated verifies that in production (release) mode,
+// a step is generated to install the gh-aw extension and place the binary at ./gh-aw
+// in the workspace before custom steps run.
+func TestGhAwWorkspaceBinaryStepGenerated(t *testing.T) {
+	tests := []struct {
+		name              string
+		actionMode        ActionMode
+		customSteps       string
+		importedFiles     []string
+		expectInstallStep bool
+		description       string
+	}{
+		{
+			name:              "release mode with custom steps generates install step",
+			actionMode:        ActionModeRelease,
+			customSteps:       "- name: Use binary\n  run: ./gh-aw logs\n",
+			expectInstallStep: true,
+			description:       "Should generate Install gh-aw CLI step before custom steps in production mode",
+		},
+		{
+			name:              "dev mode skips install step",
+			actionMode:        ActionModeDev,
+			customSteps:       "- name: Use binary\n  run: ./gh-aw logs\n",
+			expectInstallStep: false,
+			description:       "Should not generate Install gh-aw CLI step in dev mode (builds from source)",
+		},
+		{
+			name:              "release mode without custom steps skips install step",
+			actionMode:        ActionModeRelease,
+			customSteps:       "",
+			expectInstallStep: false,
+			description:       "Should not generate Install gh-aw CLI step when there are no custom steps",
+		},
+		{
+			name:              "release mode with gh-aw import skips install step",
+			actionMode:        ActionModeRelease,
+			customSteps:       "- name: Use binary\n  run: ./gh-aw logs\n",
+			importedFiles:     []string{"shared/mcp/gh-aw.md"},
+			expectInstallStep: false,
+			description:       "Should not generate Install gh-aw CLI step when shared/mcp/gh-aw.md provides it",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := testCompiler()
+			c.SetActionMode(tt.actionMode)
+
+			workflowData := &WorkflowData{
+				Name:          "test-workflow",
+				CustomSteps:   tt.customSteps,
+				ImportedFiles: tt.importedFiles,
+				Tools: map[string]any{
+					"agentic-workflows": nil,
+				},
+			}
+
+			var yaml strings.Builder
+			// Call generateGhAwWorkspaceBinaryStep conditionally as generateMainJobSteps would
+			if !c.actionMode.IsDev() && workflowData.CustomSteps != "" {
+				if _, hasAgenticWorkflows := workflowData.Tools["agentic-workflows"]; hasAgenticWorkflows {
+					if !workflowHasGhAwImport(workflowData) {
+						c.generateGhAwWorkspaceBinaryStep(&yaml)
+					}
+				}
+			}
+
+			result := yaml.String()
+
+			if tt.expectInstallStep {
+				assert.Contains(t, result, "Install gh-aw CLI",
+					"%s: expected Install gh-aw CLI step to be present", tt.description)
+				assert.Contains(t, result, "gh extension install github/gh-aw",
+					"%s: expected gh extension install command", tt.description)
+				assert.Contains(t, result, "cp \"$GH_AW_BIN\" ./gh-aw",
+					"%s: expected binary to be copied to ./gh-aw in workspace", tt.description)
+				assert.Contains(t, result, "chmod +x ./gh-aw",
+					"%s: expected chmod +x on ./gh-aw", tt.description)
+			} else {
+				assert.NotContains(t, result, "Install gh-aw CLI",
+					"%s: expected Install gh-aw CLI step to be absent", tt.description)
+			}
+		})
+	}
+}
