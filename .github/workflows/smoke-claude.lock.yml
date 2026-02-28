@@ -35,7 +35,7 @@
 #
 # inlined-imports: true
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"44795abbc68aff36a88e78da3acdaacdd1156a7f0abf1600e5a60943fa23edb3"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"3c51aae5273e87f99e7a3b67000326d5e50ceb7676e3adb05d06d00af33d0c58"}
 
 name: "Smoke Claude"
 "on":
@@ -2077,6 +2077,12 @@ jobs:
                   "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_MCP_SERVER_TOKEN",
                   "GITHUB_READ_ONLY": "1",
                   "GITHUB_TOOLSETS": "repos,pull_requests"
+                },
+                "guard-policies": {
+                  "allow-only": {
+                    "min-integrity": "writer",
+                    "repos": "public"
+                  }
                 }
               },
               "playwright": {

@@ -41,6 +41,8 @@ tools:
   agentic-workflows:
   cache-memory: true
   github:
+    repos: public
+    min-integrity: writer
     toolsets: [repos, pull_requests]
   playwright:
   edit:
