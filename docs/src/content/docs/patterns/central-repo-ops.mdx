@@ -10,6 +10,21 @@ CentralRepoOps is a [MultiRepoOps](/gh-aw/patterns/multi-repo-ops/) deployment v
 
 Use this pattern when you need to coordinate rollouts, policy updates, and tracking across tens or hundreds of repositories from a private central location, using cross-repository safe outputs and secure authentication to deliver consistency, control, and auditability.
 
+```mermaid
+graph TB
+    subgraph Central["Central Control Repository"]
+        O["Orchestrator Workflow\n(selects & prioritizes repos)"]
+        W["Worker Workflow\n(runs per target repo)"]
+    end
+
+    O -->|"dispatch-workflow\n(max: N)"| W
+
+    W -->|"checkout + create PR/issue"| R1["Target Repo 1"]
+    W -->|"checkout + create PR/issue"| R2["Target Repo 2"]
+    W -->|"checkout + create PR/issue"| R3["Target Repo 3"]
+    W -->|"checkout + create PR/issue"| RN["Target Repo N"]
+```
+
 Below are the key benefits of this pattern for enterprise use cases:
 
 - **Consistency at scale** - Same rollout logic and policy gates across all repositories

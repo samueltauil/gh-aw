@@ -86,10 +86,11 @@ See [Using a GitHub App for Authentication](/gh-aw/reference/auth/#using-a-githu
 
 Central repository aggregates issues from multiple component repositories:
 
-```text
-Component Repo A ──┐
-Component Repo B ──┼──> Central Tracker
-Component Repo C ──┘
+```mermaid
+graph LR
+    A["Component Repo A"] --> D["Central Tracker"]
+    B["Component Repo B"] --> D
+    C["Component Repo C"] --> D
 ```
 
 Each component workflow creates tracking issues in the central repo using `target-repo` parameter.
@@ -98,10 +99,11 @@ Each component workflow creates tracking issues in the central repo using `targe
 
 Main repository propagates changes to downstream repositories:
 
-```text
-Main Repo ──> Sub-Repo Alpha
-          ──> Sub-Repo Beta
-          ──> Sub-Repo Gamma
+```mermaid
+graph LR
+    M["Main Repo"] --> A["Sub-Repo Alpha"]
+    M --> B["Sub-Repo Beta"]
+    M --> G["Sub-Repo Gamma"]
 ```
 
 Use cross-repo pull requests with `create-pull-request` safe output and `target-repo` configuration.
@@ -110,10 +112,11 @@ Use cross-repo pull requests with `create-pull-request` safe output and `target-
 
 Single workflow creates issues across multiple repositories:
 
-```text
-Control Workflow ──> Repo 1 (tracking issue)
-                 ──> Repo 2 (tracking issue)
-                 ──> Repo 3 (tracking issue)
+```mermaid
+graph LR
+    CW["Control Workflow"] --> R1["Repo 1\n(tracking issue)"]
+    CW --> R2["Repo 2\n(tracking issue)"]
+    CW --> R3["Repo 3\n(tracking issue)"]
 ```
 
 Agent generates multiple tracking issues with different `target-repo` values (up to configured `max` limit).
