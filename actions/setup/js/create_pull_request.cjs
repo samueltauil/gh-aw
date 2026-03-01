@@ -18,6 +18,7 @@ const { parseBoolTemplatable } = require("./templatable.cjs");
 const { generateFooterWithMessages } = require("./messages_footer.cjs");
 const { normalizeBranchName } = require("./normalize_branch_name.cjs");
 const { pushExtraEmptyCommit } = require("./extra_empty_commit.cjs");
+const { createCheckoutManager } = require("./dynamic_checkout.cjs");
 const { getBaseBranch } = require("./get_base_branch.cjs");
 const { createAuthenticatedGitHubClient } = require("./handler_auth.cjs");
 
@@ -176,6 +177,18 @@ async function main(config = {}) {
   // Track how many items we've processed for max limit
   let processedCount = 0;
 
+  // Create checkout manager for multi-repo support
+  // Token is available via GITHUB_TOKEN environment variable (set by the workflow job)
+  const checkoutToken = process.env.GITHUB_TOKEN;
+  const checkoutManager = checkoutToken ? createCheckoutManager(checkoutToken, { defaultBaseBranch: configBaseBranch }) : null;
+
+  // Log multi-repo support status
+  if (allowedRepos.size > 0 && checkoutManager) {
+    core.info(`Multi-repo support enabled: can switch between repos in allowed-repos list`);
+  } else if (allowedRepos.size > 0 && !checkoutManager) {
+    core.warning(`Multi-repo support disabled: GITHUB_TOKEN not available for dynamic checkout`);
+  }
+
   /**
    * Message handler function that processes a single create_pull_request message
    * @param {Object} message - The create_pull_request message to process
@@ -211,11 +224,11 @@ async function main(config = {}) {
 
       if (!isTemporaryId(normalized)) {
         core.warning(
-          `Skipping create_pull_request: Invalid temporary_id format: '${pullRequestItem.temporary_id}'. Temporary IDs must be in format 'aw_' followed by 3 to 8 alphanumeric characters (A-Za-z0-9). Example: 'aw_abc' or 'aw_Test123'`
+          `Skipping create_pull_request: Invalid temporary_id format: '${pullRequestItem.temporary_id}'. Temporary IDs must be in format 'aw_' followed by 3 to 12 alphanumeric characters (A-Za-z0-9). Example: 'aw_abc' or 'aw_Test123'`
         );
         return {
           success: false,
-          error: `Invalid temporary_id format: '${pullRequestItem.temporary_id}'. Temporary IDs must be in format 'aw_' followed by 3 to 8 alphanumeric characters (A-Za-z0-9). Example: 'aw_abc' or 'aw_Test123'`,
+          error: `Invalid temporary_id format: '${pullRequestItem.temporary_id}'. Temporary IDs must be in format 'aw_' followed by 3 to 12 alphanumeric characters (A-Za-z0-9). Example: 'aw_abc' or 'aw_Test123'`,
         };
       }
 
@@ -239,6 +252,22 @@ async function main(config = {}) {
     }
     const { repo: itemRepo, repoParts } = repoResult;
     core.info(`Target repository: ${itemRepo}`);
+
+    // Multi-repo support: Switch checkout to target repo if different from current
+    // This enables creating PRs in multiple repos from a single workflow run
+    if (checkoutManager && itemRepo) {
+      const switchResult = await checkoutManager.switchTo(itemRepo, { baseBranch: configBaseBranch });
+      if (!switchResult.success) {
+        core.warning(`Failed to switch to repository ${itemRepo}: ${switchResult.error}`);
+        return {
+          success: false,
+          error: `Failed to checkout repository ${itemRepo}: ${switchResult.error}`,
+        };
+      }
+      if (switchResult.switched) {
+        core.info(`Switched checkout to repository: ${itemRepo}`);
+      }
+    }
 
     // Resolve base branch for this target repository
     // Use config value if set, otherwise resolve dynamically for the specific target repo

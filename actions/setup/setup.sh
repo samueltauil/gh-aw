@@ -37,6 +37,10 @@ echo "Safe-output-projects support: ${SAFE_OUTPUT_PROJECTS_ENABLED}"
 create_dir "${DESTINATION}"
 echo "Created directory: ${DESTINATION}"
 
+# Create /tmp/gh-aw directory so it exists before any activation scripts run
+mkdir -p /tmp/gh-aw
+echo "Created /tmp/gh-aw directory"
+
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 JS_SOURCE_DIR="${SCRIPT_DIR}/js"
@@ -226,12 +230,18 @@ SAFE_OUTPUTS_FILES=(
   "error_helpers.cjs"
   "error_codes.cjs"
   "git_helpers.cjs"
+  "find_repo_checkout.cjs"
   "mcp_enhanced_errors.cjs"
   "comment_limit_helpers.cjs"
   "shim.cjs"
   "repo_helpers.cjs"
   "glob_pattern_helpers.cjs"
   "handler_auth.cjs"
+  "missing_messages_helper.cjs"
+  "firewall_blocked_domains.cjs"
+  "missing_info_formatter.cjs"
+  "sanitize_content_core.cjs"
+  "markdown_code_region_balancer.cjs"
 )
 
 SAFE_OUTPUTS_COUNT=0
