@@ -332,3 +332,139 @@ This workflow tests that agentic-workflows uses the correct container in dev mod
 		})
 	}
 }
+
+// TestReleaseModeGhAwInstallStepWithCustomSteps verifies that in release mode, when the
+// agentic-workflows tool is enabled and user-defined steps are present, a "Install gh-aw CLI"
+// step is generated before user steps to make ./gh-aw available.
+func TestReleaseModeGhAwInstallStepWithCustomSteps(t *testing.T) {
+	tests := []struct {
+		name               string
+		actionMode         ActionMode
+		hasCustomSteps     bool
+		expectInstallStep  bool
+		expectDevBuildStep bool
+	}{
+		{
+			name:               "release mode with custom steps generates install step",
+			actionMode:         ActionModeRelease,
+			hasCustomSteps:     true,
+			expectInstallStep:  true,
+			expectDevBuildStep: false,
+		},
+		{
+			name:               "release mode without custom steps does not generate install step",
+			actionMode:         ActionModeRelease,
+			hasCustomSteps:     false,
+			expectInstallStep:  false,
+			expectDevBuildStep: false,
+		},
+		{
+			name:               "dev mode with custom steps generates dev build steps not install step",
+			actionMode:         ActionModeDev,
+			hasCustomSteps:     true,
+			expectInstallStep:  false,
+			expectDevBuildStep: true,
+		},
+		{
+			name:               "script mode with custom steps generates install step",
+			actionMode:         ActionModeScript,
+			hasCustomSteps:     true,
+			expectInstallStep:  true,
+			expectDevBuildStep: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stepsSection := ""
+			if tt.hasCustomSteps {
+				stepsSection = `steps:
+  - name: Download logs
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    run: |
+      ./gh-aw logs --start-date -30d -o /tmp/logs --json > /tmp/logs/summary.json
+`
+			}
+
+			workflowContent := `---
+on:
+  workflow_dispatch:
+strict: false
+permissions:
+  contents: read
+  actions: read
+engine: copilot
+tools:
+  agentic-workflows:
+` + stepsSection + `---
+
+# Test Release Mode Install Step
+
+This workflow tests the release mode gh-aw install step.
+`
+
+			tmpFile, err := os.CreateTemp("", "test-release-install-*.md")
+			if err != nil {
+				t.Fatalf("Failed to create temp file: %v", err)
+			}
+			defer os.Remove(tmpFile.Name())
+
+			if _, err := tmpFile.WriteString(workflowContent); err != nil {
+				t.Fatalf("Failed to write to temp file: %v", err)
+			}
+			tmpFile.Close()
+
+			compiler := NewCompiler()
+			compiler.SetActionMode(tt.actionMode)
+
+			if err := compiler.CompileWorkflow(tmpFile.Name()); err != nil {
+				t.Fatalf("Failed to compile workflow: %v", err)
+			}
+
+			lockFile := strings.TrimSuffix(tmpFile.Name(), ".md") + ".lock.yml"
+			defer os.Remove(lockFile)
+
+			lockContent, err := os.ReadFile(lockFile)
+			if err != nil {
+				t.Fatalf("Failed to read lock file: %v", err)
+			}
+
+			content := string(lockContent)
+
+			if tt.expectInstallStep {
+				if !strings.Contains(content, "name: Install gh-aw CLI") {
+					t.Error("Expected 'Install gh-aw CLI' step in release mode with custom steps, but not found")
+				}
+				if !strings.Contains(content, "gh extension install github/gh-aw") {
+					t.Error("Expected 'gh extension install github/gh-aw' in install step")
+				}
+				if !strings.Contains(content, "cp \"$GH_AW_BIN\" ./gh-aw") {
+					t.Error("Expected binary copy to ./gh-aw in install step")
+				}
+				// Verify install step appears before user steps
+				installIdx := strings.Index(content, "name: Install gh-aw CLI")
+				userStepIdx := strings.Index(content, "name: Download logs")
+				if installIdx < 0 {
+					t.Error("Expected 'Install gh-aw CLI' step in lock file, but not found")
+				} else if userStepIdx > 0 && installIdx > userStepIdx {
+					t.Error("Expected 'Install gh-aw CLI' step to appear before user-defined steps")
+				}
+			} else {
+				if strings.Contains(content, "name: Install gh-aw CLI") {
+					t.Error("Did not expect 'Install gh-aw CLI' step, but found it")
+				}
+			}
+
+			if tt.expectDevBuildStep {
+				if !strings.Contains(content, "name: Build gh-aw CLI") {
+					t.Error("Expected 'Build gh-aw CLI' dev mode step, but not found")
+				}
+			} else {
+				if strings.Contains(content, "name: Build gh-aw CLI") {
+					t.Error("Did not expect 'Build gh-aw CLI' dev mode step, but found it")
+				}
+			}
+		})
+	}
+}

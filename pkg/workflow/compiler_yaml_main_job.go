@@ -40,6 +40,14 @@ func (c *Compiler) generateMainJobSteps(yaml *strings.Builder, data *WorkflowDat
 			} else {
 				compilerYamlLog.Printf("Skipping CLI build steps in dev mode (agentic-workflows tool not enabled)")
 			}
+		} else if data.CustomSteps != "" {
+			// Release/script mode: if agentic-workflows tool is enabled and user-defined steps are present,
+			// install the gh-aw extension early so ./gh-aw is available for user-defined steps.
+			// This mirrors what dev mode does (building from source), but installs the published binary instead.
+			if _, hasAgenticWorkflows := data.Tools["agentic-workflows"]; hasAgenticWorkflows {
+				compilerYamlLog.Printf("Generating release mode gh-aw install step for user-defined steps (agentic-workflows tool enabled)")
+				c.generateReleaseModeGhAwInstallStep(yaml)
+			}
 		}
 	}
 
@@ -693,4 +701,31 @@ func (c *Compiler) generateDevModeCLIBuildSteps(yaml *strings.Builder) {
 	yaml.WriteString("          tags: localhost/gh-aw:dev\n")
 	yaml.WriteString("          build-args: |\n")
 	yaml.WriteString("            BINARY=dist/gh-aw-linux-amd64\n")
+}
+
+// generateReleaseModeGhAwInstallStep generates a step to install the gh-aw extension
+// and copy the binary to ./gh-aw in the workspace. This enables user-defined steps to
+// execute ./gh-aw directly, mirroring the dev mode behavior where the binary is built
+// from source. The agentic-workflows container MCP server also requires the binary to be
+// copied to /opt/gh-aw later in the MCP setup step.
+func (c *Compiler) generateReleaseModeGhAwInstallStep(yaml *strings.Builder) {
+	compilerYamlLog.Print("Generating release mode gh-aw install step for user-defined steps")
+
+	yaml.WriteString("      - name: Install gh-aw CLI\n")
+	yaml.WriteString("        run: |\n")
+	yaml.WriteString("          if gh extension list | grep -q \"github/gh-aw\"; then\n")
+	yaml.WriteString("            gh extension upgrade gh-aw || true\n")
+	yaml.WriteString("          else\n")
+	yaml.WriteString("            gh extension install github/gh-aw\n")
+	yaml.WriteString("          fi\n")
+	yaml.WriteString("          # Copy binary to workspace root for direct execution in user-defined steps\n")
+	yaml.WriteString("          GH_AW_BIN=$(which gh-aw 2>/dev/null || find ~/.local/share/gh/extensions/gh-aw -name 'gh-aw' -type f 2>/dev/null | head -1)\n")
+	yaml.WriteString("          if [ -n \"$GH_AW_BIN\" ] && [ -f \"$GH_AW_BIN\" ]; then\n")
+	yaml.WriteString("            cp \"$GH_AW_BIN\" ./gh-aw\n")
+	yaml.WriteString("            chmod +x ./gh-aw\n")
+	yaml.WriteString("            echo \"✓ gh-aw CLI available at ./gh-aw\"\n")
+	yaml.WriteString("          else\n")
+	yaml.WriteString("            echo \"::error::Failed to find gh-aw binary after installation\"\n")
+	yaml.WriteString("            exit 1\n")
+	yaml.WriteString("          fi\n")
 }
