@@ -734,8 +734,8 @@
       "properties": {
         "project": {
           "type": "string",
-          "pattern": "^(https?://github\\.com/(orgs|users)/[^/]+/projects/\\d+|[A-Za-z0-9][A-Za-z0-9\\-]*/\\d+|#?aw_[A-Za-z0-9]{3,8})$",
-          "description": "Full GitHub project URL (e.g., 'https://github.com/orgs/myorg/projects/42'), owner/number shorthand (e.g., 'myorg/42'), or a temporary project ID from a recent create_project call (e.g., '#aw_abc1', 'aw_Test123')."
+          "pattern": "^(https?://github\\.com/(orgs|users)/[^/]+/projects/\\d+|#?aw_[A-Za-z0-9]{3,8})$",
+          "description": "Full GitHub project URL (e.g., 'https://github.com/orgs/myorg/projects/42') or a temporary project ID from a recent create_project call (e.g., '#aw_abc1', 'aw_Test123'). Use 'owner' and 'number' fields instead to reference a project by org/user and number."
         },
         "operation": {
           "type": "string",
@@ -828,6 +828,14 @@
         "create_if_missing": {
           "type": "boolean",
           "description": "Whether to create the project if it doesn't exist. Defaults to false. Requires projects:write permission when true."
+        },
+        "owner": {
+          "type": "string",
+          "description": "Login name of the organization or user that owns the project (e.g., 'myorg' or 'username'). Required together with 'number' when not using a full project URL."
+        },
+        "number": {
+          "type": "integer",
+          "description": "Project number (e.g., 42 for github.com/orgs/myorg/projects/42). Required together with 'owner' when not using a full project URL."
         }
       },
       "additionalProperties": false
@@ -903,8 +911,8 @@
       "properties": {
         "project": {
           "type": "string",
-          "pattern": "^(https?://github\\.com/(orgs|users)/[^/]+/projects/\\d+|[A-Za-z0-9][A-Za-z0-9\\-]*/\\d+|#?aw_[A-Za-z0-9]{3,8})$",
-          "description": "Full GitHub project URL (e.g., 'https://github.com/orgs/myorg/projects/42'), owner/number shorthand (e.g., 'myorg/42'), or a temporary project ID from a recent create_project call (e.g., '#aw_abc1', 'aw_Test123')."
+          "pattern": "^(https?://github\\.com/(orgs|users)/[^/]+/projects/\\d+|#?aw_[A-Za-z0-9]{3,8})$",
+          "description": "Full GitHub project URL (e.g., 'https://github.com/orgs/myorg/projects/42') or a temporary project ID from a recent create_project call (e.g., '#aw_abc1', 'aw_Test123'). Use 'owner' and 'number' fields instead to reference a project by org/user and number."
         },
         "status": {
           "type": "string",
@@ -924,6 +932,14 @@
         "body": {
           "type": "string",
           "description": "Status update body in markdown format describing progress, findings, trends, and next steps. Should provide stakeholders with clear understanding of project state."
+        },
+        "owner": {
+          "type": "string",
+          "description": "Login name of the organization or user that owns the project (e.g., 'myorg' or 'username'). Required together with 'number' when not using a full project URL."
+        },
+        "number": {
+          "type": "integer",
+          "description": "Project number (e.g., 42 for github.com/orgs/myorg/projects/42). Required together with 'owner' when not using a full project URL."
         }
       },
       "additionalProperties": false

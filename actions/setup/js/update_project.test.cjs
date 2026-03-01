@@ -325,10 +325,6 @@ describe("parseProjectInput", () => {
     expect(parseProjectInput("https://github.com/orgs/acme/projects/42")).toBe("42");
   });
 
-  it("extracts the project number from owner/number format", () => {
-    expect(parseProjectInput("myorg/42")).toBe("42");
-  });
-
   it("rejects a bare numeric string", () => {
     expect(() => parseProjectInput("17")).toThrow(/Invalid project reference/);
   });
@@ -1676,8 +1672,8 @@ describe("updateProject", () => {
     const result = await messageHandler(messageWithoutProject, new Map());
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain('Missing required "project" field');
-    expect(mockCore.error).toHaveBeenCalledWith(expect.stringContaining("Missing required"));
+    expect(result.error).toContain("Missing project reference");
+    expect(mockCore.error).toHaveBeenCalledWith(expect.stringContaining("Missing project reference"));
   });
 
   it("should reject update_project message with empty project field", async () => {
@@ -1696,8 +1692,8 @@ describe("updateProject", () => {
     const result = await messageHandler(messageWithEmptyProject, new Map());
 
     expect(result.success).toBe(false);
-    expect(result.error).toContain('Missing required "project" field');
-    expect(mockCore.error).toHaveBeenCalledWith(expect.stringContaining("Missing required"));
+    expect(result.error).toContain("Missing project reference");
+    expect(mockCore.error).toHaveBeenCalledWith(expect.stringContaining("Missing project reference"));
   });
 
   it("should fail when project field is missing even if GH_AW_PROJECT_URL is set", async () => {
@@ -1717,8 +1713,8 @@ describe("updateProject", () => {
     const result = await messageHandler(messageWithoutProject, new Map());
 
     expect(result.success).toBe(false);
-    expect(result.error).toBe('Missing required "project" field. The agent must explicitly include the project URL in the output message.');
-    expect(mockCore.error).toHaveBeenCalledWith(expect.stringContaining('Missing required "project" field'));
+    expect(result.error).toContain("Missing project reference");
+    expect(mockCore.error).toHaveBeenCalledWith(expect.stringContaining("Missing project reference"));
 
     // Cleanup
     delete process.env.GH_AW_PROJECT_URL;
@@ -1950,14 +1946,15 @@ describe("update_project owner/number format", () => {
     messageHandler = await updateProjectHandlerFactory({ max: 100 });
   });
 
-  it("resolves an org project via owner/number shorthand", async () => {
+  it("resolves an org project via separate owner and number params", async () => {
     const projectUrl = "https://github.com/orgs/myorg/projects/42";
 
     queueResponses([repoResponse(), viewerResponse(), orgProjectV2Response(projectUrl, 42, "project-owner-num", "myorg"), issueResponse("issue-id-1"), existingItemResponse("issue-id-1", "item-owner-num"), fieldsResponse([])]);
 
     const message = {
       type: "update_project",
-      project: "myorg/42",
+      owner: "myorg",
+      number: 42,
       content_type: "issue",
       content_number: 1,
     };
@@ -1968,7 +1965,7 @@ describe("update_project owner/number format", () => {
     expect(mockCore.info).toHaveBeenCalledWith(expect.stringContaining("scope=auto"));
   });
 
-  it("resolves a user project via owner/number shorthand (org fails, user succeeds)", async () => {
+  it("resolves a user project via separate owner and number params (org fails, user succeeds)", async () => {
     const projectUrl = "https://github.com/users/myuser/projects/5";
 
     mockGithub.graphql
@@ -1983,7 +1980,8 @@ describe("update_project owner/number format", () => {
 
     const message = {
       type: "update_project",
-      project: "myuser/5",
+      owner: "myuser",
+      number: 5,
       content_type: "issue",
       content_number: 2,
     };
@@ -2003,7 +2001,8 @@ describe("update_project owner/number format", () => {
 
     const message = {
       type: "update_project",
-      project: "unknownowner/99",
+      owner: "unknownowner",
+      number: 99,
       content_type: "issue",
       content_number: 1,
     };

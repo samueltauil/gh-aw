@@ -509,7 +509,7 @@ Manages GitHub Projects boards. Requires PAT or GitHub App token ([`GH_AW_PROJEC
 ```yaml wrap
 safe-outputs:
   update-project:
-    project: "myorg/42"              # required: target project (owner/number shorthand)
+    project: "https://github.com/orgs/myorg/projects/42"  # or use separate owner/number params
     max: 20                          # max operations (default: 10)
     github-token: ${{ secrets.GH_AW_PROJECT_GITHUB_TOKEN }}
     views:                           # optional: auto-create views
@@ -524,7 +524,7 @@ safe-outputs:
 
 **Configuration options:**
 
-- `project` (required in configuration): Default project reference shown in examples. Note: Agent output messages **must** explicitly include the `project` field - the configured value is for documentation purposes only.
+- `project` (required in configuration): Default project reference shown in examples. Note: Agent output messages **must** explicitly include either the `project` field or separate `owner` and `number` fields - the configured value is for documentation purposes only.
 - `max`: Maximum number of operations per run (default: 10).
 - `github-token`: Custom token with Projects permissions (required for Projects v2 access).
 - `views`: Optional array of project views to create automatically.
@@ -532,15 +532,15 @@ safe-outputs:
 
 #### Project Reference Formats
 
-The `project` field in agent output messages accepts three formats:
+Agent output messages can reference a project in three ways:
 
 | Format | Example | Description |
 |--------|---------|-------------|
-| `owner/number` | `myorg/42` | Shorthand: org or user login, slash, project number. Org is tried first, then user. |
-| Full URL | `https://github.com/orgs/myorg/projects/42` | Explicit full GitHub Projects URL. |
+| Separate params | `"owner": "myorg", "number": 42` | Separate `owner` and `number` fields. Org is tried first, then user. |
+| Full URL | `https://github.com/orgs/myorg/projects/42` | Explicit full GitHub Projects URL via `project` field. |
 | Temporary ID | `aw_abc1` or `#aw_abc1` | Reference a project created earlier in the same run via `create_project`. |
 
-Unlike issues or pull requests, projects are scoped to an **org or user** (not a repository). The `owner/number` shorthand provides all necessary information without requiring a full URL.
+Unlike issues or pull requests, projects are scoped to an **org or user** (not a repository). Use the separate `owner` and `number` fields for a concise reference without a full URL.
 
 #### Supported Field Types
 
@@ -619,14 +619,14 @@ Creates status updates on GitHub Projects boards to communicate progress, findin
 ```yaml wrap
 safe-outputs:
   create-project-status-update:
-    project: "myorg/73"              # required: target project (owner/number shorthand)
+    project: "https://github.com/orgs/myorg/projects/73"  # or use separate owner/number params
     max: 1                           # max updates per run (default: 1)
     github-token: ${{ secrets.GH_AW_PROJECT_GITHUB_TOKEN }}
 ```
 
 **Configuration options:**
 
-- `project` (required in configuration): Default project reference shown in examples. Note: Agent output messages **must** explicitly include the `project` field - the configured value is for documentation purposes only.
+- `project` (required in configuration): Default project reference shown in examples. Note: Agent output messages **must** explicitly include either the `project` field or separate `owner` and `number` fields - the configured value is for documentation purposes only.
 - `max`: Maximum number of status updates per run (default: 1).
 - `github-token`: Custom token with Projects permissions (required for Projects v2 access).
 - Often used by scheduled workflows and orchestrator workflows to post run summaries.
@@ -635,7 +635,9 @@ safe-outputs:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `project` | string | Project reference: `owner/number` (e.g., `myorg/73`), full URL, or temporary ID from `create_project`. **Required** in every agent output message. |
+| `project` | string | Full GitHub project URL or temporary ID from `create_project`. Use `owner` + `number` fields instead for a concise reference. |
+| `owner` | string | Login name of the org or user that owns the project (e.g., `myorg`). Required together with `number` when not using a full URL. |
+| `number` | integer | Project number (e.g., `73`). Required together with `owner` when not using a full URL. |
 | `body` | Markdown | Status update content with summary, findings, and next steps |
 
 #### Optional Fields
@@ -650,7 +652,8 @@ safe-outputs:
 
 ```yaml
 create-project-status-update:
-  project: "myorg/73"
+  owner: "myorg"
+  number: 73
   status: "ON_TRACK"
   start_date: "2026-01-06"
   target_date: "2026-01-31"

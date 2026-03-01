@@ -53,15 +53,13 @@ function logGraphQLError(error, operation) {
 }
 
 /**
- * Parse project URL or owner/number format into components.
- * When the owner/number format is used, `scope` is set to `null` and is resolved
- * automatically during project lookup (org tried first, then user).
- * @param {unknown} projectUrl - Project URL or owner/number (e.g., 'myorg/42')
- * @returns {{ scope: string | null, ownerLogin: string, projectNumber: string }} Project info
+ * Parse project URL into components.
+ * @param {unknown} projectUrl - Full GitHub project URL
+ * @returns {{ scope: string, ownerLogin: string, projectNumber: string }} Project info
  */
 function parseProjectUrl(projectUrl) {
   if (!projectUrl || typeof projectUrl !== "string") {
-    throw new Error(`${ERR_VALIDATION}: Invalid project input: expected string, got ${typeof projectUrl}. The "project" field is required and must be a full GitHub project URL or owner/number format.`);
+    throw new Error(`${ERR_VALIDATION}: Invalid project input: expected string, got ${typeof projectUrl}. The "project" field is required and must be a full GitHub project URL.`);
   }
 
   const urlMatch = projectUrl.match(/^https?:\/\/[^/]+\/(users|orgs)\/([^/]+)\/projects\/(\d+)/);
@@ -69,17 +67,33 @@ function parseProjectUrl(projectUrl) {
     return { scope: urlMatch[1], ownerLogin: urlMatch[2], projectNumber: urlMatch[3] };
   }
 
-  const ownerNumberMatch = projectUrl.match(/^([A-Za-z0-9][A-Za-z0-9\-]*)\/(\d+)$/);
-  if (ownerNumberMatch) {
-    return { scope: null, ownerLogin: ownerNumberMatch[1], projectNumber: ownerNumberMatch[2] };
-  }
+  throw new Error(`${ERR_VALIDATION}: Invalid project reference: "${projectUrl}". The "project" field must be a full GitHub project URL (e.g., https://github.com/orgs/myorg/projects/123).`);
+}
 
-  throw new Error(`${ERR_VALIDATION}: Invalid project reference: "${projectUrl}". The "project" field must be a full GitHub project URL (e.g., https://github.com/orgs/myorg/projects/123) or owner/number format (e.g., myorg/42).`);
+/**
+ * Resolve project info from an output message.
+ * Accepts either a full GitHub project URL in `output.project`, or separate
+ * `output.owner` (string) and `output.number` (number) fields.
+ * When owner/number are used, scope is resolved automatically at lookup time.
+ * @param {any} output - Output message with project reference
+ * @returns {{ scope: string | null, ownerLogin: string, projectNumber: string }} Project info
+ */
+function resolveProjectInfo(output) {
+  if (output.owner != null && output.number != null) {
+    if (typeof output.owner !== "string") throw new Error(`${ERR_VALIDATION}: The "owner" field must be a string, got ${typeof output.owner}.`);
+    if (typeof output.number !== "number" && typeof output.number !== "string") throw new Error(`${ERR_VALIDATION}: The "number" field must be a number or string, got ${typeof output.number}.`);
+    const ownerLogin = output.owner.trim();
+    const projectNumber = String(output.number).trim();
+    if (!ownerLogin) throw new Error(`${ERR_VALIDATION}: The "owner" field must be a non-empty string.`);
+    if (!/^\d+$/.test(projectNumber)) throw new Error(`${ERR_VALIDATION}: The "number" field must be a positive integer.`);
+    return { scope: null, ownerLogin, projectNumber };
+  }
+  return parseProjectUrl(output.project);
 }
 
 /**
  * List accessible Projects v2 for org or user
- * @param {{ scope: string, ownerLogin: string, projectNumber: string }} projectInfo - Project info
+ * @param {{ scope: string | null, ownerLogin: string, projectNumber: string }} projectInfo - Project info
  * @returns {Promise<{ nodes: Array<{ id: string, number: number, title: string, closed?: boolean, url: string }>, totalCount?: number, diagnostics: { rawNodesCount: number, nullNodesCount: number, rawEdgesCount: number, nullEdgeNodesCount: number } }>} List result
  */
 async function listAccessibleProjectsV2(projectInfo) {
@@ -347,32 +361,35 @@ async function main(config = {}, githubClient = null) {
     const output = message;
 
     // Validate that project field is explicitly provided in the message
-    // The project field can be a full URL, owner/number format, or a temporary project ID
+    // The project field can be a full URL or a temporary project ID, or separate owner/number fields
     let effectiveProjectUrl = output.project;
+    const hasOwnerNumber = output.owner != null && output.number != null;
 
-    if (!effectiveProjectUrl || typeof effectiveProjectUrl !== "string" || effectiveProjectUrl.trim() === "") {
-      core.error('Missing required "project" field. The agent must explicitly include the project in the output message: {"type": "create_project_status_update", "project": "myorg/42", "body": "..."}');
+    if ((!effectiveProjectUrl || typeof effectiveProjectUrl !== "string" || effectiveProjectUrl.trim() === "") && !hasOwnerNumber) {
+      core.error('Missing project reference. The agent must include either a "project" URL or separate "owner" and "number" fields: {"type": "create_project_status_update", "owner": "myorg", "number": 42, "body": "..."}');
       return {
         success: false,
-        error: "Missing required field: project",
+        error: "Missing required field: project (or owner + number)",
       };
     }
 
-    // Resolve temporary project ID if present
-    const projectStr = effectiveProjectUrl.trim();
-    const projectWithoutHash = projectStr.startsWith("#") ? projectStr.substring(1) : projectStr;
-    if (isTemporaryId(projectWithoutHash)) {
-      const normalizedId = normalizeTemporaryId(projectWithoutHash);
-      const resolved = temporaryIdMap instanceof Map ? temporaryIdMap.get(normalizedId) : undefined;
-      if (resolved && typeof resolved === "object" && "projectUrl" in resolved && resolved.projectUrl) {
-        core.info(`Resolved temporary project ID ${projectStr} to ${resolved.projectUrl}`);
-        effectiveProjectUrl = resolved.projectUrl;
-      } else {
-        core.error(`Temporary project ID '${projectStr}' not found. Ensure create_project was called before create_project_status_update.`);
-        return {
-          success: false,
-          error: `Temporary project ID '${projectStr}' not found`,
-        };
+    // Resolve temporary project ID if present in project field
+    if (effectiveProjectUrl && typeof effectiveProjectUrl === "string") {
+      const projectStr = effectiveProjectUrl.trim();
+      const projectWithoutHash = projectStr.startsWith("#") ? projectStr.substring(1) : projectStr;
+      if (isTemporaryId(projectWithoutHash)) {
+        const normalizedId = normalizeTemporaryId(projectWithoutHash);
+        const resolved = temporaryIdMap instanceof Map ? temporaryIdMap.get(normalizedId) : undefined;
+        if (resolved && typeof resolved === "object" && "projectUrl" in resolved && resolved.projectUrl) {
+          core.info(`Resolved temporary project ID ${projectStr} to ${resolved.projectUrl}`);
+          effectiveProjectUrl = resolved.projectUrl;
+        } else {
+          core.error(`Temporary project ID '${projectStr}' not found. Ensure create_project was called before create_project_status_update.`);
+          return {
+            success: false,
+            error: `Temporary project ID '${projectStr}' not found`,
+          };
+        }
       }
     }
 
@@ -385,14 +402,16 @@ async function main(config = {}, githubClient = null) {
     }
 
     try {
-      core.info(`Creating status update for project: ${effectiveProjectUrl}`);
+      const effectiveOutput = effectiveProjectUrl ? { ...output, project: effectiveProjectUrl } : output;
+      const projectRef = effectiveProjectUrl || `${output.owner}/${output.number}`;
+      core.info(`Creating status update for project: ${projectRef}`);
 
-      // Parse project URL and resolve project ID
-      const projectInfo = parseProjectUrl(effectiveProjectUrl);
+      // Resolve project info from either URL or owner/number params
+      const projectInfo = resolveProjectInfo(effectiveOutput);
       const projectNumberInt = parseInt(projectInfo.projectNumber, 10);
 
       if (!Number.isFinite(projectNumberInt)) {
-        throw new Error(`${ERR_PARSE}: Invalid project number parsed from URL: ${projectInfo.projectNumber}`);
+        throw new Error(`${ERR_PARSE}: Invalid project number: ${projectInfo.projectNumber}`);
       }
 
       const project = await resolveProjectV2(projectInfo, projectNumberInt);
@@ -411,7 +430,7 @@ async function main(config = {}, githubClient = null) {
 
       // If in staged mode, preview without executing
       if (isStaged) {
-        logStagedPreviewInfo(`Would create status update for project ${effectiveProjectUrl}`);
+        logStagedPreviewInfo(`Would create status update for project ${projectRef}`);
         return {
           success: true,
           staged: true,

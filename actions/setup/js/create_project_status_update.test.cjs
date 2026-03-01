@@ -97,7 +97,7 @@ describe("create_project_status_update", () => {
     );
 
     expect(result.success).toBe(false);
-    expect(result.error).toBe("Missing required field: project");
+    expect(result.error).toContain("Missing required field: project");
     expect(mockCore.error).toHaveBeenCalled();
   });
 
@@ -542,8 +542,8 @@ describe("create_project_status_update", () => {
     const result = await handler(messageWithoutProject, {});
 
     expect(result.success).toBe(false);
-    expect(result.error).toBe("Missing required field: project");
-    expect(mockCore.error).toHaveBeenCalledWith(expect.stringContaining('Missing required "project" field'));
+    expect(result.error).toContain("Missing required field: project");
+    expect(mockCore.error).toHaveBeenCalledWith(expect.stringContaining("Missing project reference"));
 
     // Cleanup
     delete process.env.GH_AW_PROJECT_URL;
@@ -607,7 +607,7 @@ describe("create_project_status_update owner/number format", () => {
     vi.clearAllMocks();
   });
 
-  it("resolves an org project via owner/number shorthand", async () => {
+  it("resolves an org project via separate owner and number params", async () => {
     const projectUrl = "https://github.com/orgs/myorg/projects/42";
 
     mockGithub.graphql
@@ -625,7 +625,7 @@ describe("create_project_status_update owner/number format", () => {
         createProjectV2StatusUpdate: {
           statusUpdate: {
             id: "PVTSU_ownernum1",
-            body: "Status via owner/number",
+            body: "Status via separate owner/number",
             bodyHTML: "<p>Status</p>",
             startDate: "2025-01-01",
             targetDate: "2025-12-31",
@@ -636,13 +636,13 @@ describe("create_project_status_update owner/number format", () => {
       });
 
     const handler = await main({ max: 10 });
-    const result = await handler({ project: "myorg/42", body: "Status via owner/number" }, new Map());
+    const result = await handler({ owner: "myorg", number: 42, body: "Status via separate owner/number" }, new Map());
 
     expect(result.success).toBe(true);
     expect(result.status_update_id).toBe("PVTSU_ownernum1");
   });
 
-  it("resolves a user project via owner/number shorthand (org fails, user succeeds)", async () => {
+  it("resolves a user project via separate owner and number params (org fails, user succeeds)", async () => {
     const projectUrl = "https://github.com/users/myuser/projects/5";
 
     mockGithub.graphql
@@ -662,7 +662,7 @@ describe("create_project_status_update owner/number format", () => {
         createProjectV2StatusUpdate: {
           statusUpdate: {
             id: "PVTSU_usernum1",
-            body: "Status via user owner/number",
+            body: "Status via separate user owner/number",
             bodyHTML: "<p>Status</p>",
             startDate: "2025-01-01",
             targetDate: "2025-12-31",
@@ -673,7 +673,7 @@ describe("create_project_status_update owner/number format", () => {
       });
 
     const handler = await main({ max: 10 });
-    const result = await handler({ project: "myuser/5", body: "Status via user owner/number" }, new Map());
+    const result = await handler({ owner: "myuser", number: 5, body: "Status via separate user owner/number" }, new Map());
 
     expect(result.success).toBe(true);
     expect(result.status_update_id).toBe("PVTSU_usernum1");
