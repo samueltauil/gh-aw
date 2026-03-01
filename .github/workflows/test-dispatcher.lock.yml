@@ -312,6 +312,8 @@ jobs:
         run: |
           mkdir -p /opt/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/safeoutputs
+          mkdir -p /tmp/gh-aw/mcp-logs
+          sudo chown -R runner:runner /tmp/gh-aw/mcp-logs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
           cat > /opt/gh-aw/safeoutputs/config.json << 'GH_AW_SAFE_OUTPUTS_CONFIG_EOF'
           {"dispatch_workflow":{"max":1,"workflow_files":{"test-workflow":".lock.yml"},"workflows":["test-workflow"]},"missing_data":{},"missing_tool":{},"noop":{"max":1}}

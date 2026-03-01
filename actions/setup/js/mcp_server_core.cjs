@@ -82,8 +82,10 @@ function initLogFile(server) {
     const timestamp = new Date().toISOString();
     fs.writeFileSync(server.logFilePath, `# ${server.serverInfo.name} MCP Server Log\n# Started: ${timestamp}\n# Version: ${server.serverInfo.version}\n\n`);
     server.logFileInitialized = true;
-  } catch {
-    // Silently ignore errors - logging to stderr will still work
+  } catch (err) {
+    // Surface log-file initialization errors so operators can diagnose permission
+    // issues (e.g. EACCES when /tmp/gh-aw/mcp-logs is owned by a different UID).
+    process.stderr.write(`[mcp_server_core] Warning: Failed to initialize log file at ${server.logFilePath}: ${err && err.message ? err.message : String(err)}\n`);
   }
 }
 
@@ -108,8 +110,12 @@ function createDebugFunction(server) {
       if (server.logFileInitialized) {
         try {
           fs.appendFileSync(server.logFilePath, formattedMsg);
-        } catch {
-          // Silently ignore file write errors - stderr logging still works
+        } catch (writeErr) {
+          // Surface file write errors so operators can diagnose permission issues
+          // (e.g. EACCES when /tmp/gh-aw/mcp-logs is owned by a different UID).
+          process.stderr.write(`[mcp_server_core] Warning: Failed to write to log file ${server.logFilePath}: ${writeErr && writeErr.message ? writeErr.message : String(writeErr)}\n`);
+          // Disable log file writes to avoid repeated error messages.
+          server.logDir = undefined;
         }
       }
     }

@@ -404,6 +404,8 @@ jobs:
         run: |
           mkdir -p /opt/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/safeoutputs
+          mkdir -p /tmp/gh-aw/mcp-logs
+          sudo chown -R runner:runner /tmp/gh-aw/mcp-logs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
           cat > /opt/gh-aw/safeoutputs/config.json << 'GH_AW_SAFE_OUTPUTS_CONFIG_EOF'
           {"add_comment":{"max":2},"add_labels":{"allowed":["smoke-codex"],"max":3},"create_issue":{"expires":2,"max":1},"hide_comment":{"max":5},"missing_data":{},"missing_tool":{},"noop":{"max":1},"remove_labels":{"allowed":["smoke"],"max":3},"unassign_from_user":{"allowed":["githubactionagent"],"max":1}}
@@ -999,6 +1001,8 @@ jobs:
         run: |
           set -eo pipefail
           mkdir -p /tmp/gh-aw/mcp-config
+          mkdir -p /tmp/gh-aw/mcp-logs
+          sudo chown -R runner:runner /tmp/gh-aw/mcp-logs
           mkdir -p /tmp/gh-aw/mcp-logs/playwright
           
           # Export gateway environment variables for MCP config and gateway script

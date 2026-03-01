@@ -27,9 +27,14 @@ if [ -z "$MCP_GATEWAY_DOCKER_COMMAND" ]; then
   exit 1
 fi
 
-# Create logs directory for gateway
+# Create logs and config directories for gateway and repair ownership for the
+# current user. A prior workflow run may have left these directories owned by
+# root (e.g. from container execution), which would cause EACCES errors. This
+# mirrors the pattern used by install_copilot_cli.sh for /home/runner/.copilot.
 mkdir -p /tmp/gh-aw/mcp-logs
+sudo chown -R runner:runner /tmp/gh-aw/mcp-logs
 mkdir -p /tmp/gh-aw/mcp-config
+sudo chown -R runner:runner /tmp/gh-aw/mcp-config
 
 # Validate container syntax first (before accessing files)
 # Container should be a valid docker command starting with "docker run"

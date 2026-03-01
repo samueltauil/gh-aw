@@ -197,6 +197,11 @@ func (c *Compiler) generateMCPSetup(yaml *strings.Builder, tools map[string]any,
 		yaml.WriteString("        run: |\n")
 		yaml.WriteString("          mkdir -p /opt/gh-aw/safeoutputs\n")
 		yaml.WriteString("          mkdir -p /tmp/gh-aw/safeoutputs\n")
+		// Repair ownership on the mcp-logs parent before creating the subdirectory.
+		// A prior workflow run may have left it owned by root (container execution),
+		// which would cause EACCES when trying to create subdirectories.
+		yaml.WriteString("          mkdir -p /tmp/gh-aw/mcp-logs\n")
+		yaml.WriteString("          sudo chown -R runner:runner /tmp/gh-aw/mcp-logs\n")
 		yaml.WriteString("          mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs\n")
 
 		// Write the safe-outputs configuration to config.json
@@ -467,8 +472,12 @@ func (c *Compiler) generateMCPSetup(yaml *strings.Builder, tools map[string]any,
 	yaml.WriteString("          set -eo pipefail\n")
 	yaml.WriteString("          mkdir -p /tmp/gh-aw/mcp-config\n")
 	// Pre-create the playwright output directory on the host so the Docker container
-	// can write screenshots to the mounted volume path without ENOENT errors
+	// can write screenshots to the mounted volume path without ENOENT errors.
+	// Repair ownership first so a root-owned mcp-logs directory from a prior run
+	// does not cause EACCES when creating the subdirectory.
 	if slices.Contains(mcpTools, "playwright") {
+		yaml.WriteString("          mkdir -p /tmp/gh-aw/mcp-logs\n")
+		yaml.WriteString("          sudo chown -R runner:runner /tmp/gh-aw/mcp-logs\n")
 		yaml.WriteString("          mkdir -p /tmp/gh-aw/mcp-logs/playwright\n")
 	}
 
