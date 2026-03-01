@@ -6,6 +6,7 @@ const { getErrorMessage } = require("./error_helpers.cjs");
 const { sanitizeContent } = require("./sanitize_content.cjs");
 const { logStagedPreviewInfo } = require("./staged_preview.cjs");
 const { ERR_CONFIG, ERR_NOT_FOUND, ERR_PARSE, ERR_VALIDATION } = require("./error_codes.cjs");
+const { isTemporaryId, normalizeTemporaryId } = require("./temporary_id.cjs");
 
 /**
  * @typedef {import('./types/handler-factory').HandlerFactoryFunction} HandlerFactoryFunction
@@ -52,25 +53,28 @@ function logGraphQLError(error, operation) {
 }
 
 /**
- * Parse project URL into components
- * @param {unknown} projectUrl - Project URL
- * @returns {{ scope: string, ownerLogin: string, projectNumber: string }} Project info
+ * Parse project URL or owner/number format into components.
+ * When the owner/number format is used, `scope` is set to `null` and is resolved
+ * automatically during project lookup (org tried first, then user).
+ * @param {unknown} projectUrl - Project URL or owner/number (e.g., 'myorg/42')
+ * @returns {{ scope: string | null, ownerLogin: string, projectNumber: string }} Project info
  */
 function parseProjectUrl(projectUrl) {
   if (!projectUrl || typeof projectUrl !== "string") {
-    throw new Error(`${ERR_VALIDATION}: Invalid project input: expected string, got ${typeof projectUrl}. The "project" field is required and must be a full GitHub project URL.`);
+    throw new Error(`${ERR_VALIDATION}: Invalid project input: expected string, got ${typeof projectUrl}. The "project" field is required and must be a full GitHub project URL or owner/number format.`);
   }
 
-  const match = projectUrl.match(/^https:\/\/[^/]+\/(users|orgs)\/([^/]+)\/projects\/(\d+)/);
-  if (!match) {
-    throw new Error(`${ERR_VALIDATION}: Invalid project URL: "${projectUrl}". The "project" field must be a full GitHub project URL (e.g., https://github.com/orgs/myorg/projects/123).`);
+  const urlMatch = projectUrl.match(/^https?:\/\/[^/]+\/(users|orgs)\/([^/]+)\/projects\/(\d+)/);
+  if (urlMatch) {
+    return { scope: urlMatch[1], ownerLogin: urlMatch[2], projectNumber: urlMatch[3] };
   }
 
-  return {
-    scope: match[1],
-    ownerLogin: match[2],
-    projectNumber: match[3],
-  };
+  const ownerNumberMatch = projectUrl.match(/^([A-Za-z0-9][A-Za-z0-9\-]*)\/(\d+)$/);
+  if (ownerNumberMatch) {
+    return { scope: null, ownerLogin: ownerNumberMatch[1], projectNumber: ownerNumberMatch[2] };
+  }
+
+  throw new Error(`${ERR_VALIDATION}: Invalid project reference: "${projectUrl}". The "project" field must be a full GitHub project URL (e.g., https://github.com/orgs/myorg/projects/123) or owner/number format (e.g., myorg/42).`);
 }
 
 /**
@@ -158,12 +162,28 @@ function summarizeEmptyProjectsV2List(list) {
 }
 
 /**
- * Resolve a project by number
- * @param {{ scope: string, ownerLogin: string, projectNumber: string }} projectInfo - Project info
+ * Resolve a project by number.
+ * When `projectInfo.scope` is `null` (owner/number format), org is tried first then user.
+ * On success the resolved scope is written back to `projectInfo.scope`.
+ * @param {{ scope: string | null, ownerLogin: string, projectNumber: string }} projectInfo - Project info (mutated to set scope when null)
  * @param {number} projectNumberInt - Project number
  * @returns {Promise<{ id: string, number: number, title: string, url: string }>} Project details
  */
 async function resolveProjectV2(projectInfo, projectNumberInt) {
+  // When scope is unknown (owner/number format), try org then user.
+  if (!projectInfo.scope) {
+    for (const tryScope of ["orgs", "users"]) {
+      try {
+        const project = await resolveProjectV2({ ...projectInfo, scope: tryScope }, projectNumberInt);
+        projectInfo.scope = tryScope; // propagate resolved scope to the caller's object
+        return project;
+      } catch (e) {
+        core.warning(`Project #${projectNumberInt} not found as ${tryScope === "orgs" ? "org" : "user"} "${projectInfo.ownerLogin}"; trying ${tryScope === "orgs" ? "user" : "org"}.`);
+      }
+    }
+    throw new Error(`${ERR_NOT_FOUND}: Project #${projectNumberInt} not found for owner "${projectInfo.ownerLogin}" (tried as org and user). Verify the owner login and project number are correct.`);
+  }
+
   try {
     const query =
       projectInfo.scope === "orgs"
@@ -327,15 +347,33 @@ async function main(config = {}, githubClient = null) {
     const output = message;
 
     // Validate that project field is explicitly provided in the message
-    // The project field is required in agent output messages and must be a full GitHub project URL
-    const effectiveProjectUrl = output.project;
+    // The project field can be a full URL, owner/number format, or a temporary project ID
+    let effectiveProjectUrl = output.project;
 
     if (!effectiveProjectUrl || typeof effectiveProjectUrl !== "string" || effectiveProjectUrl.trim() === "") {
-      core.error('Missing required "project" field. The agent must explicitly include the project URL in the output message: {"type": "create_project_status_update", "project": "https://github.com/orgs/myorg/projects/42", "body": "..."}');
+      core.error('Missing required "project" field. The agent must explicitly include the project in the output message: {"type": "create_project_status_update", "project": "myorg/42", "body": "..."}');
       return {
         success: false,
         error: "Missing required field: project",
       };
+    }
+
+    // Resolve temporary project ID if present
+    const projectStr = effectiveProjectUrl.trim();
+    const projectWithoutHash = projectStr.startsWith("#") ? projectStr.substring(1) : projectStr;
+    if (isTemporaryId(projectWithoutHash)) {
+      const normalizedId = normalizeTemporaryId(projectWithoutHash);
+      const resolved = temporaryIdMap instanceof Map ? temporaryIdMap.get(normalizedId) : undefined;
+      if (resolved && typeof resolved === "object" && "projectUrl" in resolved && resolved.projectUrl) {
+        core.info(`Resolved temporary project ID ${projectStr} to ${resolved.projectUrl}`);
+        effectiveProjectUrl = resolved.projectUrl;
+      } else {
+        core.error(`Temporary project ID '${projectStr}' not found. Ensure create_project was called before create_project_status_update.`);
+        return {
+          success: false,
+          error: `Temporary project ID '${projectStr}' not found`,
+        };
+      }
     }
 
     if (!output.body) {

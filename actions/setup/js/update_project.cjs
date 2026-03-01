@@ -71,43 +71,51 @@ function logGraphQLError(error, operation) {
   if (error.data) core.info(`Response data: ${JSON.stringify(error.data, null, 2)}`);
 }
 /**
- * Parse project number from URL
- * @param {unknown} projectUrl - Project URL
+ * Parse project number from URL or owner/number format
+ * @param {unknown} projectUrl - Project URL or owner/number (e.g., 'myorg/42')
  * @returns {string} Project number
  */
 function parseProjectInput(projectUrl) {
   if (!projectUrl || typeof projectUrl !== "string") {
-    throw new Error(`${ERR_VALIDATION}: Invalid project input: expected string, got ${typeof projectUrl}. The "project" field is required and must be a full GitHub project URL.`);
+    throw new Error(`${ERR_VALIDATION}: Invalid project input: expected string, got ${typeof projectUrl}. The "project" field is required and must be a full GitHub project URL or owner/number format.`);
   }
 
-  const urlMatch = projectUrl.match(/^https:\/\/[^/]+\/(?:users|orgs)\/[^/]+\/projects\/(\d+)/);
-  if (!urlMatch) {
-    throw new Error(`${ERR_VALIDATION}: Invalid project URL: "${projectUrl}". The "project" field must be a full GitHub project URL (e.g., https://github.com/orgs/myorg/projects/123).`);
+  const urlMatch = projectUrl.match(/^https?:\/\/[^/]+\/(?:users|orgs)\/[^/]+\/projects\/(\d+)/);
+  if (urlMatch) {
+    return urlMatch[1];
   }
 
-  return urlMatch[1];
+  const ownerNumberMatch = projectUrl.match(/^[A-Za-z0-9][A-Za-z0-9\-]*\/(\d+)$/);
+  if (ownerNumberMatch) {
+    return ownerNumberMatch[1];
+  }
+
+  throw new Error(`${ERR_VALIDATION}: Invalid project reference: "${projectUrl}". The "project" field must be a full GitHub project URL (e.g., https://github.com/orgs/myorg/projects/123) or owner/number format (e.g., myorg/42).`);
 }
 
 /**
- * Parse project URL into components
- * @param {unknown} projectUrl - Project URL
- * @returns {{ scope: string, ownerLogin: string, projectNumber: string }} Project info
+ * Parse project URL or owner/number format into components.
+ * When the owner/number format is used, `scope` is set to `null` and is resolved
+ * automatically during project lookup (org tried first, then user).
+ * @param {unknown} projectUrl - Project URL or owner/number (e.g., 'myorg/42')
+ * @returns {{ scope: string | null, ownerLogin: string, projectNumber: string }} Project info
  */
 function parseProjectUrl(projectUrl) {
   if (!projectUrl || typeof projectUrl !== "string") {
-    throw new Error(`${ERR_VALIDATION}: Invalid project input: expected string, got ${typeof projectUrl}. The "project" field is required and must be a full GitHub project URL.`);
+    throw new Error(`${ERR_VALIDATION}: Invalid project input: expected string, got ${typeof projectUrl}. The "project" field is required and must be a full GitHub project URL or owner/number format.`);
   }
 
-  const match = projectUrl.match(/^https:\/\/[^/]+\/(users|orgs)\/([^/]+)\/projects\/(\d+)/);
-  if (!match) {
-    throw new Error(`${ERR_VALIDATION}: Invalid project URL: "${projectUrl}". The "project" field must be a full GitHub project URL (e.g., https://github.com/orgs/myorg/projects/123).`);
+  const urlMatch = projectUrl.match(/^https?:\/\/[^/]+\/(users|orgs)\/([^/]+)\/projects\/(\d+)/);
+  if (urlMatch) {
+    return { scope: urlMatch[1], ownerLogin: urlMatch[2], projectNumber: urlMatch[3] };
   }
 
-  return {
-    scope: match[1],
-    ownerLogin: match[2],
-    projectNumber: match[3],
-  };
+  const ownerNumberMatch = projectUrl.match(/^([A-Za-z0-9][A-Za-z0-9\-]*)\/(\d+)$/);
+  if (ownerNumberMatch) {
+    return { scope: null, ownerLogin: ownerNumberMatch[1], projectNumber: ownerNumberMatch[2] };
+  }
+
+  throw new Error(`${ERR_VALIDATION}: Invalid project reference: "${projectUrl}". The "project" field must be a full GitHub project URL (e.g., https://github.com/orgs/myorg/projects/123) or owner/number format (e.g., myorg/42).`);
 }
 /**
  * List accessible Projects v2 for org or user
@@ -211,13 +219,29 @@ function summarizeEmptyProjectsV2List(list) {
   return `(none${diag})`;
 }
 /**
- * Resolve a project by number
- * @param {{ scope: string, ownerLogin: string, projectNumber: string }} projectInfo - Project info
+ * Resolve a project by number.
+ * When `projectInfo.scope` is `null` (owner/number format), org is tried first then user.
+ * On success the resolved scope is written back to `projectInfo.scope`.
+ * @param {{ scope: string | null, ownerLogin: string, projectNumber: string }} projectInfo - Project info (mutated to set scope when null)
  * @param {number} projectNumberInt - Project number
  * @param {Object} github - GitHub client (Octokit instance) to use for GraphQL queries
  * @returns {Promise<{ id: string, number: number, title: string, url: string }>} Project details
  */
 async function resolveProjectV2(projectInfo, projectNumberInt, github) {
+  // When scope is unknown (owner/number format), try org then user.
+  if (!projectInfo.scope) {
+    for (const tryScope of ["orgs", "users"]) {
+      try {
+        const project = await resolveProjectV2({ ...projectInfo, scope: tryScope }, projectNumberInt, github);
+        projectInfo.scope = tryScope; // propagate resolved scope to the caller's object
+        return project;
+      } catch (e) {
+        core.warning(`Project #${projectNumberInt} not found as ${tryScope === "orgs" ? "org" : "user"} "${projectInfo.ownerLogin}"; trying ${tryScope === "orgs" ? "user" : "org"}.`);
+      }
+    }
+    throw new Error(`${ERR_NOT_FOUND}: Project #${projectNumberInt} not found for owner "${projectInfo.ownerLogin}" (tried as org and user). Verify the owner login and project number are correct.`);
+  }
+
   try {
     const query =
       projectInfo.scope === "orgs"
@@ -250,6 +274,9 @@ async function resolveProjectV2(projectInfo, projectNumberInt, github) {
     const project = projectInfo.scope === "orgs" ? direct?.organization?.projectV2 : direct?.user?.projectV2;
 
     if (project) return project;
+
+    // If the query succeeded but returned null, fall back to list search
+    core.warning(`Direct projectV2(number) query returned null; falling back to projectsV2 list search`);
   } catch (error) {
     core.warning(`Direct projectV2(number) query failed; falling back to projectsV2 list search: ${getErrorMessage(error)}`);
   }
@@ -476,7 +503,7 @@ async function updateProject(output, temporaryIdMap = new Map(), githubClient = 
     }
 
     let projectId;
-    core.info(`[2/4] Resolving project from URL (scope=${projectInfo.scope}, login=${projectInfo.ownerLogin}, number=${projectNumberFromUrl})...`);
+    core.info(`[2/4] Resolving project (scope=${projectInfo.scope ?? "auto"}, login=${projectInfo.ownerLogin}, number=${projectNumberFromUrl})...`);
     let resolvedProjectNumber = projectNumberFromUrl;
 
     try {

@@ -734,8 +734,8 @@
       "properties": {
         "project": {
           "type": "string",
-          "pattern": "^(https://github\\.com/(orgs|users)/[^/]+/projects/\\d+|#?aw_[A-Za-z0-9]{3,8})$",
-          "description": "Full GitHub project URL (e.g., 'https://github.com/orgs/myorg/projects/42' or 'https://github.com/users/username/projects/5'), or a temporary project ID from a recent create_project call (e.g., '#aw_abc1', 'aw_Test123'). Project names or numbers alone are NOT accepted."
+          "pattern": "^(https?://github\\.com/(orgs|users)/[^/]+/projects/\\d+|[A-Za-z0-9][A-Za-z0-9\\-]*/\\d+|#?aw_[A-Za-z0-9]{3,8})$",
+          "description": "Full GitHub project URL (e.g., 'https://github.com/orgs/myorg/projects/42'), owner/number shorthand (e.g., 'myorg/42'), or a temporary project ID from a recent create_project call (e.g., '#aw_abc1', 'aw_Test123')."
         },
         "operation": {
           "type": "string",
@@ -903,8 +903,8 @@
       "properties": {
         "project": {
           "type": "string",
-          "pattern": "^https://github\\\\.com/(orgs|users)/[^/]+/projects/\\\\d+$",
-          "description": "Full GitHub project URL (e.g., 'https://github.com/orgs/myorg/projects/42' or 'https://github.com/users/username/projects/5'). Project names or numbers alone are NOT accepted."
+          "pattern": "^(https?://github\\.com/(orgs|users)/[^/]+/projects/\\d+|[A-Za-z0-9][A-Za-z0-9\\-]*/\\d+|#?aw_[A-Za-z0-9]{3,8})$",
+          "description": "Full GitHub project URL (e.g., 'https://github.com/orgs/myorg/projects/42'), owner/number shorthand (e.g., 'myorg/42'), or a temporary project ID from a recent create_project call (e.g., '#aw_abc1', 'aw_Test123')."
         },
         "status": {
           "type": "string",

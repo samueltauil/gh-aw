@@ -325,12 +325,16 @@ describe("parseProjectInput", () => {
     expect(parseProjectInput("https://github.com/orgs/acme/projects/42")).toBe("42");
   });
 
-  it("rejects a numeric string", () => {
-    expect(() => parseProjectInput("17")).toThrow(/full GitHub project URL/);
+  it("extracts the project number from owner/number format", () => {
+    expect(parseProjectInput("myorg/42")).toBe("42");
+  });
+
+  it("rejects a bare numeric string", () => {
+    expect(() => parseProjectInput("17")).toThrow(/Invalid project reference/);
   });
 
   it("rejects a project name", () => {
-    expect(() => parseProjectInput("Engineering Roadmap")).toThrow(/full GitHub project URL/);
+    expect(() => parseProjectInput("Engineering Roadmap")).toThrow(/Invalid project reference/);
   });
 
   it("throws when the project input is missing", () => {
@@ -1167,7 +1171,7 @@ describe("updateProject", () => {
 
   it("rejects non-URL project identifier", async () => {
     const output = { type: "update_project", project: "Engineering Roadmap" };
-    await expect(updateProject(output)).rejects.toThrow(/full GitHub project URL/);
+    await expect(updateProject(output)).rejects.toThrow(/Invalid project reference/);
   });
 
   it("correctly identifies DATE fields and uses date format (not singleSelectOptionId)", async () => {
@@ -1935,5 +1939,78 @@ describe("update_project temporary project ID resolution", () => {
     expect(result.success).toBe(true);
     // Should NOT log temporary ID resolution
     expect(mockCore.info).not.toHaveBeenCalledWith(expect.stringContaining("Resolved temporary project ID"));
+  });
+});
+
+describe("update_project owner/number format", () => {
+  let messageHandler;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    messageHandler = await updateProjectHandlerFactory({ max: 100 });
+  });
+
+  it("resolves an org project via owner/number shorthand", async () => {
+    const projectUrl = "https://github.com/orgs/myorg/projects/42";
+
+    queueResponses([repoResponse(), viewerResponse(), orgProjectV2Response(projectUrl, 42, "project-owner-num", "myorg"), issueResponse("issue-id-1"), existingItemResponse("issue-id-1", "item-owner-num"), fieldsResponse([])]);
+
+    const message = {
+      type: "update_project",
+      project: "myorg/42",
+      content_type: "issue",
+      content_number: 1,
+    };
+
+    const result = await messageHandler(message, {}, new Map());
+
+    expect(result.success).toBe(true);
+    expect(mockCore.info).toHaveBeenCalledWith(expect.stringContaining("scope=auto"));
+  });
+
+  it("resolves a user project via owner/number shorthand (org fails, user succeeds)", async () => {
+    const projectUrl = "https://github.com/users/myuser/projects/5";
+
+    mockGithub.graphql
+      .mockResolvedValueOnce(repoResponse()) // repo info
+      .mockResolvedValueOnce(viewerResponse()) // viewer
+      .mockRejectedValueOnce(new Error("Could not resolve to an Organization")) // org direct query fails
+      .mockRejectedValueOnce(new Error("org list also failed")) // org fallback list fails → auto-scope moves to user
+      .mockResolvedValueOnce(userProjectV2Response(projectUrl, 5, "project-user-owner-num", "myuser")) // user query succeeds
+      .mockResolvedValueOnce(issueResponse("issue-id-2")) // issue lookup
+      .mockResolvedValueOnce(existingItemResponse("issue-id-2", "item-user-owner-num")) // existing item
+      .mockResolvedValueOnce(fieldsResponse([])); // fields
+
+    const message = {
+      type: "update_project",
+      project: "myuser/5",
+      content_type: "issue",
+      content_number: 2,
+    };
+
+    const result = await messageHandler(message, {}, new Map());
+
+    expect(result.success).toBe(true);
+    expect(mockCore.warning).toHaveBeenCalledWith(expect.stringContaining('not found as org "myuser"'));
+  });
+
+  it("fails gracefully when owner/number project not found as org or user", async () => {
+    mockGithub.graphql
+      .mockResolvedValueOnce(repoResponse()) // repo info
+      .mockResolvedValueOnce(viewerResponse()) // viewer
+      .mockRejectedValueOnce(new Error("org not found")) // org query fails
+      .mockRejectedValueOnce(new Error("user not found")); // user query fails
+
+    const message = {
+      type: "update_project",
+      project: "unknownowner/99",
+      content_type: "issue",
+      content_number: 1,
+    };
+
+    const result = await messageHandler(message, {}, new Map());
+
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/not found for owner.*unknownowner/);
   });
 });
