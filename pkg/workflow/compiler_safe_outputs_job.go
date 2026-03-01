@@ -120,6 +120,8 @@ func (c *Compiler) buildConsolidatedSafeOutputsJob(data *WorkflowData, mainJobNa
 		data.SafeOutputs.CloseDiscussions != nil ||
 		data.SafeOutputs.AddLabels != nil ||
 		data.SafeOutputs.RemoveLabels != nil ||
+		data.SafeOutputs.AddIssueType != nil ||
+		data.SafeOutputs.RemoveIssueType != nil ||
 		data.SafeOutputs.UpdateIssues != nil ||
 		data.SafeOutputs.UpdateDiscussions != nil ||
 		data.SafeOutputs.LinkSubIssue != nil ||

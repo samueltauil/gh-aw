@@ -185,6 +185,26 @@ interface RemoveLabelsItem extends BaseSafeOutputItem {
 }
 
 /**
+ * JSONL item for setting the issue type on an issue
+ */
+interface AddIssueTypeItem extends BaseSafeOutputItem {
+  type: "add_issue_type";
+  /** Name of the issue type to set (e.g., 'Bug', 'Feature') */
+  issue_type: string;
+  /** Target issue; otherwise resolved from current context */
+  item_number?: number | string;
+}
+
+/**
+ * JSONL item for removing the issue type from an issue
+ */
+interface RemoveIssueTypeItem extends BaseSafeOutputItem {
+  type: "remove_issue_type";
+  /** Target issue; otherwise resolved from current context */
+  item_number?: number | string;
+}
+
+/**
  * JSONL item for adding reviewers to a pull request
  */
 interface AddReviewerItem extends BaseSafeOutputItem {
@@ -393,6 +413,8 @@ type SafeOutputItem =
   | CreateCodeScanningAlertItem
   | AddLabelsItem
   | RemoveLabelsItem
+  | AddIssueTypeItem
+  | RemoveIssueTypeItem
   | AddReviewerItem
   | UpdateIssueItem
   | UpdatePullRequestItem
@@ -434,6 +456,8 @@ export {
   CreateCodeScanningAlertItem,
   AddLabelsItem,
   RemoveLabelsItem,
+  AddIssueTypeItem,
+  RemoveIssueTypeItem,
   AddReviewerItem,
   UpdateIssueItem,
   UpdatePullRequestItem,

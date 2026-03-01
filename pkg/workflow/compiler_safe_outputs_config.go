@@ -256,6 +256,41 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
+	"add_issue_type": func(cfg *SafeOutputsConfig) map[string]any {
+		if cfg.AddIssueType == nil {
+			return nil
+		}
+		c := cfg.AddIssueType
+		config := newHandlerConfigBuilder().
+			AddTemplatableInt("max", c.Max).
+			AddStringSlice("allowed", c.Allowed).
+			AddIfNotEmpty("target", c.Target).
+			AddIfNotEmpty("target-repo", c.TargetRepoSlug).
+			AddStringSlice("allowed_repos", c.AllowedRepos).
+			AddIfNotEmpty("github-token", c.GitHubToken).
+			Build()
+		// If config is empty, it means add_issue_type was explicitly configured with no options
+		// (null config), which means "allow any issue type". Return non-nil empty map to
+		// indicate the handler is enabled.
+		if len(config) == 0 {
+			// Return empty map so handler is included in config
+			return make(map[string]any)
+		}
+		return config
+	},
+	"remove_issue_type": func(cfg *SafeOutputsConfig) map[string]any {
+		if cfg.RemoveIssueType == nil {
+			return nil
+		}
+		c := cfg.RemoveIssueType
+		return newHandlerConfigBuilder().
+			AddTemplatableInt("max", c.Max).
+			AddIfNotEmpty("target", c.Target).
+			AddIfNotEmpty("target-repo", c.TargetRepoSlug).
+			AddStringSlice("allowed_repos", c.AllowedRepos).
+			AddIfNotEmpty("github-token", c.GitHubToken).
+			Build()
+	},
 	"add_reviewer": func(cfg *SafeOutputsConfig) map[string]any {
 		if cfg.AddReviewer == nil {
 			return nil

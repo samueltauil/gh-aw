@@ -33,6 +33,8 @@ const HANDLER_MAP = {
   close_discussion: "./close_discussion.cjs",
   add_labels: "./add_labels.cjs",
   remove_labels: "./remove_labels.cjs",
+  add_issue_type: "./add_issue_type.cjs",
+  remove_issue_type: "./remove_issue_type.cjs",
   update_issue: "./update_issue.cjs",
   update_discussion: "./update_discussion.cjs",
   link_sub_issue: "./link_sub_issue.cjs",

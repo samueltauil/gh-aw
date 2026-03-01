@@ -325,6 +325,21 @@ var ValidationConfig = map[string]TypeValidationConfig{
 			"repo":        {Type: "string", MaxLength: 256}, // Optional: target repository in format "owner/repo"
 		},
 	},
+	"add_issue_type": {
+		DefaultMax: 5,
+		Fields: map[string]FieldValidation{
+			"issue_type":  {Required: true, Type: "string", Sanitize: true, MaxLength: 128},
+			"item_number": {IssueOrPRNumber: true},
+			"repo":        {Type: "string", MaxLength: 256}, // Optional: target repository in format "owner/repo"
+		},
+	},
+	"remove_issue_type": {
+		DefaultMax: 5,
+		Fields: map[string]FieldValidation{
+			"item_number": {IssueOrPRNumber: true},
+			"repo":        {Type: "string", MaxLength: 256}, // Optional: target repository in format "owner/repo"
+		},
+	},
 	"unassign_from_user": {
 		DefaultMax: 1,
 		Fields: map[string]FieldValidation{

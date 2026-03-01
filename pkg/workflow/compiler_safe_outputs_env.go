@@ -66,6 +66,28 @@ func (c *Compiler) addAllSafeOutputConfigEnvVars(steps *[]string, data *Workflow
 		// All remove_labels configuration (allowed, max, target) is now in handler config JSON
 	}
 
+	// Add Issue Type - all config now in handler config JSON
+	if data.SafeOutputs.AddIssueType != nil {
+		cfg := data.SafeOutputs.AddIssueType
+		// Add staged flag if needed (but not if target-repo is specified or we're in trial mode)
+		if !c.trialMode && data.SafeOutputs.Staged && !stagedFlagAdded && cfg.TargetRepoSlug == "" {
+			*steps = append(*steps, "          GH_AW_SAFE_OUTPUTS_STAGED: \"true\"\n")
+			stagedFlagAdded = true
+		}
+		// All add_issue_type configuration (allowed, max, target) is now in handler config JSON
+	}
+
+	// Remove Issue Type - all config now in handler config JSON
+	if data.SafeOutputs.RemoveIssueType != nil {
+		cfg := data.SafeOutputs.RemoveIssueType
+		// Add staged flag if needed (but not if target-repo is specified or we're in trial mode)
+		if !c.trialMode && data.SafeOutputs.Staged && !stagedFlagAdded && cfg.TargetRepoSlug == "" {
+			*steps = append(*steps, "          GH_AW_SAFE_OUTPUTS_STAGED: \"true\"\n")
+			stagedFlagAdded = true
+		}
+		// All remove_issue_type configuration (max, target) is now in handler config JSON
+	}
+
 	// Update Issue env vars
 	if data.SafeOutputs.UpdateIssues != nil {
 		cfg := data.SafeOutputs.UpdateIssues

@@ -209,6 +209,18 @@ func (c *Compiler) extractSafeOutputsConfig(frontmatter map[string]any) *SafeOut
 				config.RemoveLabels = removeLabelsConfig
 			}
 
+			// Parse add-issue-type configuration
+			addIssueTypeConfig := c.parseAddIssueTypeConfig(outputMap)
+			if addIssueTypeConfig != nil {
+				config.AddIssueType = addIssueTypeConfig
+			}
+
+			// Parse remove-issue-type configuration
+			removeIssueTypeConfig := c.parseRemoveIssueTypeConfig(outputMap)
+			if removeIssueTypeConfig != nil {
+				config.RemoveIssueType = removeIssueTypeConfig
+			}
+
 			// Parse add-reviewer configuration
 			addReviewerConfig := c.parseAddReviewerConfig(outputMap)
 			if addReviewerConfig != nil {

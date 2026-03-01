@@ -456,6 +456,8 @@ type SafeOutputsConfig struct {
 	AutofixCodeScanningAlert        *AutofixCodeScanningAlertConfig        `yaml:"autofix-code-scanning-alert,omitempty"`
 	AddLabels                       *AddLabelsConfig                       `yaml:"add-labels,omitempty"`
 	RemoveLabels                    *RemoveLabelsConfig                    `yaml:"remove-labels,omitempty"`
+	AddIssueType                    *AddIssueTypeConfig                    `yaml:"add-issue-type,omitempty"`
+	RemoveIssueType                 *RemoveIssueTypeConfig                 `yaml:"remove-issue-type,omitempty"`
 	AddReviewer                     *AddReviewerConfig                     `yaml:"add-reviewer,omitempty"`
 	AssignMilestone                 *AssignMilestoneConfig                 `yaml:"assign-milestone,omitempty"`
 	AssignToAgent                   *AssignToAgentConfig                   `yaml:"assign-to-agent,omitempty"`

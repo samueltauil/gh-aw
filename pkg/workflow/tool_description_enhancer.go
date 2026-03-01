@@ -221,6 +221,29 @@ func enhanceToolDescription(toolName, baseDescription string, safeOutputs *SafeO
 			}
 		}
 
+	case "add_issue_type":
+		if config := safeOutputs.AddIssueType; config != nil {
+			if templatableIntValue(config.Max) > 0 {
+				constraints = append(constraints, fmt.Sprintf("Maximum %d issue type(s) can be set.", templatableIntValue(config.Max)))
+			}
+			if len(config.Allowed) > 0 {
+				constraints = append(constraints, fmt.Sprintf("Only these issue types are allowed: %v.", config.Allowed))
+			}
+			if config.Target != "" {
+				constraints = append(constraints, fmt.Sprintf("Target: %s.", config.Target))
+			}
+		}
+
+	case "remove_issue_type":
+		if config := safeOutputs.RemoveIssueType; config != nil {
+			if templatableIntValue(config.Max) > 0 {
+				constraints = append(constraints, fmt.Sprintf("Maximum %d issue type(s) can be removed.", templatableIntValue(config.Max)))
+			}
+			if config.Target != "" {
+				constraints = append(constraints, fmt.Sprintf("Target: %s.", config.Target))
+			}
+		}
+
 	case "add_reviewer":
 		if config := safeOutputs.AddReviewer; config != nil {
 			if templatableIntValue(config.Max) > 0 {

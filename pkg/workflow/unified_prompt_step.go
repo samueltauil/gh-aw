@@ -666,6 +666,12 @@ func buildSafeOutputsSections(safeOutputs *SafeOutputsConfig) []PromptSection {
 	if safeOutputs.RemoveLabels != nil {
 		tools = append(tools, "remove_labels")
 	}
+	if safeOutputs.AddIssueType != nil {
+		tools = append(tools, "add_issue_type")
+	}
+	if safeOutputs.RemoveIssueType != nil {
+		tools = append(tools, "remove_issue_type")
+	}
 	if safeOutputs.AddReviewer != nil {
 		tools = append(tools, "add_reviewer")
 	}

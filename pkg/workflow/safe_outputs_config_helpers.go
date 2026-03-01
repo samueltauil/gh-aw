@@ -33,6 +33,8 @@ var safeOutputFieldMapping = map[string]string{
 	"CreateCodeScanningAlerts":        "create_code_scanning_alert",
 	"AddLabels":                       "add_labels",
 	"RemoveLabels":                    "remove_labels",
+	"AddIssueType":                    "add_issue_type",
+	"RemoveIssueType":                 "remove_issue_type",
 	"AddReviewer":                     "add_reviewer",
 	"AssignMilestone":                 "assign_milestone",
 	"AssignToAgent":                   "assign_to_agent",

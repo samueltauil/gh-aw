@@ -291,6 +291,26 @@ func generateSafeOutputsConfig(data *WorkflowData) string {
 				data.SafeOutputs.RemoveLabels.Allowed,
 			)
 		}
+		if data.SafeOutputs.AddIssueType != nil {
+			additionalFields := make(map[string]any)
+			if len(data.SafeOutputs.AddIssueType.Allowed) > 0 {
+				additionalFields["allowed"] = data.SafeOutputs.AddIssueType.Allowed
+			}
+			safeOutputsConfig["add_issue_type"] = generateTargetConfigWithRepos(
+				data.SafeOutputs.AddIssueType.SafeOutputTargetConfig,
+				data.SafeOutputs.AddIssueType.Max,
+				3, // default max
+				additionalFields,
+			)
+		}
+		if data.SafeOutputs.RemoveIssueType != nil {
+			safeOutputsConfig["remove_issue_type"] = generateTargetConfigWithRepos(
+				data.SafeOutputs.RemoveIssueType.SafeOutputTargetConfig,
+				data.SafeOutputs.RemoveIssueType.Max,
+				3, // default max
+				nil,
+			)
+		}
 		if data.SafeOutputs.AddReviewer != nil {
 			safeOutputsConfig["add_reviewer"] = generateMaxWithReviewersConfig(
 				data.SafeOutputs.AddReviewer.Max,

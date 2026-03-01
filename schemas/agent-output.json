@@ -31,6 +31,8 @@
         { "$ref": "#/$defs/AddCommentOutput" },
         { "$ref": "#/$defs/CreatePullRequestOutput" },
         { "$ref": "#/$defs/AddLabelsOutput" },
+        { "$ref": "#/$defs/AddIssueTypeOutput" },
+        { "$ref": "#/$defs/RemoveIssueTypeOutput" },
         { "$ref": "#/$defs/AddReviewerOutput" },
         { "$ref": "#/$defs/UpdateIssueOutput" },
         { "$ref": "#/$defs/UpdatePullRequestOutput" },
@@ -155,6 +157,43 @@
         }
       },
       "required": ["type", "labels"],
+      "additionalProperties": false
+    },
+    "AddIssueTypeOutput": {
+      "title": "Add Issue Type Output",
+      "description": "Output for setting the issue type on a GitHub issue",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "add_issue_type"
+        },
+        "issue_type": {
+          "type": "string",
+          "description": "Name of the issue type to set (e.g., 'Bug', 'Feature')",
+          "minLength": 1
+        },
+        "item_number": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }],
+          "description": "Issue number to set the type on (optional - uses triggering issue if not provided)"
+        }
+      },
+      "required": ["type", "issue_type"],
+      "additionalProperties": false
+    },
+    "RemoveIssueTypeOutput": {
+      "title": "Remove Issue Type Output",
+      "description": "Output for removing the issue type from a GitHub issue",
+      "type": "object",
+      "properties": {
+        "type": {
+          "const": "remove_issue_type"
+        },
+        "item_number": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }],
+          "description": "Issue number to remove the type from (optional - uses triggering issue if not provided)"
+        }
+      },
+      "required": ["type"],
       "additionalProperties": false
     },
     "AddReviewerOutput": {

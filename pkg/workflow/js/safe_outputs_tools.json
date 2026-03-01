@@ -463,6 +463,47 @@
     }
   },
   {
+    "name": "add_issue_type",
+    "description": "Set the issue type on a GitHub issue for categorization. Issue types must already be configured in the organization. Use this to classify issues (e.g., 'Bug', 'Feature', 'Task').",
+    "inputSchema": {
+      "type": "object",
+      "required": [
+        "issue_type"
+      ],
+      "properties": {
+        "issue_type": {
+          "type": "string",
+          "description": "Name of the issue type to set (e.g., 'Bug', 'Feature', 'Task'). Must match an existing issue type in the organization."
+        },
+        "item_number": {
+          "type": [
+            "number",
+            "string"
+          ],
+          "description": "Issue number to set the type on. This is the numeric ID from the GitHub URL (e.g., 456 in github.com/owner/repo/issues/456). If omitted, sets the type on the issue that triggered this workflow."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "remove_issue_type",
+    "description": "Remove the issue type from a GitHub issue. Use this to clear the type classification from an issue.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "item_number": {
+          "type": [
+            "number",
+            "string"
+          ],
+          "description": "Issue number to remove the type from. This is the numeric ID from the GitHub URL (e.g., 456 in github.com/owner/repo/issues/456). If omitted, removes the type from the issue that triggered this workflow."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
     "name": "add_reviewer",
     "description": "Add reviewers to a GitHub pull request. Reviewers receive notifications and can approve or request changes. Use 'copilot' as a reviewer name to request the Copilot PR review bot.",
     "inputSchema": {

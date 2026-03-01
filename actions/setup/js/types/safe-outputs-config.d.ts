@@ -150,6 +150,21 @@ interface AddLabelsConfig extends SafeOutputConfig {
 }
 
 /**
+ * Configuration for setting the issue type on issues
+ */
+interface AddIssueTypeConfig extends SafeOutputConfig {
+  allowed?: string[];
+  target?: string;
+}
+
+/**
+ * Configuration for removing the issue type from issues
+ */
+interface RemoveIssueTypeConfig extends SafeOutputConfig {
+  target?: string;
+}
+
+/**
  * Configuration for adding reviewers to pull requests
  */
 interface AddReviewerConfig extends SafeOutputConfig {
@@ -313,6 +328,8 @@ type SpecificSafeOutputConfig =
   | CreateCodeScanningAlertConfig
   | AutofixCodeScanningAlertConfig
   | AddLabelsConfig
+  | AddIssueTypeConfig
+  | RemoveIssueTypeConfig
   | AddReviewerConfig
   | UpdateIssueConfig
   | UpdatePullRequestConfig
@@ -348,6 +365,8 @@ export {
   CreateCodeScanningAlertConfig,
   AutofixCodeScanningAlertConfig,
   AddLabelsConfig,
+  AddIssueTypeConfig,
+  RemoveIssueTypeConfig,
   AddReviewerConfig,
   UpdateIssueConfig,
   UpdatePullRequestConfig,
