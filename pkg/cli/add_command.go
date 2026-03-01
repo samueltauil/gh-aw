@@ -67,7 +67,6 @@ Examples:
   ` + string(constants.CLIExtensionPrefix) + ` add githubnext/agentics/ci-doctor@v1.0.0         # Add with version
   ` + string(constants.CLIExtensionPrefix) + ` add githubnext/agentics/workflows/ci-doctor.md@main
   ` + string(constants.CLIExtensionPrefix) + ` add https://github.com/githubnext/agentics/blob/main/workflows/ci-doctor.md
-  ` + string(constants.CLIExtensionPrefix) + ` add githubnext/agentics/ci-doctor --create-pull-request --force
   ` + string(constants.CLIExtensionPrefix) + ` add githubnext/agentics/ci-doctor --push         # Add and push changes
   ` + string(constants.CLIExtensionPrefix) + ` add ./my-workflow.md                             # Add local workflow
   ` + string(constants.CLIExtensionPrefix) + ` add ./*.md                                       # Add all local workflows
@@ -83,7 +82,6 @@ Workflow specifications:
 
 The -n flag allows you to specify a custom name for the workflow file (only applies to the first workflow when adding multiple).
 The --dir flag allows you to specify a subdirectory under .github/workflows/ where the workflow will be added.
-The --create-pull-request flag (or --pr) automatically creates a pull request with the workflow changes.
 The --push flag automatically commits and pushes changes after successful workflow addition.
 The --force flag overwrites existing workflow files.
 The --non-interactive flag skips the guided setup and uses traditional behavior.
@@ -99,9 +97,6 @@ Note: To create a new workflow from scratch, use the 'new' command instead.`,
 			workflows := args
 			engineOverride, _ := cmd.Flags().GetString("engine")
 			nameFlag, _ := cmd.Flags().GetString("name")
-			createPRFlag, _ := cmd.Flags().GetBool("create-pull-request")
-			prFlagAlias, _ := cmd.Flags().GetBool("pr")
-			prFlag := createPRFlag || prFlagAlias // Support both --create-pull-request and --pr
 			pushFlag, _ := cmd.Flags().GetBool("push")
 			forceFlag, _ := cmd.Flags().GetBool("force")
 			appendText, _ := cmd.Flags().GetString("append")
@@ -119,11 +114,10 @@ Note: To create a new workflow from scratch, use the 'new' command instead.`,
 			// Determine if we should use interactive mode
 			// Interactive mode is the default for TTY unless:
 			// - --non-interactive flag is set
-			// - Any of the batch/automation flags are set (--create-pull-request, --force, --name, --append)
+			// - Any of the batch/automation flags are set (--force, --name, --append, --push)
 			// - Not a TTY (piped input/output)
 			// - In CI environment
 			useInteractive := !nonInteractive &&
-				!prFlag &&
 				!forceFlag &&
 				nameFlag == "" &&
 				appendText == "" &&
@@ -143,7 +137,6 @@ Note: To create a new workflow from scratch, use the 'new' command instead.`,
 				Name:                   nameFlag,
 				Force:                  forceFlag,
 				AppendText:             appendText,
-				CreatePR:               prFlag,
 				Push:                   pushFlag,
 				NoGitattributes:        noGitattributes,
 				WorkflowDir:            workflowDir,
@@ -164,11 +157,6 @@ Note: To create a new workflow from scratch, use the 'new' command instead.`,
 
 	// Add repository flag to add command
 	cmd.Flags().StringP("repo", "r", "", "Source repository containing workflows (owner/repo format)")
-
-	// Add PR flag to add command (--create-pull-request with --pr as alias)
-	cmd.Flags().Bool("create-pull-request", false, "Create a pull request with the workflow changes")
-	cmd.Flags().Bool("pr", false, "Alias for --create-pull-request")
-	_ = cmd.Flags().MarkHidden("pr") // Hide the short alias from help output
 
 	// Add push flag to add command
 	cmd.Flags().Bool("push", false, "Automatically commit and push changes after successful workflow addition")
@@ -221,7 +209,7 @@ func AddWorkflows(workflows []string, opts AddOptions) (*AddWorkflowsResult, err
 // This allows callers to resolve workflows early (e.g., to show descriptions) and then add them later.
 // The opts.Quiet parameter suppresses detailed output (useful for interactive mode where output is already shown).
 func AddResolvedWorkflows(workflowStrings []string, resolved *ResolvedWorkflows, opts AddOptions) (*AddWorkflowsResult, error) {
-	addLog.Printf("Adding workflows: count=%d, engineOverride=%s, createPR=%v, noGitattributes=%v, opts.WorkflowDir=%s, noStopAfter=%v, stopAfter=%s", len(workflowStrings), opts.EngineOverride, opts.CreatePR, opts.NoGitattributes, opts.WorkflowDir, opts.NoStopAfter, opts.StopAfter)
+	addLog.Printf("Adding workflows: count=%d, engineOverride=%s, noGitattributes=%v, opts.WorkflowDir=%s, noStopAfter=%v, stopAfter=%s", len(workflowStrings), opts.EngineOverride, opts.NoGitattributes, opts.WorkflowDir, opts.NoStopAfter, opts.StopAfter)
 
 	result := &AddWorkflowsResult{}
 

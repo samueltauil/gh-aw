@@ -43,12 +43,6 @@ func TestNewAddCommand(t *testing.T) {
 	assert.NotNil(t, repoFlag, "Should have 'repo' flag")
 	assert.Equal(t, "r", repoFlag.Shorthand, "Repo flag shorthand should be 'r'")
 
-	// Check PR flags
-	createPRFlag := flags.Lookup("create-pull-request")
-	assert.NotNil(t, createPRFlag, "Should have 'create-pull-request' flag")
-	prFlag := flags.Lookup("pr")
-	assert.NotNil(t, prFlag, "Should have 'pr' flag (alias)")
-
 	// Check push flag
 	pushFlag := flags.Lookup("push")
 	assert.NotNil(t, pushFlag, "Should have 'push' flag")
@@ -239,15 +233,6 @@ func TestAddCommandFlagInteractions(t *testing.T) {
 			description: "Both no-stop-after and stop-after flags can be set",
 		},
 		{
-			name: "create-pull-request and pr alias",
-			flagSetup: func(cmd *cobra.Command) {
-				cmd.Flags().Set("create-pull-request", "true")
-				cmd.Flags().Set("pr", "true")
-			},
-			expectValid: true, // Both aliases should work
-			description: "Both create-pull-request and pr flags can be set (aliases)",
-		},
-		{
 			name: "force flag with number",
 			flagSetup: func(cmd *cobra.Command) {
 				cmd.Flags().Set("force", "true")
@@ -313,7 +298,7 @@ func TestAddCommandBooleanFlags(t *testing.T) {
 	cmd := NewAddCommand(validateEngineStub)
 	flags := cmd.Flags()
 
-	boolFlags := []string{"create-pull-request", "pr", "force", "no-gitattributes", "no-stop-after"}
+	boolFlags := []string{"push", "force", "no-gitattributes", "no-stop-after"}
 
 	for _, flagName := range boolFlags {
 		t.Run(flagName, func(t *testing.T) {
