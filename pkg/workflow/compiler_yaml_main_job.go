@@ -718,29 +718,26 @@ func workflowHasGhAwImport(data *WorkflowData) bool {
 	return false
 }
 
-// generateGhAwWorkspaceBinaryStep generates a step that installs the gh-aw extension
-// and copies the binary to ./gh-aw in the workspace, making it available for
-// custom steps before the MCP setup phase runs.
+// generateGhAwWorkspaceBinaryStep generates a step that extracts the gh-aw binary
+// from the published release container (ghcr.io/github/gh-aw:<version>) and places
+// it at ./gh-aw in the workspace, making it available for custom steps before the
+// MCP setup phase runs.
 //
 // This step is only generated in production mode when the agentic-workflows tool
 // is enabled and there are custom steps that may need the ./gh-aw binary.
 // In dev mode, the binary is built from source by generateDevModeCLIBuildSteps instead.
 func (c *Compiler) generateGhAwWorkspaceBinaryStep(yaml *strings.Builder) {
-	effectiveToken := getEffectiveGitHubToken("")
+	// Container images are tagged with the semver version without the 'v' prefix
+	// (e.g., 'ghcr.io/github/gh-aw:0.50.7' for compiler version 'v0.50.7')
+	version := strings.TrimPrefix(c.version, "v")
+	containerImage := "ghcr.io/github/gh-aw:" + version
 
 	yaml.WriteString("      - name: Install gh-aw CLI\n")
-	yaml.WriteString("        env:\n")
-	fmt.Fprintf(yaml, "          GH_TOKEN: %s\n", effectiveToken)
 	yaml.WriteString("        run: |\n")
-	yaml.WriteString("          if ! gh extension list | grep -q \"github/gh-aw\"; then\n")
-	yaml.WriteString("            gh extension install github/gh-aw\n")
-	yaml.WriteString("          fi\n")
-	yaml.WriteString("          GH_AW_BIN=$(which gh-aw 2>/dev/null || find ~/.local/share/gh/extensions/gh-aw -name 'gh-aw' -type f 2>/dev/null | head -1)\n")
-	yaml.WriteString("          if [ -n \"$GH_AW_BIN\" ] && [ -f \"$GH_AW_BIN\" ]; then\n")
-	yaml.WriteString("            cp \"$GH_AW_BIN\" ./gh-aw\n")
-	yaml.WriteString("            chmod +x ./gh-aw\n")
-	yaml.WriteString("            echo \"gh-aw binary available at ./gh-aw\"\n")
-	yaml.WriteString("          else\n")
-	yaml.WriteString("            echo \"::warning::Failed to find gh-aw binary; ./gh-aw will not be available in custom steps\"\n")
-	yaml.WriteString("          fi\n")
+	fmt.Fprintf(yaml, "          docker pull %s\n", containerImage)
+	fmt.Fprintf(yaml, "          CONTAINER=$(docker create %s)\n", containerImage)
+	yaml.WriteString("          docker cp \"${CONTAINER}:/usr/local/bin/gh-aw\" ./gh-aw\n")
+	yaml.WriteString("          docker rm \"${CONTAINER}\" > /dev/null\n")
+	yaml.WriteString("          chmod +x ./gh-aw\n")
+	yaml.WriteString("          echo \"gh-aw CLI binary available at ./gh-aw\"\n")
 }

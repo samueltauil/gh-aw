@@ -428,8 +428,8 @@ func TestAgenticWorkflowsExtractToolsEdgeCases(t *testing.T) {
 }
 
 // TestGhAwWorkspaceBinaryStepGenerated verifies that in production (release) mode,
-// a step is generated to install the gh-aw extension and place the binary at ./gh-aw
-// in the workspace before custom steps run.
+// a step is generated to extract the gh-aw binary from the published container and
+// place it at ./gh-aw in the workspace before custom steps run.
 func TestGhAwWorkspaceBinaryStepGenerated(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -499,12 +499,18 @@ func TestGhAwWorkspaceBinaryStepGenerated(t *testing.T) {
 			if tt.expectInstallStep {
 				assert.Contains(t, result, "Install gh-aw CLI",
 					"%s: expected Install gh-aw CLI step to be present", tt.description)
-				assert.Contains(t, result, "gh extension install github/gh-aw",
-					"%s: expected gh extension install command", tt.description)
-				assert.Contains(t, result, "cp \"$GH_AW_BIN\" ./gh-aw",
+				assert.Contains(t, result, "docker pull ghcr.io/github/gh-aw:",
+					"%s: expected docker pull of published container", tt.description)
+				assert.Contains(t, result, "docker create",
+					"%s: expected docker create to extract binary", tt.description)
+				assert.Contains(t, result, "docker cp",
+					"%s: expected docker cp to copy binary to workspace", tt.description)
+				assert.Contains(t, result, "/usr/local/bin/gh-aw\" ./gh-aw",
 					"%s: expected binary to be copied to ./gh-aw in workspace", tt.description)
 				assert.Contains(t, result, "chmod +x ./gh-aw",
 					"%s: expected chmod +x on ./gh-aw", tt.description)
+				assert.NotContains(t, result, "gh extension install",
+					"%s: should not install gh extension", tt.description)
 			} else {
 				assert.NotContains(t, result, "Install gh-aw CLI",
 					"%s: expected Install gh-aw CLI step to be absent", tt.description)
