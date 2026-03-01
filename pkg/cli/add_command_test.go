@@ -164,38 +164,14 @@ func TestAddResolvedWorkflows(t *testing.T) {
 func TestAddWorkflowsResult(t *testing.T) {
 	tests := []struct {
 		name                string
-		prNumber            int
-		prURL               string
 		hasWorkflowDispatch bool
 	}{
 		{
 			name:                "default values",
-			prNumber:            0,
-			prURL:               "",
-			hasWorkflowDispatch: false,
-		},
-		{
-			name:                "with PR number",
-			prNumber:            123,
-			prURL:               "",
-			hasWorkflowDispatch: false,
-		},
-		{
-			name:                "with PR URL",
-			prNumber:            0,
-			prURL:               "https://github.com/owner/repo/pull/123",
 			hasWorkflowDispatch: false,
 		},
 		{
 			name:                "with workflow dispatch",
-			prNumber:            0,
-			prURL:               "",
-			hasWorkflowDispatch: true,
-		},
-		{
-			name:                "all fields set",
-			prNumber:            456,
-			prURL:               "https://github.com/owner/repo/pull/456",
 			hasWorkflowDispatch: true,
 		},
 	}
@@ -203,14 +179,9 @@ func TestAddWorkflowsResult(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := &AddWorkflowsResult{
-				PRNumber:            tt.prNumber,
-				PRURL:               tt.prURL,
 				HasWorkflowDispatch: tt.hasWorkflowDispatch,
 			}
 
-			// Verify all fields are accessible and have expected values
-			assert.Equal(t, tt.prNumber, result.PRNumber, "PRNumber should match")
-			assert.Equal(t, tt.prURL, result.PRURL, "PRURL should match")
 			assert.Equal(t, tt.hasWorkflowDispatch, result.HasWorkflowDispatch, "HasWorkflowDispatch should match")
 		})
 	}

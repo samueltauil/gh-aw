@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -13,6 +14,51 @@ import (
 )
 
 var addWorkflowPRLog = logger.New("cli:add_workflow_pr")
+
+// AddWizardResult contains the result of the interactive add wizard's workflow addition,
+// including PR details that are only relevant in the wizard context.
+type AddWizardResult struct {
+	// PRNumber is the PR number created by the wizard
+	PRNumber int
+	// PRURL is the URL of the PR created by the wizard
+	PRURL string
+	// HasWorkflowDispatch is true if any of the added workflows has a workflow_dispatch trigger
+	HasWorkflowDispatch bool
+}
+
+// AddResolvedWorkflowsWithPR adds workflows using pre-resolved workflow data and creates a pull request.
+// This is the wizard-specific variant of AddResolvedWorkflows used by the interactive add flow.
+func AddResolvedWorkflowsWithPR(workflowStrings []string, resolved *ResolvedWorkflows, opts AddOptions) (*AddWizardResult, error) {
+	addWorkflowPRLog.Printf("Adding workflows with PR: count=%d", len(workflowStrings))
+
+	// Check if GitHub CLI is available
+	if !isGHCLIAvailable() {
+		return nil, errors.New("GitHub CLI (gh) is required for PR creation but not available")
+	}
+
+	// Check if we're in a git repository
+	if !isGitRepo() {
+		return nil, errors.New("not in a git repository - PR creation requires a git repository")
+	}
+
+	// Check no other changes are present
+	if err := checkCleanWorkingDirectory(opts.Verbose); err != nil {
+		return nil, fmt.Errorf("working directory is not clean: %w", err)
+	}
+
+	opts.FromWildcard = resolved.HasWildcard
+
+	prNumber, prURL, err := addWorkflowsWithPR(resolved.Workflows, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AddWizardResult{
+		PRNumber:            prNumber,
+		PRURL:               prURL,
+		HasWorkflowDispatch: resolved.HasWorkflowDispatch,
+	}, nil
+}
 
 // sanitizeBranchName sanitizes a string for use in a git branch name.
 // Git branch names cannot contain:

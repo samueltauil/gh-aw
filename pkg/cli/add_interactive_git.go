@@ -20,18 +20,12 @@ func (c *AddInteractiveConfig) applyChanges(ctx context.Context, workflowFiles, 
 
 	fmt.Fprintln(os.Stderr, "")
 
-	// Add the workflow using existing implementation with --create-pull-request
-	// Pass the resolved workflows to avoid re-fetching them
-	// Pass Quiet=true to suppress detailed output (already shown earlier in interactive mode)
-	// This returns the result including PR number and HasWorkflowDispatch
+	// Add the workflow via PR using the wizard-specific function.
+	// Pass Quiet=true to suppress detailed output (already shown earlier in interactive mode).
 	opts := AddOptions{
 		Verbose:                c.Verbose,
 		Quiet:                  true,
 		EngineOverride:         c.EngineOverride,
-		Name:                   "",
-		Force:                  false,
-		AppendText:             "",
-		CreatePR:               true,
 		Push:                   false,
 		NoGitattributes:        c.NoGitattributes,
 		WorkflowDir:            c.WorkflowDir,
@@ -39,7 +33,7 @@ func (c *AddInteractiveConfig) applyChanges(ctx context.Context, workflowFiles, 
 		StopAfter:              c.StopAfter,
 		DisableSecurityScanner: false,
 	}
-	result, err := AddResolvedWorkflows(c.WorkflowSpecs, c.resolvedWorkflows, opts)
+	result, err := AddResolvedWorkflowsWithPR(c.WorkflowSpecs, c.resolvedWorkflows, opts)
 	if err != nil {
 		return fmt.Errorf("failed to add workflow: %w", err)
 	}

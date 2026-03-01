@@ -38,8 +38,8 @@ type AddInteractiveConfig struct {
 	// This is populated by checkExistingSecrets() before engine selection
 	existingSecrets map[string]bool
 
-	// addResult holds the result from AddWorkflows, including HasWorkflowDispatch
-	addResult *AddWorkflowsResult
+	// addResult holds the result from AddResolvedWorkflowsWithPR, including PR details and HasWorkflowDispatch
+	addResult *AddWizardResult
 
 	// resolvedWorkflows holds the pre-resolved workflow data including descriptions
 	// This is populated early in the flow by resolveWorkflows()

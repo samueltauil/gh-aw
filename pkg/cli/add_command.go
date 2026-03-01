@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -25,7 +24,6 @@ type AddOptions struct {
 	Name                   string
 	Force                  bool
 	AppendText             string
-	CreatePR               bool
 	Push                   bool
 	NoGitattributes        bool
 	FromWildcard           bool
@@ -37,10 +35,6 @@ type AddOptions struct {
 
 // AddWorkflowsResult contains the result of adding workflows
 type AddWorkflowsResult struct {
-	// PRNumber is the PR number if a PR was created, or 0 if no PR was created
-	PRNumber int
-	// PRURL is the URL of the created PR, or empty if no PR was created
-	PRURL string
 	// HasWorkflowDispatch is true if any of the added workflows has a workflow_dispatch trigger
 	HasWorkflowDispatch bool
 }
@@ -213,44 +207,14 @@ func AddResolvedWorkflows(workflowStrings []string, resolved *ResolvedWorkflows,
 
 	result := &AddWorkflowsResult{}
 
-	// If creating a PR, check prerequisites
-	if opts.CreatePR {
-		// Check if GitHub CLI is available
-		if !isGHCLIAvailable() {
-			return nil, errors.New("GitHub CLI (gh) is required for PR creation but not available")
-		}
-
-		// Check if we're in a git repository
-		if !isGitRepo() {
-			return nil, errors.New("not in a git repository - PR creation requires a git repository")
-		}
-
-		// Check no other changes are present
-		if err := checkCleanWorkingDirectory(opts.Verbose); err != nil {
-			return nil, fmt.Errorf("working directory is not clean: %w", err)
-		}
-	}
-
 	// Set workflow_dispatch result
 	result.HasWorkflowDispatch = resolved.HasWorkflowDispatch
 
 	// Set FromWildcard flag based on resolved workflows
 	opts.FromWildcard = resolved.HasWildcard
 
-	// Handle PR creation workflow
-	if opts.CreatePR {
-		addLog.Print("Creating workflow with PR")
-		prNumber, prURL, err := addWorkflowsWithPR(resolved.Workflows, opts)
-		if err != nil {
-			return nil, err
-		}
-		result.PRNumber = prNumber
-		result.PRURL = prURL
-		return result, nil
-	}
-
 	// Handle normal workflow addition - pass resolved workflows with content
-	addLog.Print("Adding workflows normally without PR")
+	addLog.Print("Adding workflows normally")
 	return result, addWorkflows(resolved.Workflows, opts)
 }
 
