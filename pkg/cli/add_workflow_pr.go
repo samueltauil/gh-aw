@@ -29,7 +29,7 @@ type AddWizardResult struct {
 // AddResolvedWorkflowsWithPR adds workflows using pre-resolved workflow data and creates a pull request.
 // This is the wizard-specific variant of AddResolvedWorkflows used by the interactive add flow.
 func AddResolvedWorkflowsWithPR(workflowStrings []string, resolved *ResolvedWorkflows, opts AddOptions) (*AddWizardResult, error) {
-	addWorkflowPRLog.Printf("Adding workflows with PR: count=%d", len(workflowStrings))
+	addWorkflowPRLog.Printf("Adding workflows with PR: specs=%d, resolved_workflows=%d", len(workflowStrings), len(resolved.Workflows))
 
 	// Check if GitHub CLI is available
 	if !isGHCLIAvailable() {

@@ -3,6 +3,7 @@
 package cli
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -199,56 +200,33 @@ func TestSanitizeBranchName(t *testing.T) {
 	}
 }
 
-func TestAddWizardResult(t *testing.T) {
-	tests := []struct {
-		name                string
-		prNumber            int
-		prURL               string
-		hasWorkflowDispatch bool
-	}{
-		{
-			name:                "default values",
-			prNumber:            0,
-			prURL:               "",
-			hasWorkflowDispatch: false,
-		},
-		{
-			name:                "with PR number",
-			prNumber:            123,
-			prURL:               "",
-			hasWorkflowDispatch: false,
-		},
-		{
-			name:                "with PR URL",
-			prNumber:            0,
-			prURL:               "https://github.com/owner/repo/pull/123",
-			hasWorkflowDispatch: false,
-		},
-		{
-			name:                "with workflow dispatch",
-			prNumber:            0,
-			prURL:               "",
-			hasWorkflowDispatch: true,
-		},
-		{
-			name:                "all fields set",
-			prNumber:            456,
-			prURL:               "https://github.com/owner/repo/pull/456",
-			hasWorkflowDispatch: true,
-		},
+func TestAddResolvedWorkflowsWithPR_GHNotAvailable(t *testing.T) {
+	// Make "gh" unavailable by clearing PATH
+	t.Setenv("PATH", "")
+
+	resolved := &ResolvedWorkflows{
+		Workflows: []*ResolvedWorkflow{},
+	}
+	_, err := AddResolvedWorkflowsWithPR([]string{"my-workflow"}, resolved, AddOptions{})
+	assert.Error(t, err, "should fail when gh CLI is not available")
+	assert.Contains(t, err.Error(), "gh", "error should mention gh CLI")
+}
+
+func TestAddResolvedWorkflowsWithPR_NotGitRepo(t *testing.T) {
+	// Change to a directory that is not a git repository
+	tmpDir := t.TempDir()
+	orig, err := os.Getwd()
+	if err == nil {
+		t.Cleanup(func() { _ = os.Chdir(orig) })
+	}
+	if chErr := os.Chdir(tmpDir); chErr != nil {
+		t.Skipf("cannot chdir to temp dir: %v", chErr)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := &AddWizardResult{
-				PRNumber:            tt.prNumber,
-				PRURL:               tt.prURL,
-				HasWorkflowDispatch: tt.hasWorkflowDispatch,
-			}
-
-			assert.Equal(t, tt.prNumber, result.PRNumber, "PRNumber should match")
-			assert.Equal(t, tt.prURL, result.PRURL, "PRURL should match")
-			assert.Equal(t, tt.hasWorkflowDispatch, result.HasWorkflowDispatch, "HasWorkflowDispatch should match")
-		})
+	resolved := &ResolvedWorkflows{
+		Workflows: []*ResolvedWorkflow{},
 	}
+	_, err = AddResolvedWorkflowsWithPR([]string{"my-workflow"}, resolved, AddOptions{})
+	assert.Error(t, err, "should fail when not in a git repository")
+	assert.Contains(t, err.Error(), "git", "error should mention git")
 }
