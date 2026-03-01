@@ -25,6 +25,8 @@ runs:
         INPUT_DESTINATION: ${{ inputs.destination }}
         INPUT_SAFE_OUTPUT_PROJECTS: ${{ inputs.safe-output-projects }}
       run: ${{ github.action_path }}/setup.sh
+      post: ${{ github.action_path }}/post.sh
+      post-if: always()
 
 branding:
   icon: 'play'
