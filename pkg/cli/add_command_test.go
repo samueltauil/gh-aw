@@ -43,10 +43,6 @@ func TestNewAddCommand(t *testing.T) {
 	assert.NotNil(t, repoFlag, "Should have 'repo' flag")
 	assert.Equal(t, "r", repoFlag.Shorthand, "Repo flag shorthand should be 'r'")
 
-	// Check push flag
-	pushFlag := flags.Lookup("push")
-	assert.NotNil(t, pushFlag, "Should have 'push' flag")
-
 	// Check force flag
 	forceFlag := flags.Lookup("force")
 	assert.NotNil(t, forceFlag, "Should have 'force' flag")
@@ -269,7 +265,7 @@ func TestAddCommandBooleanFlags(t *testing.T) {
 	cmd := NewAddCommand(validateEngineStub)
 	flags := cmd.Flags()
 
-	boolFlags := []string{"push", "force", "no-gitattributes", "no-stop-after"}
+	boolFlags := []string{"force", "no-gitattributes", "no-stop-after"}
 
 	for _, flagName := range boolFlags {
 		t.Run(flagName, func(t *testing.T) {

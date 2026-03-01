@@ -24,7 +24,6 @@ type AddOptions struct {
 	Name                   string
 	Force                  bool
 	AppendText             string
-	Push                   bool
 	NoGitattributes        bool
 	FromWildcard           bool
 	WorkflowDir            string
@@ -61,7 +60,6 @@ Examples:
   ` + string(constants.CLIExtensionPrefix) + ` add githubnext/agentics/ci-doctor@v1.0.0         # Add with version
   ` + string(constants.CLIExtensionPrefix) + ` add githubnext/agentics/workflows/ci-doctor.md@main
   ` + string(constants.CLIExtensionPrefix) + ` add https://github.com/githubnext/agentics/blob/main/workflows/ci-doctor.md
-  ` + string(constants.CLIExtensionPrefix) + ` add githubnext/agentics/ci-doctor --push         # Add and push changes
   ` + string(constants.CLIExtensionPrefix) + ` add ./my-workflow.md                             # Add local workflow
   ` + string(constants.CLIExtensionPrefix) + ` add ./*.md                                       # Add all local workflows
   ` + string(constants.CLIExtensionPrefix) + ` add githubnext/agentics/ci-doctor --dir shared   # Add to .github/workflows/shared/
@@ -76,7 +74,6 @@ Workflow specifications:
 
 The -n flag allows you to specify a custom name for the workflow file (only applies to the first workflow when adding multiple).
 The --dir flag allows you to specify a subdirectory under .github/workflows/ where the workflow will be added.
-The --push flag automatically commits and pushes changes after successful workflow addition.
 The --force flag overwrites existing workflow files.
 The --non-interactive flag skips the guided setup and uses traditional behavior.
 
@@ -91,7 +88,6 @@ Note: To create a new workflow from scratch, use the 'new' command instead.`,
 			workflows := args
 			engineOverride, _ := cmd.Flags().GetString("engine")
 			nameFlag, _ := cmd.Flags().GetString("name")
-			pushFlag, _ := cmd.Flags().GetBool("push")
 			forceFlag, _ := cmd.Flags().GetBool("force")
 			appendText, _ := cmd.Flags().GetString("append")
 			verbose, _ := cmd.Flags().GetBool("verbose")
@@ -108,7 +104,7 @@ Note: To create a new workflow from scratch, use the 'new' command instead.`,
 			// Determine if we should use interactive mode
 			// Interactive mode is the default for TTY unless:
 			// - --non-interactive flag is set
-			// - Any of the batch/automation flags are set (--force, --name, --append, --push)
+			// - Any of the batch/automation flags are set (--force, --name, --append)
 			// - Not a TTY (piped input/output)
 			// - In CI environment
 			useInteractive := !nonInteractive &&
@@ -131,7 +127,6 @@ Note: To create a new workflow from scratch, use the 'new' command instead.`,
 				Name:                   nameFlag,
 				Force:                  forceFlag,
 				AppendText:             appendText,
-				Push:                   pushFlag,
 				NoGitattributes:        noGitattributes,
 				WorkflowDir:            workflowDir,
 				NoStopAfter:            noStopAfter,
@@ -151,9 +146,6 @@ Note: To create a new workflow from scratch, use the 'new' command instead.`,
 
 	// Add repository flag to add command
 	cmd.Flags().StringP("repo", "r", "", "Source repository containing workflows (owner/repo format)")
-
-	// Add push flag to add command
-	cmd.Flags().Bool("push", false, "Automatically commit and push changes after successful workflow addition")
 
 	// Add force flag to add command
 	cmd.Flags().BoolP("force", "f", false, "Overwrite existing workflow files without confirmation")
@@ -265,55 +257,6 @@ func addWorkflowsWithTracking(workflows []*ResolvedWorkflow, tracker *FileTracke
 
 	if !opts.Quiet && len(workflows) > 1 {
 		fmt.Fprintln(os.Stderr, console.FormatSuccessMessage(fmt.Sprintf("Successfully added all %d workflows", len(workflows))))
-	}
-
-	// If --push is enabled, commit and push changes
-	if opts.Push {
-		addLog.Print("Push enabled - preparing to commit and push changes")
-		fmt.Fprintln(os.Stderr, "")
-
-		// Check if we're on the default branch
-		fmt.Fprintln(os.Stderr, console.FormatInfoMessage("Checking current branch..."))
-		if err := checkOnDefaultBranch(opts.Verbose); err != nil {
-			addLog.Printf("Default branch check failed: %v", err)
-			return fmt.Errorf("cannot push: %w", err)
-		}
-
-		// Confirm with user (skip in CI)
-		if err := confirmPushOperation(opts.Verbose); err != nil {
-			addLog.Printf("Push operation not confirmed: %v", err)
-			return fmt.Errorf("push operation cancelled: %w", err)
-		}
-
-		fmt.Fprintln(os.Stderr, console.FormatInfoMessage("Preparing to commit and push changes..."))
-
-		// Create commit message
-		var commitMessage string
-		if len(workflows) == 1 {
-			commitMessage = "chore: add workflow " + workflows[0].Spec.WorkflowName
-		} else {
-			commitMessage = fmt.Sprintf("chore: add %d workflows", len(workflows))
-		}
-
-		// Use the helper function to orchestrate the full workflow
-		if err := commitAndPushChanges(commitMessage, opts.Verbose); err != nil {
-			// Check if it's the "no changes" case
-			hasChanges, checkErr := hasChangesToCommit()
-			if checkErr == nil && !hasChanges {
-				addLog.Print("No changes to commit")
-				fmt.Fprintln(os.Stderr, console.FormatInfoMessage("No changes to commit"))
-			} else {
-				return err
-			}
-		} else {
-			// Print success messages based on whether remote exists
-			fmt.Fprintln(os.Stderr, "")
-			if hasRemote() {
-				fmt.Fprintln(os.Stderr, console.FormatSuccessMessage("✓ Changes pushed to remote"))
-			} else {
-				fmt.Fprintln(os.Stderr, console.FormatSuccessMessage("✓ Changes committed locally (no remote configured)"))
-			}
-		}
 	}
 
 	// Stage tracked files to git if in a git repository
