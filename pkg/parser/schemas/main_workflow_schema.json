@@ -8007,6 +8007,11 @@
       "description": "Configuration for a single actions/checkout step",
       "additionalProperties": false,
       "properties": {
+        "name": {
+          "type": "string",
+          "description": "Optional human-readable label for the checkout step. When set, the step will be named \"Checkout <name>\" instead of the default derived from repository or path.",
+          "examples": ["side repo", "shared libraries", "actions folder"]
+        },
         "repository": {
           "type": "string",
           "description": "Repository to checkout in owner/repo format. Defaults to the current repository.",

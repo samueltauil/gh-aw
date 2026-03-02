@@ -27,6 +27,10 @@ var checkoutManagerLog = logger.New("workflow:checkout_manager")
 //	    path: ./libs/other
 //	    ref: main
 type CheckoutConfig struct {
+	// Name overrides the auto-generated step name. When set, the checkout step will be
+	// named "Checkout <name>" instead of the default derived from repository or path.
+	Name string `json:"name,omitempty"`
+
 	// Repository to checkout in owner/repo format. Defaults to the current repository.
 	Repository string `json:"repository,omitempty"`
 
@@ -74,6 +78,7 @@ type checkoutKey struct {
 // resolvedCheckout is an internal merged checkout entry used by CheckoutManager.
 type resolvedCheckout struct {
 	key            checkoutKey
+	name           string   // optional custom step name (overrides auto-generated)
 	ref            string   // last non-empty ref wins
 	token          string   // last non-empty token wins
 	fetchDepth     *int     // nil means use default (1)
@@ -154,6 +159,7 @@ func (cm *CheckoutManager) add(cfg *CheckoutConfig) {
 	} else {
 		entry := &resolvedCheckout{
 			key:        key,
+			name:       cfg.Name,
 			ref:        cfg.Ref,
 			token:      cfg.Token,
 			fetchDepth: cfg.FetchDepth,
@@ -278,7 +284,13 @@ func (cm *CheckoutManager) GenerateDefaultCheckoutStep(
 
 // generateCheckoutStepLines generates YAML step lines for a single non-default checkout.
 func generateCheckoutStepLines(entry *resolvedCheckout, getActionPin func(string) string) []string {
-	name := "Checkout " + checkoutStepName(entry.key)
+	var stepLabel string
+	if entry.name != "" {
+		stepLabel = entry.name
+	} else {
+		stepLabel = checkoutStepName(entry.key)
+	}
+	name := "Checkout " + stepLabel
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "      - name: %s\n", name)
 	fmt.Fprintf(&sb, "        uses: %s\n", getActionPin("actions/checkout"))
@@ -445,6 +457,14 @@ func ParseCheckoutConfigs(raw any) ([]*CheckoutConfig, error) {
 // checkoutConfigFromMap converts a raw map to a CheckoutConfig.
 func checkoutConfigFromMap(m map[string]any) (*CheckoutConfig, error) {
 	cfg := &CheckoutConfig{}
+
+	if v, ok := m["name"]; ok {
+		s, ok := v.(string)
+		if !ok {
+			return nil, errors.New("checkout.name must be a string")
+		}
+		cfg.Name = s
+	}
 
 	if v, ok := m["repository"]; ok {
 		s, ok := v.(string)
