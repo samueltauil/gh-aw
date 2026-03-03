@@ -37,6 +37,11 @@ var checkoutManagerLog = logger.New("workflow:checkout_manager")
 //	      app-id: ${{ vars.APP_ID }}
 //	      private-key: ${{ secrets.APP_PRIVATE_KEY }}
 type CheckoutConfig struct {
+	// Name is an optional human-readable label used in generated step names.
+	// When set, it overrides the default repository/path-derived label in
+	// "Checkout <name>" and "Fetch additional refs for <name>" step names.
+	Name string `json:"name,omitempty"`
+
 	// Repository to checkout in owner/repo format. Defaults to the current repository.
 	Repository string `json:"repository,omitempty"`
 
@@ -107,6 +112,7 @@ type checkoutKey struct {
 // resolvedCheckout is an internal merged checkout entry used by CheckoutManager.
 type resolvedCheckout struct {
 	key            checkoutKey
+	name           string           // optional human-readable label overriding key-derived step name
 	ref            string           // last non-empty ref wins
 	token          string           // last non-empty github-token wins
 	githubApp      *GitHubAppConfig // GitHub App config (first non-nil wins)
@@ -167,6 +173,9 @@ func (cm *CheckoutManager) add(cfg *CheckoutConfig) {
 		// Merge into existing entry; first-seen wins for ref and token
 		entry := cm.ordered[idx]
 		entry.fetchDepth = deeperFetchDepth(entry.fetchDepth, cfg.FetchDepth)
+		if cfg.Name != "" && entry.name == "" {
+			entry.name = cfg.Name // first-seen name wins
+		}
 		if cfg.Ref != "" && entry.ref == "" {
 			entry.ref = cfg.Ref // first-seen ref wins
 		}
@@ -195,6 +204,7 @@ func (cm *CheckoutManager) add(cfg *CheckoutConfig) {
 	} else {
 		entry := &resolvedCheckout{
 			key:        key,
+			name:       cfg.Name,
 			ref:        cfg.Ref,
 			token:      cfg.GitHubToken,
 			githubApp:  cfg.GitHubApp,
@@ -403,7 +413,7 @@ func (cm *CheckoutManager) GenerateDefaultCheckoutStep(
 // The index parameter identifies the checkout's position in the ordered list, used to
 // reference the correct app token minting step when app authentication is configured.
 func generateCheckoutStepLines(entry *resolvedCheckout, index int, getActionPin func(string) string) []string {
-	name := "Checkout " + checkoutStepName(entry.key)
+	name := "Checkout " + checkoutStepName(entry)
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "      - name: %s\n", name)
 	fmt.Fprintf(&sb, "        uses: %s\n", getActionPin("actions/checkout"))
@@ -454,7 +464,12 @@ func generateCheckoutStepLines(entry *resolvedCheckout, index int, getActionPin 
 }
 
 // checkoutStepName returns a human-readable description for a checkout step.
-func checkoutStepName(key checkoutKey) string {
+// When entry.name is set it takes precedence; otherwise a label is derived from the key.
+func checkoutStepName(entry *resolvedCheckout) string {
+	if entry.name != "" {
+		return entry.name
+	}
+	key := entry.key
 	if key.repository != "" && key.path != "" {
 		return fmt.Sprintf("%s into %s", key.repository, key.path)
 	}
@@ -576,8 +591,8 @@ func generateFetchStepLines(entry *resolvedCheckout, index int) string {
 
 	// Build step name
 	name := "Fetch additional refs"
-	if entry.key.repository != "" {
-		name = "Fetch additional refs for " + entry.key.repository
+	if entry.name != "" || entry.key.repository != "" || entry.key.path != "" {
+		name = "Fetch additional refs for " + checkoutStepName(entry)
 	}
 
 	// Determine authentication token
@@ -676,6 +691,14 @@ func ParseCheckoutConfigs(raw any) ([]*CheckoutConfig, error) {
 // checkoutConfigFromMap converts a raw map to a CheckoutConfig.
 func checkoutConfigFromMap(m map[string]any) (*CheckoutConfig, error) {
 	cfg := &CheckoutConfig{}
+
+	if v, ok := m["name"]; ok {
+		s, ok := v.(string)
+		if !ok {
+			return nil, errors.New("checkout.name must be a string")
+		}
+		cfg.Name = s
+	}
 
 	if v, ok := m["repository"]; ok {
 		s, ok := v.(string)

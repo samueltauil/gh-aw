@@ -22,6 +22,7 @@ network:
 
 checkout:
   - repository: githubnext/gh-aw-side-repo
+    name: side repo
     github-token: ${{ secrets.GH_AW_SIDE_REPO_PAT }}
     fetch: ["main", "refs/pulls/open/*"]      # fetch all open PR refs after checkout
     fetch-depth: 0               # fetch full history to ensure we can see all commits and PR details

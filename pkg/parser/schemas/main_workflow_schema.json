@@ -8007,6 +8007,11 @@
       "description": "Configuration for a single actions/checkout step",
       "additionalProperties": false,
       "properties": {
+        "name": {
+          "type": "string",
+          "description": "Optional human-readable label used in generated step names. When set, overrides the default repository/path-derived label in 'Checkout <name>' and 'Fetch additional refs for <name>' step names.",
+          "examples": ["side repo", "upstream", "my-lib"]
+        },
         "repository": {
           "type": "string",
           "description": "Repository to checkout in owner/repo format. Defaults to the current repository.",
