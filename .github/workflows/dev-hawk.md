@@ -32,8 +32,6 @@ safe-outputs:
     run-failure: "🦅 Hawk down! [{workflow_name}]({run_url}) {status}. The skies grow quiet..."
 timeout-minutes: 15
 strict: true
-features:
-  copilot-requests: true
 ---
 
 # Dev Hawk - Development Workflow Monitor

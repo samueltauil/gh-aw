@@ -27,8 +27,6 @@ safe-outputs:
 timeout-minutes: 20
 imports:
   - shared/reporting.md
-features:
-  copilot-requests: true
 ---
 
 {{#runtime-import? .github/shared-instructions.md}}

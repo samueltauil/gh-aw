@@ -35,8 +35,6 @@ imports:
 
 timeout-minutes: 10
 strict: true
-features:
-  copilot-requests: true
 ---
 
 # Architecture Diagram Generator

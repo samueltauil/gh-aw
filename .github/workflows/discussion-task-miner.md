@@ -55,8 +55,6 @@ imports:
   - shared/jqschema.md
   - shared/reporting.md
 
-features:
-  copilot-requests: true
 ---
 
 # Discussion Task Miner - Code Quality Improvement Agent

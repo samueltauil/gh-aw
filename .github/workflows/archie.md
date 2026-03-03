@@ -32,8 +32,6 @@ safe-outputs:
     run-success: "🎨 [{workflow_name}]({run_url}) has completed the architecture visualization. ✅"
     run-failure: "📐 [{workflow_name}]({run_url}) encountered an issue and could not complete the architecture diagram. Check the [run logs]({run_url}) for details."
 timeout-minutes: 10
-features:
-  copilot-requests: true
 ---
 
 # Archie - Mermaid Diagram Generator

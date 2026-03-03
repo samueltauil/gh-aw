@@ -30,8 +30,6 @@ safe-outputs:
   add-comment:
     max: 10
 timeout-minutes: 30
-features:
-  copilot-requests: true
 ---
 
 {{#runtime-import? .github/shared-instructions.md}}

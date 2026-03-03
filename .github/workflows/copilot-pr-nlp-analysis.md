@@ -82,8 +82,6 @@ steps:
 
 timeout-minutes: 20
 
-features:
-  copilot-requests: true
 ---
 
 # Copilot PR Conversation NLP Analysis

@@ -33,8 +33,6 @@ strict: true
 imports:
   - shared/reporting.md
   - shared/go-make.md
-features:
-  copilot-requests: true
 ---
 
 {{#runtime-import? .github/shared-instructions.md}}

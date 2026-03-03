@@ -34,8 +34,6 @@ safe-outputs:
     auto-merge: true
 
 timeout-minutes: 10
-features:
-  copilot-requests: true
 ---
 
 # Dictation Prompt Generator

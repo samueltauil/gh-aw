@@ -48,8 +48,6 @@ steps:
       echo "gh-aw binary is ready at ./gh-aw"
 imports:
   - shared/reporting.md
-features:
-  copilot-requests: true
 ---
 
 {{#runtime-import? .github/shared-instructions.md}}

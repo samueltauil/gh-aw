@@ -59,8 +59,6 @@ imports:
   - shared/reporting.md
   - shared/jqschema.md
 
-features:
-  copilot-requests: true
 ---
 
 {{#runtime-import? .github/shared-instructions.md}}

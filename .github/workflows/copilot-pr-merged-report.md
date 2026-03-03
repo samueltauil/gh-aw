@@ -38,8 +38,6 @@ imports:
   - shared/copilot-pr-analysis-base.md
 
 timeout-minutes: 10
-features:
-  copilot-requests: true
 ---
 
 # Daily Copilot PR Merged Report

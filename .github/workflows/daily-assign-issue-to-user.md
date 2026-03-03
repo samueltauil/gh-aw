@@ -17,8 +17,6 @@ safe-outputs:
     target: "*"
   add-comment:
     target: "*"
-features:
-  copilot-requests: true
 ---
 
 {{#runtime-import? .github/shared-instructions.md}}

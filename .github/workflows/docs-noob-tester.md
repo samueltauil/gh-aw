@@ -29,8 +29,6 @@ network:
 
 imports:
   - shared/docs-server-lifecycle.md
-features:
-  copilot-requests: true
 ---
 
 # Documentation Noob Testing
