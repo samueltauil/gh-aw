@@ -433,10 +433,11 @@ async function main(config = {}) {
     const workflowSource = process.env.GH_AW_WORKFLOW_SOURCE ?? "";
     const workflowSourceURL = process.env.GH_AW_WORKFLOW_SOURCE_URL ?? "";
     const workflowId = process.env.GH_AW_WORKFLOW_ID ?? "";
-    // GH_AW_CALLER_WORKFLOW_ID is set at runtime to `github.repository/github.workflow`.
+    // GH_AW_CALLER_WORKFLOW_ID is set at runtime to `github.workflow_ref`
+    // (e.g. "owner/repo/.github/workflows/caller.lock.yml@refs/heads/main").
     // When multiple workflows call the same reusable workflow via workflow_call they all
     // share the same GH_AW_WORKFLOW_ID. We embed a separate gh-aw-workflow-call-id marker
-    // with the caller's identity so close-older-issues can distinguish callers precisely.
+    // with the caller's workflow file identity so close-older-issues can distinguish callers precisely.
     const callerWorkflowId = process.env.GH_AW_CALLER_WORKFLOW_ID ?? "";
     const runUrl = buildWorkflowRunUrl(context, context.repo);
 

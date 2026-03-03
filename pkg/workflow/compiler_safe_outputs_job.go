@@ -368,9 +368,11 @@ func (c *Compiler) buildJobLevelSafeOutputEnvVars(data *WorkflowData, workflowID
 	// Set GH_AW_CALLER_WORKFLOW_ID to the runtime caller identity.
 	// When a reusable workflow is called via workflow_call, multiple callers share the
 	// same GH_AW_WORKFLOW_ID (derived from the reusable file). This separate runtime
-	// value uniquely identifies each caller and is used as the issue/discussion marker
-	// for close-older-issues, preventing cross-caller false closes.
-	envVars["GH_AW_CALLER_WORKFLOW_ID"] = `"${{ github.repository }}/${{ github.workflow }}"`
+	// value uniquely identifies each caller by its workflow file path (not its display name)
+	// and is used as the issue/discussion marker for close-older-issues, preventing
+	// cross-caller false closes.
+	// Format: "owner/repo/.github/workflows/caller.lock.yml@refs/heads/main"
+	envVars["GH_AW_CALLER_WORKFLOW_ID"] = `"${{ github.workflow_ref }}"`
 
 	// Add workflow metadata that's common to all steps
 	envVars["GH_AW_WORKFLOW_NAME"] = fmt.Sprintf("%q", data.Name)
