@@ -268,6 +268,51 @@ steps:
       date +%s > "/tmp/gh-aw/repo-memory/default/daily-news-data/.timestamp"
       echo "✅ Data caching complete"
 
+  - name: Fetch or restore 30-day commit history
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    run: |
+      set -e
+      COMMITS_30D_REPO_MEMORY="/tmp/gh-aw/repo-memory/default/daily-news-data/commits-30d.json"
+      COMMITS_30D_TIMESTAMP="/tmp/gh-aw/repo-memory/default/daily-news-data/.commits-30d-timestamp"
+      COMMITS_30D_DEST="/tmp/gh-aw/daily-news-data/commits-30d.json"
+
+      # Check if commits-30d.json is in repo-memory and fresh (< 24 hours old)
+      COMMITS_CACHE_VALID=false
+      if [ -f "$COMMITS_30D_TIMESTAMP" ] && [ -f "$COMMITS_30D_REPO_MEMORY" ]; then
+        CACHE_AGE=$(($(date +%s) - $(cat "$COMMITS_30D_TIMESTAMP")))
+        if [ $CACHE_AGE -lt 86400 ]; then
+          echo "✅ Found valid commits-30d.json in repo-memory (age: ${CACHE_AGE}s)"
+          COMMITS_CACHE_VALID=true
+        else
+          echo "⚠ commits-30d.json in repo-memory is stale (age: ${CACHE_AGE}s)"
+        fi
+      else
+        echo "ℹ No commits-30d.json in repo-memory, will fetch"
+      fi
+
+      if [ "$COMMITS_CACHE_VALID" = true ]; then
+        echo "📦 Restoring commits-30d.json from repo-memory"
+        cp "$COMMITS_30D_REPO_MEMORY" "$COMMITS_30D_DEST"
+        echo "✅ Restored $(jq 'length' "$COMMITS_30D_DEST") commits from cache"
+      else
+        echo "🔄 Fetching full 30-day commit history..."
+        SINCE=$(date -u -d '30 days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-30d +%Y-%m-%dT%H:%M:%SZ)
+        gh api "repos/${GITHUB_REPOSITORY}/commits" \
+          --paginate \
+          -F since="$SINCE" \
+          --jq '[.[] | {sha, author: .commit.author, message: .commit.message, date: .commit.author.date, html_url}]' \
+          | jq -s 'add // []' \
+          > "$COMMITS_30D_DEST"
+        COMMIT_COUNT=$(jq 'length' "$COMMITS_30D_DEST")
+        echo "✅ Fetched $COMMIT_COUNT commits in the last 30 days"
+        # Store in repo-memory for future runs
+        cp "$COMMITS_30D_DEST" "$COMMITS_30D_REPO_MEMORY"
+        date +%s > "$COMMITS_30D_TIMESTAMP"
+        echo "💾 Cached commits-30d.json in repo-memory for future runs"
+      fi
+
   - name: List downloaded data
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -296,7 +341,8 @@ Write an upbeat, friendly, motivating summary of recent activity in the repo.
 
 - **`issues.json`** - Open and recently closed issues (last 100 of each)
 - **`pull_requests.json`** - Open, merged, and closed pull requests
-- **`commits.json`** - Recent commits (up to last 100)
+- **`commits-30d.json`** - All commits in the last 30 days (full window, uncapped)
+- **`commits.json`** - Recent commits (fallback, up to last 100)
 - **`releases.json`** - All releases
 - **`discussions.json`** - Recent discussions (last 50)
 - **`changesets.txt`** - List of changeset files (if directory exists)
@@ -340,7 +386,7 @@ Use the pre-downloaded data from `/tmp/gh-aw/daily-news-data/` to generate all s
    - Extract `createdAt`, `updatedAt`, `mergedAt`, `closedAt` timestamps
    - Aggregate by day to count opens/merges/closes
 
-3. **Commit Activity Data**: Load from `commits.json`
+3. **Commit Activity Data**: Load from `commits-30d.json` (prefer over `commits.json`)
    - Parse commit array
    - Extract `date` (commit.author.date) timestamps
    - Aggregate by day to count commits
@@ -365,7 +411,7 @@ Use the pre-downloaded data from `/tmp/gh-aw/daily-news-data/` to generate all s
 **Guardrails**:
 - **Maximum issues to process**: 200 (100 open + 100 closed from pre-downloaded data)
 - **Maximum PRs to process**: 130 (50 open + 50 merged + 30 closed from pre-downloaded data)
-- **Maximum commits to process**: 100 (from pre-downloaded data)
+- **Commits**: Full 30-day window from `commits-30d.json` (uncapped; falls back to `commits.json` if unavailable)
 - **Date range**: Last 30 days from the data available
 - If data is sparse, use what's available and note it in the analysis
 
@@ -448,7 +494,7 @@ If insufficient data is available (less than 7 days):
   * Recent pull requests (from `pull_requests.json`)
   * Recent discussions (from `discussions.json`)
   * Recent releases (from `releases.json`)
-  * Recent code changes (from `commits.json`)
+  * Recent code changes (from `commits-30d.json`, falling back to `commits.json`)
   * Changesets (from `changesets.txt` file list)
 
 - If little has happened, don't write too much.

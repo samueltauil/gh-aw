@@ -31,7 +31,7 @@
 #     - shared/reporting.md
 #     - shared/trends.md
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"1ac39a8230fd053ed51356e22c975e01f92adacbc0b2c86481e600549aa107d7"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"385f3479c00680ca054f05e7d022f6f5a16f5190edfb29cd9a01e7b7e46523c9"}
 
 name: "Daily News"
 "on":
@@ -398,6 +398,11 @@ jobs:
           cp -r /tmp/gh-aw/daily-news-data/* /tmp/gh-aw/repo-memory/default/daily-news-data/
           date +%s > "/tmp/gh-aw/repo-memory/default/daily-news-data/.timestamp"
           echo "✅ Data caching complete"
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: Fetch or restore 30-day commit history
+        run: "set -e\nCOMMITS_30D_REPO_MEMORY=\"/tmp/gh-aw/repo-memory/default/daily-news-data/commits-30d.json\"\nCOMMITS_30D_TIMESTAMP=\"/tmp/gh-aw/repo-memory/default/daily-news-data/.commits-30d-timestamp\"\nCOMMITS_30D_DEST=\"/tmp/gh-aw/daily-news-data/commits-30d.json\"\n\n# Check if commits-30d.json is in repo-memory and fresh (< 24 hours old)\nCOMMITS_CACHE_VALID=false\nif [ -f \"$COMMITS_30D_TIMESTAMP\" ] && [ -f \"$COMMITS_30D_REPO_MEMORY\" ]; then\n  CACHE_AGE=$(($(date +%s) - $(cat \"$COMMITS_30D_TIMESTAMP\")))\n  if [ $CACHE_AGE -lt 86400 ]; then\n    echo \"✅ Found valid commits-30d.json in repo-memory (age: ${CACHE_AGE}s)\"\n    COMMITS_CACHE_VALID=true\n  else\n    echo \"⚠ commits-30d.json in repo-memory is stale (age: ${CACHE_AGE}s)\"\n  fi\nelse\n  echo \"ℹ No commits-30d.json in repo-memory, will fetch\"\nfi\n\nif [ \"$COMMITS_CACHE_VALID\" = true ]; then\n  echo \"📦 Restoring commits-30d.json from repo-memory\"\n  cp \"$COMMITS_30D_REPO_MEMORY\" \"$COMMITS_30D_DEST\"\n  echo \"✅ Restored $(jq 'length' \"$COMMITS_30D_DEST\") commits from cache\"\nelse\n  echo \"🔄 Fetching full 30-day commit history...\"\n  SINCE=$(date -u -d '30 days ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-30d +%Y-%m-%dT%H:%M:%SZ)\n  gh api \"repos/${GITHUB_REPOSITORY}/commits\" \\\n    --paginate \\\n    -F since=\"$SINCE\" \\\n    --jq '[.[] | {sha, author: .commit.author, message: .commit.message, date: .commit.author.date, html_url}]' \\\n    | jq -s 'add // []' \\\n    > \"$COMMITS_30D_DEST\"\n  COMMIT_COUNT=$(jq 'length' \"$COMMITS_30D_DEST\")\n  echo \"✅ Fetched $COMMIT_COUNT commits in the last 30 days\"\n  # Store in repo-memory for future runs\n  cp \"$COMMITS_30D_DEST\" \"$COMMITS_30D_REPO_MEMORY\"\n  date +%s > \"$COMMITS_30D_TIMESTAMP\"\n  echo \"💾 Cached commits-30d.json in repo-memory for future runs\"\nfi\n"
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
