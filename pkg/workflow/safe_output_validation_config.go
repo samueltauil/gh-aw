@@ -81,7 +81,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"add_labels": {
-		DefaultMax: 1,
+		DefaultMax: 5,
 		Fields: map[string]FieldValidation{
 			"labels":      {Required: true, Type: "array", ItemType: "string", ItemSanitize: true, ItemMaxLength: 128},
 			"item_number": {IssueOrPRNumber: true},
@@ -89,7 +89,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"add_reviewer": {
-		DefaultMax: 1,
+		DefaultMax: 3,
 		Fields: map[string]FieldValidation{
 			"reviewers":           {Required: true, Type: "array", ItemType: "string", ItemSanitize: true, ItemMaxLength: MaxGitHubUsernameLength},
 			"pull_request_number": {IssueOrPRNumber: true},
@@ -105,7 +105,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"set_issue_type": {
-		DefaultMax: 1,
+		DefaultMax: 5,
 		Fields: map[string]FieldValidation{
 			"issue_number": {IssueOrPRNumber: true},
 			"issue_type":   {Required: true, Type: "string", Sanitize: true, MaxLength: 128}, // Empty string clears the type
@@ -187,7 +187,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"reply_to_pull_request_review_comment": {
-		DefaultMax: 1,
+		DefaultMax: 10,
 		Fields: map[string]FieldValidation{
 			"comment_id":          {Required: true, PositiveInteger: true},
 			"body":                {Required: true, Type: "string", Sanitize: true, MaxLength: MaxBodyLength},
@@ -196,7 +196,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"resolve_pull_request_review_thread": {
-		DefaultMax: 1,
+		DefaultMax: 10,
 		Fields: map[string]FieldValidation{
 			"thread_id": {Required: true, Type: "string"},
 		},
@@ -236,7 +236,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"missing_tool": {
-		DefaultMax: 1,
+		DefaultMax: 20,
 		Fields: map[string]FieldValidation{
 			"tool":         {Required: false, Type: "string", Sanitize: true, MaxLength: 128},
 			"reason":       {Required: true, Type: "string", Sanitize: true, MaxLength: 256},
@@ -252,7 +252,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"upload_asset": {
-		DefaultMax: 1,
+		DefaultMax: 10,
 		Fields: map[string]FieldValidation{
 			"path": {Required: true, Type: "string"},
 		},
@@ -264,7 +264,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"create_code_scanning_alert": {
-		DefaultMax: 1,
+		DefaultMax: 40,
 		Fields: map[string]FieldValidation{
 			"file":         {Required: true, Type: "string", Sanitize: true, MaxLength: 512},
 			"line":         {Required: true, PositiveInteger: true},
@@ -275,7 +275,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"link_sub_issue": {
-		DefaultMax:       1,
+		DefaultMax:       5,
 		CustomValidation: "parentAndSubDifferent",
 		Fields: map[string]FieldValidation{
 			"parent_issue_number": {Required: true, IssueNumberOrTemporaryID: true},
@@ -284,7 +284,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"update_project": {
-		DefaultMax: 1,
+		DefaultMax: 10,
 		Fields: map[string]FieldValidation{
 			"project":        {Required: true, Type: "string", Sanitize: true, MaxLength: 512, Pattern: "^https://[^/]+/(orgs|users)/[^/]+/projects/\\d+", PatternError: "must be a full GitHub project URL (e.g., https://github.com/orgs/myorg/projects/42)"},
 			"content_type":   {Type: "string", Enum: []string{"issue", "pull_request", "draft_issue"}},
@@ -306,7 +306,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"create_project_status_update": {
-		DefaultMax: 1,
+		DefaultMax: 10,
 		Fields: map[string]FieldValidation{
 			"project":     {Required: true, Type: "string", Sanitize: true, MaxLength: 512, Pattern: "^https://[^/]+/(orgs|users)/[^/]+/projects/\\d+", PatternError: "must be a full GitHub project URL (e.g., https://github.com/orgs/myorg/projects/42)"},
 			"body":        {Required: true, Type: "string", Sanitize: true, MaxLength: 65536},
@@ -326,7 +326,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"remove_labels": {
-		DefaultMax: 1,
+		DefaultMax: 5,
 		Fields: map[string]FieldValidation{
 			"labels":      {Required: true, Type: "array", ItemType: "string", ItemSanitize: true, ItemMaxLength: 128},
 			"item_number": {IssueOrPRNumber: true},
@@ -343,7 +343,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"hide_comment": {
-		DefaultMax: 1,
+		DefaultMax: 5,
 		Fields: map[string]FieldValidation{
 			"comment_id": {Required: true, Type: "string", MaxLength: 256},
 			"reason":     {Type: "string", Enum: []string{"SPAM", "ABUSE", "OFF_TOPIC", "OUTDATED", "RESOLVED"}},
@@ -351,7 +351,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"missing_data": {
-		DefaultMax: 1,
+		DefaultMax: 20,
 		Fields: map[string]FieldValidation{
 			"data_type":    {Type: "string", Sanitize: true, MaxLength: 128},
 			"reason":       {Type: "string", Sanitize: true, MaxLength: 256},
@@ -360,7 +360,7 @@ var ValidationConfig = map[string]TypeValidationConfig{
 		},
 	},
 	"autofix_code_scanning_alert": {
-		DefaultMax: 1,
+		DefaultMax: 10,
 		Fields: map[string]FieldValidation{
 			"alert_number":    {PositiveInteger: true},
 			"fix_description": {Required: true, Type: "string", Sanitize: true, MaxLength: MaxBodyLength},

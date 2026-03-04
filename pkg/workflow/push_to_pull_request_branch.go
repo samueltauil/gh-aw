@@ -135,7 +135,7 @@ func (c *Compiler) parsePushToPullRequestBranchConfig(outputMap map[string]any) 
 			pushToBranchConfig.AllowedRepos = parseAllowedReposFromConfig(configMap)
 
 			// Parse common base fields with default max of 0 (no limit)
-			c.parseBaseSafeOutputConfig(configMap, &pushToBranchConfig.BaseSafeOutputConfig, 1)
+			c.parseBaseSafeOutputConfig(configMap, &pushToBranchConfig.BaseSafeOutputConfig, 0)
 		}
 
 		return pushToBranchConfig

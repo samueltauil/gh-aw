@@ -64,7 +64,7 @@ func (c *Compiler) parseUploadAssetConfig(outputMap map[string]any) *UploadAsset
 			}
 
 			// Parse common base fields with default max of 0 (no limit)
-			c.parseBaseSafeOutputConfig(configMap, &config.BaseSafeOutputConfig, 1)
+			c.parseBaseSafeOutputConfig(configMap, &config.BaseSafeOutputConfig, 0)
 			publishAssetsLog.Printf("Parsed upload-asset config: branch=%s, max_size_kb=%d, allowed_exts=%d", config.BranchName, config.MaxSizeKB, len(config.AllowedExts))
 		} else if configData == nil {
 			// Handle null case: create config with defaults

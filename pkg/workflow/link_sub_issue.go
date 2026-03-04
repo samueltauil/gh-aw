@@ -32,8 +32,8 @@ func (c *Compiler) parseLinkSubIssueConfig(outputMap map[string]any) *LinkSubIss
 			}
 			linkSubIssueConfig.SafeOutputTargetConfig = targetConfig
 
-			// Parse common base fields with default max of 1
-			c.parseBaseSafeOutputConfig(configMap, &linkSubIssueConfig.BaseSafeOutputConfig, 1)
+			// Parse common base fields with default max of 5
+			c.parseBaseSafeOutputConfig(configMap, &linkSubIssueConfig.BaseSafeOutputConfig, 5)
 
 			// Parse parent-required-labels
 			linkSubIssueConfig.ParentRequiredLabels = ParseStringArrayFromConfig(configMap, "parent-required-labels", linkSubIssueLog)
@@ -52,7 +52,7 @@ func (c *Compiler) parseLinkSubIssueConfig(outputMap map[string]any) *LinkSubIss
 				len(linkSubIssueConfig.SubRequiredLabels), linkSubIssueConfig.TargetRepoSlug)
 		} else {
 			// If configData is nil or not a map, still set the default max
-			linkSubIssueConfig.Max = defaultIntStr(1)
+			linkSubIssueConfig.Max = defaultIntStr(5)
 		}
 
 		return linkSubIssueConfig

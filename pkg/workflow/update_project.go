@@ -35,11 +35,11 @@ func (c *Compiler) parseUpdateProjectConfig(outputMap map[string]any) *UpdatePro
 	if configData, exists := outputMap["update-project"]; exists {
 		updateProjectLog.Print("Parsing update-project configuration")
 		updateProjectConfig := &UpdateProjectConfig{}
-		updateProjectConfig.Max = defaultIntStr(1) // Default max is 1
+		updateProjectConfig.Max = defaultIntStr(10) // Default max is 10
 
 		if configMap, ok := configData.(map[string]any); ok {
 			// Parse base config (max, github-token)
-			c.parseBaseSafeOutputConfig(configMap, &updateProjectConfig.BaseSafeOutputConfig, 1)
+			c.parseBaseSafeOutputConfig(configMap, &updateProjectConfig.BaseSafeOutputConfig, 10)
 
 			// Parse github-token override if specified
 			if token, exists := configMap["github-token"]; exists {

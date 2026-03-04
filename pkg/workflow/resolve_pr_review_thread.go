@@ -23,8 +23,8 @@ func (c *Compiler) parseResolvePullRequestReviewThreadConfig(outputMap map[strin
 		if configMap, ok := configData.(map[string]any); ok {
 			resolvePRReviewThreadLog.Print("Found resolve-pull-request-review-thread config map")
 
-			// Parse common base fields with default max of 1
-			c.parseBaseSafeOutputConfig(configMap, &config.BaseSafeOutputConfig, 1)
+			// Parse common base fields with default max of 10
+			c.parseBaseSafeOutputConfig(configMap, &config.BaseSafeOutputConfig, 10)
 
 			// Parse target config (target, target-repo, allowed-repos)
 			targetConfig, _ := ParseTargetConfig(configMap)
@@ -33,7 +33,7 @@ func (c *Compiler) parseResolvePullRequestReviewThreadConfig(outputMap map[strin
 			resolvePRReviewThreadLog.Printf("Parsed resolve-pull-request-review-thread config: max=%d, target_repo=%s", templatableIntValue(config.Max), config.TargetRepoSlug)
 		} else {
 			// If configData is nil or not a map, still set the default max
-			config.Max = defaultIntStr(1)
+			config.Max = defaultIntStr(10)
 		}
 
 		return config
