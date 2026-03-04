@@ -18,10 +18,10 @@ func (c *Compiler) parseCreateProjectStatusUpdateConfig(outputMap map[string]any
 	if configData, exists := outputMap["create-project-status-update"]; exists {
 		createProjectStatusUpdateLog.Print("Parsing create-project-status-update configuration")
 		config := &CreateProjectStatusUpdateConfig{}
-		config.Max = defaultIntStr(10) // Default max is 10
+		config.Max = defaultIntStr(1) // Default max is 1
 
 		if configMap, ok := configData.(map[string]any); ok {
-			c.parseBaseSafeOutputConfig(configMap, &config.BaseSafeOutputConfig, 10)
+			c.parseBaseSafeOutputConfig(configMap, &config.BaseSafeOutputConfig, 1)
 
 			// Parse custom GitHub token
 			if token, ok := configMap["github-token"]; ok {

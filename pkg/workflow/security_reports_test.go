@@ -44,7 +44,7 @@ func TestCodeScanningAlertsConfig(t *testing.T) {
 					},
 				},
 			},
-			expectedConfig: &CreateCodeScanningAlertsConfig{BaseSafeOutputConfig: BaseSafeOutputConfig{Max: nil}, Driver: "Custom Security Scanner"},
+			expectedConfig: &CreateCodeScanningAlertsConfig{BaseSafeOutputConfig: BaseSafeOutputConfig{Max: strPtr("1")}, Driver: "Custom Security Scanner"},
 		},
 		{
 			name: "code scanning alert with max and driver configuration",
@@ -136,7 +136,7 @@ func TestParseCodeScanningAlertsConfig(t *testing.T) {
 					"driver": "Test Security Scanner",
 				},
 			},
-			expectedMax:    nil,
+			expectedMax:    strPtr("1"),
 			expectedDriver: "Test Security Scanner",
 			expectNil:      false,
 		},

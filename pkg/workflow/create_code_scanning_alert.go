@@ -39,7 +39,7 @@ func (c *Compiler) parseCodeScanningAlertsConfig(outputMap map[string]any) *Crea
 		securityReportsConfig.AllowedRepos = parseAllowedReposFromConfig(configMap)
 
 		// Parse common base fields with default max of 0 (unlimited)
-		c.parseBaseSafeOutputConfig(configMap, &securityReportsConfig.BaseSafeOutputConfig, 0)
+		c.parseBaseSafeOutputConfig(configMap, &securityReportsConfig.BaseSafeOutputConfig, 1)
 	} else {
 		// If configData is nil or not a map (e.g., "create-code-scanning-alert:" with no value),
 		// still set the default max (nil = unlimited)

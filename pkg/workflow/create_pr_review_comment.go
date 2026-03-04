@@ -51,12 +51,12 @@ func (c *Compiler) parsePullRequestReviewCommentsConfig(outputMap map[string]any
 		}
 		prReviewCommentsConfig.TargetRepoSlug = targetRepoSlug
 
-		// Parse common base fields with default max of 10
-		c.parseBaseSafeOutputConfig(configMap, &prReviewCommentsConfig.BaseSafeOutputConfig, 10)
+		// Parse common base fields with default max of 1
+		c.parseBaseSafeOutputConfig(configMap, &prReviewCommentsConfig.BaseSafeOutputConfig, 1)
 	} else {
 		// If configData is nil or not a map (e.g., "create-pull-request-review-comment:" with no value),
 		// still set the default max
-		prReviewCommentsConfig.Max = defaultIntStr(10)
+		prReviewCommentsConfig.Max = defaultIntStr(1)
 	}
 
 	return prReviewCommentsConfig

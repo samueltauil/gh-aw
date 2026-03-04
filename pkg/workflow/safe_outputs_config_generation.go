@@ -238,7 +238,7 @@ func generateSafeOutputsConfig(data *WorkflowData) string {
 		if data.SafeOutputs.CreatePullRequestReviewComments != nil {
 			safeOutputsConfig["create_pull_request_review_comment"] = generateMaxConfig(
 				data.SafeOutputs.CreatePullRequestReviewComments.Max,
-				10, // default max
+				1, // default max
 			)
 		}
 		if data.SafeOutputs.SubmitPullRequestReview != nil {
@@ -250,19 +250,19 @@ func generateSafeOutputsConfig(data *WorkflowData) string {
 		if data.SafeOutputs.ResolvePullRequestReviewThread != nil {
 			safeOutputsConfig["resolve_pull_request_review_thread"] = generateMaxConfig(
 				data.SafeOutputs.ResolvePullRequestReviewThread.Max,
-				10, // default max
+				1, // default max
 			)
 		}
 		if data.SafeOutputs.CreateCodeScanningAlerts != nil {
 			safeOutputsConfig["create_code_scanning_alert"] = generateMaxConfig(
 				data.SafeOutputs.CreateCodeScanningAlerts.Max,
-				0, // default: unlimited
+				1, // default max
 			)
 		}
 		if data.SafeOutputs.AutofixCodeScanningAlert != nil {
 			safeOutputsConfig["autofix_code_scanning_alert"] = generateMaxConfig(
 				data.SafeOutputs.AutofixCodeScanningAlert.Max,
-				10, // default max
+				1, // default max
 			)
 		}
 		if data.SafeOutputs.AddLabels != nil {
@@ -276,21 +276,21 @@ func generateSafeOutputsConfig(data *WorkflowData) string {
 			safeOutputsConfig["add_labels"] = generateTargetConfigWithRepos(
 				data.SafeOutputs.AddLabels.SafeOutputTargetConfig,
 				data.SafeOutputs.AddLabels.Max,
-				3, // default max
+				1, // default max
 				additionalFields,
 			)
 		}
 		if data.SafeOutputs.RemoveLabels != nil {
 			safeOutputsConfig["remove_labels"] = generateMaxWithAllowedConfig(
 				data.SafeOutputs.RemoveLabels.Max,
-				3, // default max
+				1, // default max
 				data.SafeOutputs.RemoveLabels.Allowed,
 			)
 		}
 		if data.SafeOutputs.AddReviewer != nil {
 			safeOutputsConfig["add_reviewer"] = generateMaxWithReviewersConfig(
 				data.SafeOutputs.AddReviewer.Max,
-				3, // default max
+				1, // default max
 				data.SafeOutputs.AddReviewer.Reviewers,
 			)
 		}
@@ -348,20 +348,20 @@ func generateSafeOutputsConfig(data *WorkflowData) string {
 		if data.SafeOutputs.MarkPullRequestAsReadyForReview != nil {
 			safeOutputsConfig["mark_pull_request_as_ready_for_review"] = generateMaxConfig(
 				data.SafeOutputs.MarkPullRequestAsReadyForReview.Max,
-				10, // default max
+				1, // default max
 			)
 		}
 		if data.SafeOutputs.PushToPullRequestBranch != nil {
 			safeOutputsConfig["push_to_pull_request_branch"] = generateMaxWithTargetConfig(
 				data.SafeOutputs.PushToPullRequestBranch.Max,
-				0, // default: unlimited
+				1, // default max
 				data.SafeOutputs.PushToPullRequestBranch.Target,
 			)
 		}
 		if data.SafeOutputs.UploadAssets != nil {
 			safeOutputsConfig["upload_asset"] = generateMaxConfig(
 				data.SafeOutputs.UploadAssets.Max,
-				0, // default: unlimited
+				1, // default max
 			)
 		}
 		if data.SafeOutputs.MissingTool != nil {
@@ -421,13 +421,13 @@ func generateSafeOutputsConfig(data *WorkflowData) string {
 		if data.SafeOutputs.UpdateProjects != nil {
 			safeOutputsConfig["update_project"] = generateMaxConfig(
 				data.SafeOutputs.UpdateProjects.Max,
-				10, // default max
+				1, // default max
 			)
 		}
 		if data.SafeOutputs.CreateProjectStatusUpdates != nil {
 			safeOutputsConfig["create_project_status_update"] = generateMaxConfig(
 				data.SafeOutputs.CreateProjectStatusUpdates.Max,
-				10, // default max
+				1, // default max
 			)
 		}
 		if data.SafeOutputs.CreateProjects != nil {
@@ -454,7 +454,7 @@ func generateSafeOutputsConfig(data *WorkflowData) string {
 		if data.SafeOutputs.LinkSubIssue != nil {
 			safeOutputsConfig["link_sub_issue"] = generateMaxConfig(
 				data.SafeOutputs.LinkSubIssue.Max,
-				5, // default max
+				1, // default max
 			)
 		}
 		if data.SafeOutputs.NoOp != nil {
@@ -466,7 +466,7 @@ func generateSafeOutputsConfig(data *WorkflowData) string {
 		if data.SafeOutputs.HideComment != nil {
 			safeOutputsConfig["hide_comment"] = generateHideCommentConfig(
 				data.SafeOutputs.HideComment.Max,
-				5, // default max
+				1, // default max
 				data.SafeOutputs.HideComment.AllowedReasons,
 			)
 		}
@@ -478,7 +478,7 @@ func generateSafeOutputsConfig(data *WorkflowData) string {
 			safeOutputsConfig["set_issue_type"] = generateTargetConfigWithRepos(
 				data.SafeOutputs.SetIssueType.SafeOutputTargetConfig,
 				data.SafeOutputs.SetIssueType.Max,
-				5, // default max
+				1, // default max
 				additionalFields,
 			)
 		}

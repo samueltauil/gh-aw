@@ -41,7 +41,7 @@ func (c *Compiler) parseAddReviewerConfig(outputMap map[string]any) *AddReviewer
 
 	// Set default max if not specified
 	if config.Max == nil {
-		config.Max = defaultIntStr(3)
+		config.Max = defaultIntStr(1)
 	}
 
 	// Validate target-repo (wildcard "*" is not allowed for safe outputs)
