@@ -124,16 +124,16 @@ func (b *handlerConfigBuilder) AddIfTrue(key string, value bool) *handlerConfigB
 }
 
 // Build returns the built configuration map
-func (b *handlerConfigBuilder) Build() map[string]any {
-	return b.config
+func (b *handlerConfigBuilder) Build() MapToolConfig {
+	return MapToolConfig(b.config)
 }
 
 // handlerBuilder is a function that builds a handler config from SafeOutputsConfig
-type handlerBuilder func(*SafeOutputsConfig) map[string]any
+type handlerBuilder func(*SafeOutputsConfig) MapToolConfig
 
 // handlerRegistry maps handler names to their builder functions
 var handlerRegistry = map[string]handlerBuilder{
-	"create_issue": func(cfg *SafeOutputsConfig) map[string]any {
+	"create_issue": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.CreateIssues == nil {
 			return nil
 		}
@@ -153,7 +153,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"add_comment": func(cfg *SafeOutputsConfig) map[string]any {
+	"add_comment": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.AddComments == nil {
 			return nil
 		}
@@ -168,7 +168,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddTemplatableBool("footer", getEffectiveFooterForTemplatable(c.Footer, cfg.Footer)).
 			Build()
 	},
-	"create_discussion": func(cfg *SafeOutputsConfig) map[string]any {
+	"create_discussion": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.CreateDiscussions == nil {
 			return nil
 		}
@@ -189,7 +189,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"close_issue": func(cfg *SafeOutputsConfig) map[string]any {
+	"close_issue": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.CloseIssues == nil {
 			return nil
 		}
@@ -204,7 +204,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("state_reason", c.StateReason).
 			Build()
 	},
-	"close_discussion": func(cfg *SafeOutputsConfig) map[string]any {
+	"close_discussion": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.CloseDiscussions == nil {
 			return nil
 		}
@@ -218,7 +218,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddStringSlice("allowed_repos", c.AllowedRepos).
 			Build()
 	},
-	"add_labels": func(cfg *SafeOutputsConfig) map[string]any {
+	"add_labels": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.AddLabels == nil {
 			return nil
 		}
@@ -237,11 +237,11 @@ var handlerRegistry = map[string]handlerBuilder{
 		// indicate the handler is enabled.
 		if len(config) == 0 {
 			// Return empty map so handler is included in config
-			return make(map[string]any)
+			return make(MapToolConfig)
 		}
 		return config
 	},
-	"remove_labels": func(cfg *SafeOutputsConfig) map[string]any {
+	"remove_labels": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.RemoveLabels == nil {
 			return nil
 		}
@@ -256,7 +256,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"add_reviewer": func(cfg *SafeOutputsConfig) map[string]any {
+	"add_reviewer": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.AddReviewer == nil {
 			return nil
 		}
@@ -270,7 +270,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"assign_milestone": func(cfg *SafeOutputsConfig) map[string]any {
+	"assign_milestone": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.AssignMilestone == nil {
 			return nil
 		}
@@ -284,7 +284,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"mark_pull_request_as_ready_for_review": func(cfg *SafeOutputsConfig) map[string]any {
+	"mark_pull_request_as_ready_for_review": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.MarkPullRequestAsReadyForReview == nil {
 			return nil
 		}
@@ -299,7 +299,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"create_code_scanning_alert": func(cfg *SafeOutputsConfig) map[string]any {
+	"create_code_scanning_alert": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.CreateCodeScanningAlerts == nil {
 			return nil
 		}
@@ -312,7 +312,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"create_agent_session": func(cfg *SafeOutputsConfig) map[string]any {
+	"create_agent_session": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.CreateAgentSessions == nil {
 			return nil
 		}
@@ -324,7 +324,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddStringSlice("allowed_repos", c.AllowedRepos).
 			Build()
 	},
-	"update_issue": func(cfg *SafeOutputsConfig) map[string]any {
+	"update_issue": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.UpdateIssues == nil {
 			return nil
 		}
@@ -349,7 +349,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddTemplatableBool("footer", getEffectiveFooterForTemplatable(c.Footer, cfg.Footer)).
 			Build()
 	},
-	"update_discussion": func(cfg *SafeOutputsConfig) map[string]any {
+	"update_discussion": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.UpdateDiscussions == nil {
 			return nil
 		}
@@ -375,7 +375,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddTemplatableBool("footer", getEffectiveFooterForTemplatable(c.Footer, cfg.Footer)).
 			Build()
 	},
-	"link_sub_issue": func(cfg *SafeOutputsConfig) map[string]any {
+	"link_sub_issue": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.LinkSubIssue == nil {
 			return nil
 		}
@@ -391,7 +391,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"update_release": func(cfg *SafeOutputsConfig) map[string]any {
+	"update_release": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.UpdateRelease == nil {
 			return nil
 		}
@@ -402,7 +402,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddTemplatableBool("footer", getEffectiveFooterForTemplatable(c.Footer, cfg.Footer)).
 			Build()
 	},
-	"create_pull_request_review_comment": func(cfg *SafeOutputsConfig) map[string]any {
+	"create_pull_request_review_comment": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.CreatePullRequestReviewComments == nil {
 			return nil
 		}
@@ -416,7 +416,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"submit_pull_request_review": func(cfg *SafeOutputsConfig) map[string]any {
+	"submit_pull_request_review": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.SubmitPullRequestReview == nil {
 			return nil
 		}
@@ -428,7 +428,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddStringPtr("footer", getEffectiveFooterString(c.Footer, cfg.Footer)).
 			Build()
 	},
-	"reply_to_pull_request_review_comment": func(cfg *SafeOutputsConfig) map[string]any {
+	"reply_to_pull_request_review_comment": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.ReplyToPullRequestReviewComment == nil {
 			return nil
 		}
@@ -442,7 +442,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddTemplatableBool("footer", getEffectiveFooterForTemplatable(c.Footer, cfg.Footer)).
 			Build()
 	},
-	"resolve_pull_request_review_thread": func(cfg *SafeOutputsConfig) map[string]any {
+	"resolve_pull_request_review_thread": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.ResolvePullRequestReviewThread == nil {
 			return nil
 		}
@@ -455,7 +455,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"create_pull_request": func(cfg *SafeOutputsConfig) map[string]any {
+	"create_pull_request": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.CreatePullRequests == nil {
 			return nil
 		}
@@ -483,7 +483,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("base_branch", c.BaseBranch)
 		return builder.Build()
 	},
-	"push_to_pull_request_branch": func(cfg *SafeOutputsConfig) map[string]any {
+	"push_to_pull_request_branch": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.PushToPullRequestBranch == nil {
 			return nil
 		}
@@ -506,7 +506,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfTrue("staged", c.Staged).
 			Build()
 	},
-	"update_pull_request": func(cfg *SafeOutputsConfig) map[string]any {
+	"update_pull_request": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.UpdatePullRequests == nil {
 			return nil
 		}
@@ -523,7 +523,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"close_pull_request": func(cfg *SafeOutputsConfig) map[string]any {
+	"close_pull_request": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.ClosePullRequests == nil {
 			return nil
 		}
@@ -539,7 +539,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfTrue("staged", c.Staged).
 			Build()
 	},
-	"hide_comment": func(cfg *SafeOutputsConfig) map[string]any {
+	"hide_comment": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.HideComment == nil {
 			return nil
 		}
@@ -552,7 +552,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"dispatch_workflow": func(cfg *SafeOutputsConfig) map[string]any {
+	"dispatch_workflow": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.DispatchWorkflow == nil {
 			return nil
 		}
@@ -569,7 +569,7 @@ var handlerRegistry = map[string]handlerBuilder{
 		builder.AddIfNotEmpty("github-token", c.GitHubToken)
 		return builder.Build()
 	},
-	"missing_tool": func(cfg *SafeOutputsConfig) map[string]any {
+	"missing_tool": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.MissingTool == nil {
 			return nil
 		}
@@ -579,7 +579,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"missing_data": func(cfg *SafeOutputsConfig) map[string]any {
+	"missing_data": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.MissingData == nil {
 			return nil
 		}
@@ -592,7 +592,7 @@ var handlerRegistry = map[string]handlerBuilder{
 	// Note: "noop" is intentionally NOT included here because it is always processed
 	// by a dedicated standalone step (see notify_comment.go buildConclusionJob).
 	// Adding it to the handler manager would create duplicate configuration overhead.
-	"autofix_code_scanning_alert": func(cfg *SafeOutputsConfig) map[string]any {
+	"autofix_code_scanning_alert": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.AutofixCodeScanningAlert == nil {
 			return nil
 		}
@@ -604,7 +604,7 @@ var handlerRegistry = map[string]handlerBuilder{
 	},
 	// Note: create_project, update_project and create_project_status_update are handled by the unified handler,
 	// not the separate project handler manager, so they are included in this registry.
-	"create_project": func(cfg *SafeOutputsConfig) map[string]any {
+	"create_project": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.CreateProjects == nil {
 			return nil
 		}
@@ -622,7 +622,7 @@ var handlerRegistry = map[string]handlerBuilder{
 		}
 		return builder.Build()
 	},
-	"update_project": func(cfg *SafeOutputsConfig) map[string]any {
+	"update_project": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.UpdateProjects == nil {
 			return nil
 		}
@@ -639,7 +639,7 @@ var handlerRegistry = map[string]handlerBuilder{
 		}
 		return builder.Build()
 	},
-	"assign_to_user": func(cfg *SafeOutputsConfig) map[string]any {
+	"assign_to_user": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.AssignToUser == nil {
 			return nil
 		}
@@ -655,7 +655,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddTemplatableBool("unassign_first", c.UnassignFirst).
 			Build()
 	},
-	"unassign_from_user": func(cfg *SafeOutputsConfig) map[string]any {
+	"unassign_from_user": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.UnassignFromUser == nil {
 			return nil
 		}
@@ -670,7 +670,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("github-token", c.GitHubToken).
 			Build()
 	},
-	"create_project_status_update": func(cfg *SafeOutputsConfig) map[string]any {
+	"create_project_status_update": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.CreateProjectStatusUpdates == nil {
 			return nil
 		}
@@ -681,7 +681,7 @@ var handlerRegistry = map[string]handlerBuilder{
 			AddIfNotEmpty("project", c.Project).
 			Build()
 	},
-	"set_issue_type": func(cfg *SafeOutputsConfig) map[string]any {
+	"set_issue_type": func(cfg *SafeOutputsConfig) MapToolConfig {
 		if cfg.SetIssueType == nil {
 			return nil
 		}
@@ -698,7 +698,7 @@ var handlerRegistry = map[string]handlerBuilder{
 		// (null config), which means "allow any type". Return non-nil empty map to
 		// indicate the handler is enabled.
 		if len(config) == 0 {
-			return make(map[string]any)
+			return make(MapToolConfig)
 		}
 		return config
 	},
