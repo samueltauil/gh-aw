@@ -133,7 +133,27 @@ func ResolveAgentFilePath(agentFile string) string {
 	return fmt.Sprintf("\"${GITHUB_WORKSPACE}/%s\"", agentFile)
 }
 
-// BuildStandardNpmEngineInstallSteps creates standard npm installation steps for engines
+// agentFileBodyExtractAwk is the awk program used to extract the markdown body from a custom
+// agent file, skipping any YAML frontmatter delimited by --- lines.
+//
+// How it works:
+//   - `n` counts how many `---` separator lines have been seen (max 2 counted).
+//   - Each `---` line that counts towards the frontmatter is consumed (next).
+//   - `n!=1` means: print the line unless we are inside the frontmatter (1 separator seen).
+//   - n==0: before any `---` (no frontmatter) → printed (whole file output)
+//   - n==1: inside frontmatter (between 1st and 2nd `---`) → skipped
+//   - n>=2: after closing `---` (markdown body) → printed
+//
+// Files without YAML frontmatter (n stays 0) are printed in full.
+const agentFileBodyExtractAwk = `'/^---$/ && n<2{n++;next} n!=1'`
+
+// AgentFileBodyExtractCmd builds the shell command fragment that assigns the markdown body
+// of an agent file (AGENT_CONTENT variable), stripping YAML frontmatter.
+// agentPath must already be shell-quoted (e.g. the output of ResolveAgentFilePath).
+func AgentFileBodyExtractCmd(agentPath string) string {
+	return fmt.Sprintf(`AGENT_CONTENT="$(awk %s %s)"`, agentFileBodyExtractAwk, agentPath)
+}
+
 // This helper extracts the common pattern shared by Copilot, Codex, and Claude engines.
 //
 // Parameters:

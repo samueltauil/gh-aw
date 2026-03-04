@@ -39,10 +39,10 @@ engine: copilot
 	assert.Equal(t, hash1, hash2, "same content should produce the same hash")
 }
 
-// TestInlinedImports_AgentFileError verifies that when inlined-imports: true and a custom agent
-// file is imported, ParseWorkflowFile returns a compilation error.
-// Agent files require runtime access and will not be resolved without sources.
-func TestInlinedImports_AgentFileError(t *testing.T) {
+// TestInlinedImports_AgentFileLocalWorks verifies that when inlined-imports: true and a local
+// agent file is imported, ParseWorkflowFile succeeds. Local agent imports are treated like
+// snippets (runtime-import path) and their content is inlined at compile time.
+func TestInlinedImports_AgentFileLocalWorks(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	// Create the .github/agents directory and agent file
@@ -78,16 +78,17 @@ Do something.
 		WithSkipValidation(true),
 	)
 
+	// Local agent import + inlined-imports: true should succeed now
+	// (local agents are treated like snippets, not the special AGENT_CONTENT path)
 	_, err := compiler.ParseWorkflowFile(workflowFile)
-	require.Error(t, err, "should return an error when inlined-imports is used with an agent file")
-	assert.Contains(t, err.Error(), "inlined-imports cannot be used with agent file imports",
-		"error message should explain the conflict")
-	assert.Contains(t, err.Error(), "my-agent.md",
-		"error message should include the agent file path")
+	require.NoError(t, err, "local agent import with inlined-imports should succeed")
 }
 
 // TestInlinedImports_AgentFileCleared verifies that buildInitialWorkflowData clears the AgentFile
-// field when inlined-imports is true. Note: ParseWorkflowFile will error before this state is used.
+// field when inlined-imports is true. This simulates a remote agent import scenario
+// (local imports no longer set AgentFile at all). For remote agent imports, ParseWorkflowFile
+// would error before this state is used in production (the inlined-imports + remote agent check
+// at compiler_orchestrator_workflow.go fires first).
 func TestInlinedImports_AgentFileCleared(t *testing.T) {
 	compiler := NewCompiler()
 

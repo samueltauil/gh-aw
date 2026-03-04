@@ -87,14 +87,14 @@ This workflow imports a custom agent with array-format tools.`
 		t.Fatalf("ProcessImportsFromFrontmatterWithManifest() error = %v, want nil", err)
 	}
 
-	// Verify that the agent file was detected and stored
-	if result.AgentFile == "" {
-		t.Errorf("Expected AgentFile to be set, got empty string")
+	// Verify that the agent file was NOT set as AgentFile (local imports use runtime-import path)
+	// Local agent imports (same repository) are handled like snippets via the runtime-import macro,
+	// not via the special AGENT_CONTENT engine path.
+	if result.AgentFile != "" {
+		t.Errorf("Expected AgentFile to be empty for local agent import (snippet-style path), got: %q", result.AgentFile)
 	}
-
-	expectedAgentPath := ".github/agents/feature-flag-remover.agent.md"
-	if result.AgentFile != expectedAgentPath {
-		t.Errorf("AgentFile = %q, want %q", result.AgentFile, expectedAgentPath)
+	if result.AgentImportSpec != "" {
+		t.Errorf("Expected AgentImportSpec to be empty for local agent import, got: %q", result.AgentImportSpec)
 	}
 
 	// Verify that the import path was added for runtime-import macro (new behavior)

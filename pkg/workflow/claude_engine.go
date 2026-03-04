@@ -219,16 +219,21 @@ func (e *ClaudeEngine) GetExecutionSteps(workflowData *WorkflowData, logFile str
 	}
 
 	// Build the agent command - prepend custom agent file content if specified (via imports)
+	// Note: AgentFile is only set for remote agent imports. Local agent imports use the
+	// runtime-import macro path (snippet-style) and do not set AgentFile.
+	// The AGENT_CONTENT approach reads the file at runtime from $GITHUB_WORKSPACE; it is only
+	// appropriate for remote imports where the file has been checked out separately.
 	var promptSetup string
 	var promptCommand string
 	if workflowData.AgentFile != "" {
 		agentPath := ResolveAgentFilePath(workflowData.AgentFile)
 		claudeLog.Printf("Using custom agent file: %s", workflowData.AgentFile)
-		// Extract markdown body from custom agent file and prepend to prompt
+		// Extract markdown body from custom agent file (skip YAML frontmatter) and prepend to prompt.
 		promptSetup = fmt.Sprintf(`# Extract markdown body from custom agent file (skip frontmatter)
-          AGENT_CONTENT="$(awk 'BEGIN{skip=1} /^---$/{if(skip){skip=0;next}else{skip=1;next}} !skip' %s)"
+          %s
           # Combine agent content with prompt
-          PROMPT_TEXT="$(printf '%%s\n\n%%s' "$AGENT_CONTENT" "$(cat /tmp/gh-aw/aw-prompts/prompt.txt)")"`, agentPath)
+          PROMPT_TEXT="$(printf '%%s\n\n%%s' "$AGENT_CONTENT" "$(cat /tmp/gh-aw/aw-prompts/prompt.txt)")"`,
+			AgentFileBodyExtractCmd(agentPath))
 		promptCommand = "\"$PROMPT_TEXT\""
 	} else {
 		promptCommand = "\"$(cat /tmp/gh-aw/aw-prompts/prompt.txt)\""

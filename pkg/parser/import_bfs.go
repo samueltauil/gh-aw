@@ -180,27 +180,41 @@ func processImportsFromFrontmatterWithManifestAndSource(frontmatter map[string]a
 		// Check if this is a custom agent file (any markdown file under .github/agents)
 		isAgentFile := strings.Contains(item.fullPath, "/.github/agents/") && strings.HasSuffix(strings.ToLower(item.fullPath), ".md")
 		if isAgentFile {
-			if acc.agentFile != "" {
-				// Multiple agent files found - error
-				log.Printf("Multiple agent files found: %s and %s", acc.agentFile, item.importPath)
-				return nil, fmt.Errorf("multiple agent files found in imports: '%s' and '%s'. Only one agent file is allowed per workflow", acc.agentFile, item.importPath)
+			if acc.firstAgentPath != "" {
+				// Multiple agent files found - error (applies to both local and remote)
+				log.Printf("Multiple agent files found: %s and %s", acc.firstAgentPath, item.importPath)
+				return nil, fmt.Errorf("multiple agent files found in imports: '%s' and '%s'. Only one agent file is allowed per workflow", acc.firstAgentPath, item.importPath)
 			}
 			// Extract relative path from repository root (from .github/ onwards)
 			// This ensures the path works at runtime with $GITHUB_WORKSPACE
 			var importRelPath string
 			if idx := strings.Index(item.fullPath, "/.github/"); idx >= 0 {
-				acc.agentFile = item.fullPath[idx+1:] // +1 to skip the leading slash
-				importRelPath = acc.agentFile
+				importRelPath = item.fullPath[idx+1:] // +1 to skip the leading slash
 			} else {
-				acc.agentFile = item.fullPath
 				importRelPath = item.fullPath
 			}
-			log.Printf("Found agent file: %s (resolved to: %s)", item.fullPath, acc.agentFile)
+			// Track the first agent seen (for subsequent duplicate checks)
+			acc.firstAgentPath = item.importPath
+			log.Printf("Found agent file: %s (resolved to: %s)", item.fullPath, importRelPath)
 
-			// Store the original import specification for remote agents
-			// This allows runtime detection and .github folder merging
-			acc.agentImportSpec = item.importPath
-			log.Printf("Agent import specification: %s", acc.agentImportSpec)
+			// For remote agent imports, set agentFile/agentImportSpec to enable special engine handling
+			// (AGENT_CONTENT extraction at runtime) and .github folder merging.
+			// For local agent imports (same repository), the file is already available in the workspace
+			// via the normal checkout, so it is treated like a snippet import: content is injected via
+			// the runtime-import macro (importPaths) which is the robust path used by snippets.
+			//
+			// Using the AGENT_CONTENT path for local imports is both unnecessary and fragile:
+			//  - When AWF (firewall) is enabled, the engine sets AGENT_CONTENT/PROMPT_TEXT as shell
+			//    variables on the host, but only exported environment variables reach the AWF container;
+			//    unexported shell variables are invisible inside the container, causing an empty prompt.
+			//  - The snippet/runtime-import path is simpler, correct, and does not have this issue.
+			if item.remoteOrigin != nil {
+				acc.agentFile = importRelPath
+				acc.agentImportSpec = item.importPath
+				log.Printf("Remote agent import - set agentFile=%s agentImportSpec=%s", acc.agentFile, acc.agentImportSpec)
+			} else {
+				log.Printf("Local agent import - using runtime-import path (snippet-style): %s", importRelPath)
+			}
 
 			// Track import path for runtime-import macro generation (only if no inputs)
 			// Imports with inputs must be inlined for compile-time substitution

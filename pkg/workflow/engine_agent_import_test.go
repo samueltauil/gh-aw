@@ -114,6 +114,8 @@ func TestCopilotEngineWithoutAgentFlag(t *testing.T) {
 }
 
 // TestClaudeEngineWithAgentFromImports tests that claude engine prepends agent file content to prompt
+// when AgentFile is set. AgentFile is only set for remote agent imports; local agent imports
+// use the runtime-import macro path (snippet-style) and do not set AgentFile.
 func TestClaudeEngineWithAgentFromImports(t *testing.T) {
 	engine := NewClaudeEngine()
 	workflowData := &WorkflowData{
@@ -178,6 +180,8 @@ func TestClaudeEngineWithoutAgentFile(t *testing.T) {
 }
 
 // TestCodexEngineWithAgentFromImports tests that codex engine prepends agent file content to prompt
+// when AgentFile is set. AgentFile is only set for remote agent imports; local agent imports
+// use the runtime-import macro path (snippet-style) and do not set AgentFile.
 func TestCodexEngineWithAgentFromImports(t *testing.T) {
 	engine := NewCodexEngine()
 	workflowData := &WorkflowData{

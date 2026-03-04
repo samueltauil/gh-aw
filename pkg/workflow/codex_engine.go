@@ -211,11 +211,13 @@ func (e *CodexEngine) GetExecutionSteps(workflowData *WorkflowData, logFile stri
 		npmPathSetup := GetNpmBinPathSetup()
 
 		// Codex reads both agent file and prompt inside AWF container (PATH setup + agent file reading + codex command)
+		// Note: AgentFile is only set for remote agent imports. Local agent imports use the
+		// runtime-import macro path (snippet-style) and do not set AgentFile.
 		var codexCommandWithSetup string
 		if workflowData.AgentFile != "" {
 			agentPath := ResolveAgentFilePath(workflowData.AgentFile)
-			// Read agent file and prompt inside AWF container, with PATH setup for npm binaries
-			codexCommandWithSetup = fmt.Sprintf(`%s && AGENT_CONTENT="$(awk 'BEGIN{skip=1} /^---$/{if(skip){skip=0;next}else{skip=1;next}} !skip' %s)" && INSTRUCTION="$(printf "%%s\n\n%%s" "$AGENT_CONTENT" "$(cat /tmp/gh-aw/aw-prompts/prompt.txt)")" && %s`, npmPathSetup, agentPath, codexCommand)
+			// Read agent file and prompt inside AWF container, with PATH setup for npm binaries.
+			codexCommandWithSetup = fmt.Sprintf(`%s && %s && INSTRUCTION="$(printf "%%s\n\n%%s" "$AGENT_CONTENT" "$(cat /tmp/gh-aw/aw-prompts/prompt.txt)")" && %s`, npmPathSetup, AgentFileBodyExtractCmd(agentPath), codexCommand)
 		} else {
 			// Read prompt inside AWF container to avoid Docker Compose interpolation issues, with PATH setup
 			codexCommandWithSetup = fmt.Sprintf(`%s && INSTRUCTION="$(cat /tmp/gh-aw/aw-prompts/prompt.txt)" && %s`, npmPathSetup, codexCommand)
@@ -233,13 +235,15 @@ func (e *CodexEngine) GetExecutionSteps(workflowData *WorkflowData, logFile stri
 	} else {
 		// Build the command without AWF wrapping
 		// Reuse commandName already determined above
+		// Note: AgentFile is only set for remote agent imports. Local agent imports use the
+		// runtime-import macro path (snippet-style) and do not set AgentFile.
 		if workflowData.AgentFile != "" {
 			agentPath := ResolveAgentFilePath(workflowData.AgentFile)
 			command = fmt.Sprintf(`set -o pipefail
-AGENT_CONTENT="$(awk 'BEGIN{skip=1} /^---$/{if(skip){skip=0;next}else{skip=1;next}} !skip' %s)"
+%s
 INSTRUCTION="$(printf "%%s\n\n%%s" "$AGENT_CONTENT" "$(cat "$GH_AW_PROMPT")")"
 mkdir -p "$CODEX_HOME/logs"
-%s %sexec%s%s%s"$INSTRUCTION" 2>&1 | tee %s`, agentPath, commandName, modelParam, webSearchParam, fullAutoParam, customArgsParam, logFile)
+%s %sexec%s%s%s"$INSTRUCTION" 2>&1 | tee %s`, AgentFileBodyExtractCmd(agentPath), commandName, modelParam, webSearchParam, fullAutoParam, customArgsParam, logFile)
 		} else {
 			command = fmt.Sprintf(`set -o pipefail
 INSTRUCTION="$(cat "$GH_AW_PROMPT")"

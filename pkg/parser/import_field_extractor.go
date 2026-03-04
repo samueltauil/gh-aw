@@ -42,8 +42,9 @@ type importAccumulator struct {
 	skipBotsSet              map[string]bool
 	caches                   []string
 	features                 []map[string]any
-	agentFile                string
-	agentImportSpec          string
+	agentFile                string // Only set for remote agent imports
+	agentImportSpec          string // Only set for remote agent imports
+	firstAgentPath           string // Tracks first agent seen (local or remote) for duplicate check
 	repositoryImports        []string
 	importInputs             map[string]any
 }
