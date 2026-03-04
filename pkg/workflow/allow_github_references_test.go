@@ -12,7 +12,7 @@ import (
 func TestAllowGitHubReferencesConfig(t *testing.T) {
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 		expected    []string
 	}{
 		{

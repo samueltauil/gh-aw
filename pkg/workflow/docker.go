@@ -12,7 +12,7 @@ import (
 var dockerLog = logger.New("workflow:docker")
 
 // collectDockerImages collects all Docker images used in MCP configurations
-func collectDockerImages(tools map[string]any, workflowData *WorkflowData, actionMode ActionMode) []string {
+func collectDockerImages(tools ToolsMap, workflowData *WorkflowData, actionMode ActionMode) []string {
 	var images []string
 	imageSet := make(map[string]bool) // Use a set to avoid duplicates
 

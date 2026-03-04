@@ -39,7 +39,7 @@ const macOSRunnerFAQURL = "https://github.github.com/gh-aw/reference/faq/#why-ar
 // container jobs required for the Agent Workflow Firewall sandbox.
 //
 // Returns an error with a FAQ link if a macOS runner is detected, nil otherwise.
-func validateRunsOn(frontmatter map[string]any, markdownPath string) error {
+func validateRunsOn(frontmatter Frontmatter, markdownPath string) error {
 	runsOn, exists := frontmatter["runs-on"]
 	if !exists {
 		return nil

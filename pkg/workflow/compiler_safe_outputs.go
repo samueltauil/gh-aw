@@ -17,7 +17,7 @@ var compilerSafeOutputsLog = logger.New("workflow:compiler_safe_outputs")
 
 // parseOnSection handles parsing of the "on" section from frontmatter, extracting command triggers,
 // reactions, and stop-after configurations while detecting conflicts with other event types.
-func (c *Compiler) parseOnSection(frontmatter map[string]any, workflowData *WorkflowData, markdownPath string) error {
+func (c *Compiler) parseOnSection(frontmatter Frontmatter, workflowData *WorkflowData, markdownPath string) error {
 	compilerSafeOutputsLog.Printf("Parsing on section: workflow=%s, markdownPath=%s", workflowData.Name, markdownPath)
 	// Check if "slash_command" or "command" (deprecated) is used as a trigger in the "on" section
 	// Also extract "reaction" from the "on" section
@@ -275,7 +275,7 @@ func (c *Compiler) mergeSafeJobsFromIncludedConfigs(topSafeJobs map[string]*Safe
 }
 
 // applyDefaultTools adds default read-only GitHub MCP tools, creating github tool if not present
-func (c *Compiler) applyDefaultTools(tools map[string]any, safeOutputs *SafeOutputsConfig, sandboxConfig *SandboxConfig, networkPermissions *NetworkPermissions) map[string]any {
+func (c *Compiler) applyDefaultTools(tools ToolsMap, safeOutputs *SafeOutputsConfig, sandboxConfig *SandboxConfig, networkPermissions *NetworkPermissions) map[string]any {
 	compilerSafeOutputsLog.Printf("Applying default tools: existingToolCount=%d", len(tools))
 	// Always apply default GitHub tools (create github section if it doesn't exist)
 

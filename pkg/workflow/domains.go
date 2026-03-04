@@ -390,7 +390,7 @@ func matchesDomain(domain, pattern string) bool {
 
 // extractHTTPMCPDomains extracts domain names from HTTP MCP server URLs in tools configuration
 // Returns a slice of domain names (e.g., ["mcp.tavily.com", "api.example.com"])
-func extractHTTPMCPDomains(tools map[string]any) []string {
+func extractHTTPMCPDomains(tools ToolsMap) []string {
 	if tools == nil {
 		return []string{}
 	}
@@ -440,7 +440,7 @@ func extractHTTPMCPDomains(tools map[string]any) []string {
 // extractPlaywrightDomains returns Playwright domains when Playwright tool is configured
 // Returns a slice of domain names required for Playwright browser downloads
 // These domains are needed when Playwright MCP server initializes in the Docker container
-func extractPlaywrightDomains(tools map[string]any) []string {
+func extractPlaywrightDomains(tools ToolsMap) []string {
 	if tools == nil {
 		return []string{}
 	}
@@ -456,7 +456,7 @@ func extractPlaywrightDomains(tools map[string]any) []string {
 
 // mergeDomainsWithNetworkToolsAndRuntimes combines default domains with NetworkPermissions, HTTP MCP server domains, and runtime ecosystem domains
 // Returns a deduplicated, sorted, comma-separated string suitable for AWF's --allow-domains flag
-func mergeDomainsWithNetworkToolsAndRuntimes(defaultDomains []string, network *NetworkPermissions, tools map[string]any, runtimes map[string]any) string {
+func mergeDomainsWithNetworkToolsAndRuntimes(defaultDomains []string, network *NetworkPermissions, tools ToolsMap, runtimes map[string]any) string {
 	domainMap := make(map[string]bool)
 
 	// Add default domains
@@ -522,31 +522,31 @@ var engineDefaultDomains = map[constants.EngineName][]string{
 // HTTP MCP server domains, and runtime ecosystem domains.
 // Returns a deduplicated, sorted, comma-separated string suitable for AWF's --allow-domains flag.
 // Falls back to an empty default domain list for unknown engines.
-func GetAllowedDomainsForEngine(engine constants.EngineName, network *NetworkPermissions, tools map[string]any, runtimes map[string]any) string {
+func GetAllowedDomainsForEngine(engine constants.EngineName, network *NetworkPermissions, tools ToolsMap, runtimes map[string]any) string {
 	return mergeDomainsWithNetworkToolsAndRuntimes(engineDefaultDomains[engine], network, tools, runtimes)
 }
 
 // GetCopilotAllowedDomainsWithToolsAndRuntimes merges Copilot default domains with NetworkPermissions, HTTP MCP server domains, and runtime ecosystem domains
 // Returns a deduplicated, sorted, comma-separated string suitable for AWF's --allow-domains flag
-func GetCopilotAllowedDomainsWithToolsAndRuntimes(network *NetworkPermissions, tools map[string]any, runtimes map[string]any) string {
+func GetCopilotAllowedDomainsWithToolsAndRuntimes(network *NetworkPermissions, tools ToolsMap, runtimes map[string]any) string {
 	return GetAllowedDomainsForEngine(constants.CopilotEngine, network, tools, runtimes)
 }
 
 // GetCodexAllowedDomainsWithToolsAndRuntimes merges Codex default domains with NetworkPermissions, HTTP MCP server domains, and runtime ecosystem domains
 // Returns a deduplicated, sorted, comma-separated string suitable for AWF's --allow-domains flag
-func GetCodexAllowedDomainsWithToolsAndRuntimes(network *NetworkPermissions, tools map[string]any, runtimes map[string]any) string {
+func GetCodexAllowedDomainsWithToolsAndRuntimes(network *NetworkPermissions, tools ToolsMap, runtimes map[string]any) string {
 	return GetAllowedDomainsForEngine(constants.CodexEngine, network, tools, runtimes)
 }
 
 // GetClaudeAllowedDomainsWithToolsAndRuntimes merges Claude default domains with NetworkPermissions, HTTP MCP server domains, and runtime ecosystem domains
 // Returns a deduplicated, sorted, comma-separated string suitable for AWF's --allow-domains flag
-func GetClaudeAllowedDomainsWithToolsAndRuntimes(network *NetworkPermissions, tools map[string]any, runtimes map[string]any) string {
+func GetClaudeAllowedDomainsWithToolsAndRuntimes(network *NetworkPermissions, tools ToolsMap, runtimes map[string]any) string {
 	return GetAllowedDomainsForEngine(constants.ClaudeEngine, network, tools, runtimes)
 }
 
 // GetGeminiAllowedDomainsWithToolsAndRuntimes merges Gemini default domains with NetworkPermissions, HTTP MCP server domains, and runtime ecosystem domains
 // Returns a deduplicated, sorted, comma-separated string suitable for AWF's --allow-domains flag
-func GetGeminiAllowedDomainsWithToolsAndRuntimes(network *NetworkPermissions, tools map[string]any, runtimes map[string]any) string {
+func GetGeminiAllowedDomainsWithToolsAndRuntimes(network *NetworkPermissions, tools ToolsMap, runtimes map[string]any) string {
 	return GetAllowedDomainsForEngine(constants.GeminiEngine, network, tools, runtimes)
 }
 

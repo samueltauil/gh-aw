@@ -50,7 +50,7 @@ var toolsTypesLog = logger.New("workflow:tools_types")
 //	}
 //
 //	// Backward compatibility wrapper
-//	func processToolsFromMap(tools map[string]any) error {
+//	func processToolsFromMap(tools ToolsMap) error {
 //	    config, err := ParseToolsConfig(tools)
 //	    if err != nil {
 //	        return err

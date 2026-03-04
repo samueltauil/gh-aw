@@ -13,7 +13,7 @@ var frontmatterMetadataLog = logger.New("workflow:frontmatter_extraction_metadat
 
 // extractFeatures extracts the features field from frontmatter
 // Returns a map of feature flags and configuration options (supports boolean flags and string values)
-func (c *Compiler) extractFeatures(frontmatter map[string]any) map[string]any {
+func (c *Compiler) extractFeatures(frontmatter Frontmatter) map[string]any {
 	frontmatterMetadataLog.Print("Extracting features from frontmatter")
 	value, exists := frontmatter["features"]
 	if !exists {
@@ -35,7 +35,7 @@ func (c *Compiler) extractFeatures(frontmatter map[string]any) map[string]any {
 }
 
 // extractDescription extracts the description field from frontmatter
-func (c *Compiler) extractDescription(frontmatter map[string]any) string {
+func (c *Compiler) extractDescription(frontmatter Frontmatter) string {
 	value, exists := frontmatter["description"]
 	if !exists {
 		return ""
@@ -53,7 +53,7 @@ func (c *Compiler) extractDescription(frontmatter map[string]any) string {
 }
 
 // extractSource extracts the source field from frontmatter
-func (c *Compiler) extractSource(frontmatter map[string]any) string {
+func (c *Compiler) extractSource(frontmatter Frontmatter) string {
 	value, exists := frontmatter["source"]
 	if !exists {
 		return ""
@@ -68,7 +68,7 @@ func (c *Compiler) extractSource(frontmatter map[string]any) string {
 }
 
 // extractTrackerID extracts and validates the tracker-id field from frontmatter
-func (c *Compiler) extractTrackerID(frontmatter map[string]any) (string, error) {
+func (c *Compiler) extractTrackerID(frontmatter Frontmatter) (string, error) {
 	value, exists := frontmatter["tracker-id"]
 	if !exists {
 		return "", nil
@@ -162,7 +162,7 @@ func safeUint64ToInt(u uint64) int {
 // extractToolsTimeout extracts the timeout setting from tools
 // Returns 0 if not set (engines will use their own defaults)
 // Returns error if timeout is explicitly set but invalid (< 1)
-func (c *Compiler) extractToolsTimeout(tools map[string]any) (int, error) {
+func (c *Compiler) extractToolsTimeout(tools ToolsMap) (int, error) {
 	if tools == nil {
 		return 0, nil // Use engine defaults
 	}
@@ -205,7 +205,7 @@ func (c *Compiler) extractToolsTimeout(tools map[string]any) (int, error) {
 // extractToolsStartupTimeout extracts the startup-timeout setting from tools
 // Returns 0 if not set (engines will use their own defaults)
 // Returns error if startup-timeout is explicitly set but invalid (< 1)
-func (c *Compiler) extractToolsStartupTimeout(tools map[string]any) (int, error) {
+func (c *Compiler) extractToolsStartupTimeout(tools ToolsMap) (int, error) {
 	if tools == nil {
 		return 0, nil // Use engine defaults
 	}
@@ -243,22 +243,22 @@ func (c *Compiler) extractToolsStartupTimeout(tools map[string]any) (int, error)
 
 // extractMapFromFrontmatter is a generic helper to extract a map[string]any from frontmatter
 // This now uses the structured extraction helper for better error handling
-func extractMapFromFrontmatter(frontmatter map[string]any, key string) map[string]any {
+func extractMapFromFrontmatter(frontmatter Frontmatter, key string) map[string]any {
 	return ExtractMapField(frontmatter, key)
 }
 
 // extractToolsFromFrontmatter extracts tools section from frontmatter map
-func extractToolsFromFrontmatter(frontmatter map[string]any) map[string]any {
+func extractToolsFromFrontmatter(frontmatter Frontmatter) map[string]any {
 	return ExtractMapField(frontmatter, "tools")
 }
 
 // extractMCPServersFromFrontmatter extracts mcp-servers section from frontmatter
-func extractMCPServersFromFrontmatter(frontmatter map[string]any) map[string]any {
+func extractMCPServersFromFrontmatter(frontmatter Frontmatter) map[string]any {
 	return ExtractMapField(frontmatter, "mcp-servers")
 }
 
 // extractRuntimesFromFrontmatter extracts runtimes section from frontmatter map
-func extractRuntimesFromFrontmatter(frontmatter map[string]any) map[string]any {
+func extractRuntimesFromFrontmatter(frontmatter Frontmatter) map[string]any {
 	return ExtractMapField(frontmatter, "runtimes")
 }
 
@@ -266,7 +266,7 @@ func extractRuntimesFromFrontmatter(frontmatter map[string]any) map[string]any {
 // Returns: PluginInfo with plugins list, custom token, and per-plugin MCP configs
 // Supports both array format and object format with optional github-token
 // Each plugin item can be either a string (repository slug) or an object with id and optional mcp config
-func extractPluginsFromFrontmatter(frontmatter map[string]any) *PluginInfo {
+func extractPluginsFromFrontmatter(frontmatter Frontmatter) *PluginInfo {
 	value, exists := frontmatter["plugins"]
 	if !exists {
 		return nil

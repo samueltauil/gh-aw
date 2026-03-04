@@ -299,7 +299,7 @@ func (c *Compiler) buildSafeJobs(data *WorkflowData, threatDetectionEnabled bool
 
 // extractSafeJobsFromFrontmatter extracts safe-jobs configuration from frontmatter.
 // Only checks the safe-outputs.jobs location. The top-level "safe-jobs" syntax is NOT supported.
-func extractSafeJobsFromFrontmatter(frontmatter map[string]any) map[string]*SafeJobConfig {
+func extractSafeJobsFromFrontmatter(frontmatter Frontmatter) map[string]*SafeJobConfig {
 	// Check location: safe-outputs.jobs
 	if safeOutputs, exists := frontmatter["safe-outputs"]; exists {
 		if safeOutputsMap, ok := safeOutputs.(map[string]any); ok {

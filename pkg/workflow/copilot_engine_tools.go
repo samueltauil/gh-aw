@@ -35,7 +35,7 @@ var copilotEngineToolsLog = logger.New("workflow:copilot_engine_tools")
 // computeCopilotToolArguments computes the --allow-tool arguments for Copilot CLI based on tool configurations.
 // It handles bash/shell tools, edit tools, safe outputs, safe inputs, and MCP server tools.
 // Returns a sorted list of arguments ready to be passed to the Copilot CLI.
-func (e *CopilotEngine) computeCopilotToolArguments(tools map[string]any, safeOutputs *SafeOutputsConfig, safeInputs *SafeInputsConfig, workflowData *WorkflowData) []string {
+func (e *CopilotEngine) computeCopilotToolArguments(tools ToolsMap, safeOutputs *SafeOutputsConfig, safeInputs *SafeInputsConfig, workflowData *WorkflowData) []string {
 	copilotEngineToolsLog.Printf("Computing tool arguments: tools=%d", len(tools))
 	if tools == nil {
 		tools = make(map[string]any)
@@ -208,7 +208,7 @@ func (e *CopilotEngine) computeCopilotToolArguments(tools map[string]any, safeOu
 
 // generateCopilotToolArgumentsComment generates a multi-line comment showing each tool argument.
 // This is used to document which tool permissions are being granted in the compiled workflow.
-func (e *CopilotEngine) generateCopilotToolArgumentsComment(tools map[string]any, safeOutputs *SafeOutputsConfig, safeInputs *SafeInputsConfig, workflowData *WorkflowData, indent string) string {
+func (e *CopilotEngine) generateCopilotToolArgumentsComment(tools ToolsMap, safeOutputs *SafeOutputsConfig, safeInputs *SafeInputsConfig, workflowData *WorkflowData, indent string) string {
 	toolArgs := e.computeCopilotToolArguments(tools, safeOutputs, safeInputs, workflowData)
 	if len(toolArgs) == 0 {
 		return ""

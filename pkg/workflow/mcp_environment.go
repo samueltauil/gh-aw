@@ -57,7 +57,7 @@ var mcpEnvironmentLog = logger.New("workflow:mcp_environment")
 
 // collectMCPEnvironmentVariables collects all MCP-related environment variables
 // from the workflow configuration to be passed to both Start MCP gateway and MCP Gateway steps
-func collectMCPEnvironmentVariables(tools map[string]any, mcpTools []string, workflowData *WorkflowData, hasAgenticWorkflows bool) map[string]string {
+func collectMCPEnvironmentVariables(tools ToolsMap, mcpTools []string, workflowData *WorkflowData, hasAgenticWorkflows bool) map[string]string {
 	envVars := make(map[string]string)
 
 	// Check for GitHub MCP server token

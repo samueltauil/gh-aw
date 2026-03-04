@@ -75,7 +75,7 @@ import (
 var mcpSetupGeneratorLog = logger.New("workflow:mcp_setup_generator")
 
 // generateMCPSetup generates the MCP server configuration setup
-func (c *Compiler) generateMCPSetup(yaml *strings.Builder, tools map[string]any, engine CodingAgentEngine, workflowData *WorkflowData) error {
+func (c *Compiler) generateMCPSetup(yaml *strings.Builder, tools ToolsMap, engine CodingAgentEngine, workflowData *WorkflowData) error {
 	mcpSetupGeneratorLog.Print("Generating MCP server configuration setup")
 	// Collect tools that need MCP server configuration
 	var mcpTools []string

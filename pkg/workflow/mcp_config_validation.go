@@ -57,7 +57,7 @@ import (
 var mcpValidationLog = logger.New("workflow:mcp_config_validation")
 
 // ValidateMCPConfigs validates all MCP configurations in the tools section using JSON schema
-func ValidateMCPConfigs(tools map[string]any) error {
+func ValidateMCPConfigs(tools ToolsMap) error {
 	mcpValidationLog.Printf("Validating MCP configurations for %d tools", len(tools))
 
 	// List of built-in tools that have their own validation logic

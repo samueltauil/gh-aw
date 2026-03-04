@@ -5,7 +5,7 @@ import "github.com/github/gh-aw/pkg/logger"
 var frontmatterExtractionSecurityLog = logger.New("workflow:frontmatter_extraction_security")
 
 // extractNetworkPermissions extracts network permissions from frontmatter
-func (c *Compiler) extractNetworkPermissions(frontmatter map[string]any) *NetworkPermissions {
+func (c *Compiler) extractNetworkPermissions(frontmatter Frontmatter) *NetworkPermissions {
 	frontmatterExtractionSecurityLog.Print("Extracting network permissions from frontmatter")
 
 	if network, exists := frontmatter["network"]; exists {
@@ -151,7 +151,7 @@ func (c *Compiler) extractFirewallConfig(firewall any) *FirewallConfig {
 }
 
 // extractSandboxConfig extracts sandbox configuration from front matter
-func (c *Compiler) extractSandboxConfig(frontmatter map[string]any) *SandboxConfig {
+func (c *Compiler) extractSandboxConfig(frontmatter Frontmatter) *SandboxConfig {
 	frontmatterExtractionSecurityLog.Print("Extracting sandbox configuration from frontmatter")
 
 	sandbox, exists := frontmatter["sandbox"]

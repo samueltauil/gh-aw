@@ -109,7 +109,7 @@ func TestEngineVersionTypeHandling(t *testing.T) {
 func TestEngineVersionNotProvided(t *testing.T) {
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 	}{
 		{
 			name: "engine without version field",

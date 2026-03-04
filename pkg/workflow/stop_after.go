@@ -16,7 +16,7 @@ import (
 var stopAfterLog = logger.New("workflow:stop_after")
 
 // extractStopAfterFromOn extracts the stop-after value from the on: section
-func (c *Compiler) extractStopAfterFromOn(frontmatter map[string]any, workflowData ...*WorkflowData) (string, error) {
+func (c *Compiler) extractStopAfterFromOn(frontmatter Frontmatter, workflowData ...*WorkflowData) (string, error) {
 	// Use cached On field from ParsedFrontmatter if available (when workflowData is provided)
 	var onSection any
 	var exists bool
@@ -51,7 +51,7 @@ func (c *Compiler) extractStopAfterFromOn(frontmatter map[string]any, workflowDa
 }
 
 // processStopAfterConfiguration extracts and processes stop-after configuration from frontmatter
-func (c *Compiler) processStopAfterConfiguration(frontmatter map[string]any, workflowData *WorkflowData, markdownPath string) error {
+func (c *Compiler) processStopAfterConfiguration(frontmatter Frontmatter, workflowData *WorkflowData, markdownPath string) error {
 	stopAfterLog.Printf("Processing stop-after configuration for workflow: %s", markdownPath)
 	// Extract stop-after from the on: section
 	stopAfter, err := c.extractStopAfterFromOn(frontmatter, workflowData)
@@ -190,7 +190,7 @@ func ExtractStopTimeFromLockFile(lockFilePath string) string {
 }
 
 // extractSkipIfMatchFromOn extracts the skip-if-match value from the on: section
-func (c *Compiler) extractSkipIfMatchFromOn(frontmatter map[string]any, workflowData ...*WorkflowData) (*SkipIfMatchConfig, error) {
+func (c *Compiler) extractSkipIfMatchFromOn(frontmatter Frontmatter, workflowData ...*WorkflowData) (*SkipIfMatchConfig, error) {
 	// Use cached On field from ParsedFrontmatter if available (when workflowData is provided)
 	var onSection any
 	var exists bool
@@ -269,7 +269,7 @@ func (c *Compiler) extractSkipIfMatchFromOn(frontmatter map[string]any, workflow
 }
 
 // extractSkipIfNoMatchFromOn extracts the skip-if-no-match value from the on: section
-func (c *Compiler) extractSkipIfNoMatchFromOn(frontmatter map[string]any, workflowData ...*WorkflowData) (*SkipIfNoMatchConfig, error) {
+func (c *Compiler) extractSkipIfNoMatchFromOn(frontmatter Frontmatter, workflowData ...*WorkflowData) (*SkipIfNoMatchConfig, error) {
 	// Use cached On field from ParsedFrontmatter if available (when workflowData is provided)
 	var onSection any
 	var exists bool
@@ -348,7 +348,7 @@ func (c *Compiler) extractSkipIfNoMatchFromOn(frontmatter map[string]any, workfl
 }
 
 // processSkipIfMatchConfiguration extracts and processes skip-if-match configuration from frontmatter
-func (c *Compiler) processSkipIfMatchConfiguration(frontmatter map[string]any, workflowData *WorkflowData) error {
+func (c *Compiler) processSkipIfMatchConfiguration(frontmatter Frontmatter, workflowData *WorkflowData) error {
 	// Extract skip-if-match from the on: section
 	skipIfMatchConfig, err := c.extractSkipIfMatchFromOn(frontmatter, workflowData)
 	if err != nil {
@@ -368,7 +368,7 @@ func (c *Compiler) processSkipIfMatchConfiguration(frontmatter map[string]any, w
 }
 
 // processSkipIfNoMatchConfiguration extracts and processes skip-if-no-match configuration from frontmatter
-func (c *Compiler) processSkipIfNoMatchConfiguration(frontmatter map[string]any, workflowData *WorkflowData) error {
+func (c *Compiler) processSkipIfNoMatchConfiguration(frontmatter Frontmatter, workflowData *WorkflowData) error {
 	// Extract skip-if-no-match from the on: section
 	skipIfNoMatchConfig, err := c.extractSkipIfNoMatchFromOn(frontmatter, workflowData)
 	if err != nil {

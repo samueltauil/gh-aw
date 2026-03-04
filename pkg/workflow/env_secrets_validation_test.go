@@ -13,7 +13,7 @@ import (
 func TestValidateEnvSecrets(t *testing.T) {
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 		strictMode  bool
 		expectError bool
 		errorMsg    string
@@ -238,7 +238,7 @@ func TestValidateEnvSecretsNonStrictMode(t *testing.T) {
 	// The warning behavior is tested by ensuring no error is returned in non-strict mode
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 	}{
 		{
 			name: "env with single secret in non-strict mode emits warning",
@@ -277,7 +277,7 @@ func TestValidateEnvSecretsIntegration(t *testing.T) {
 	// Test that validateEnvSecrets is properly integrated with the compiler
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 		strictMode  bool
 		expectError bool
 	}{
@@ -451,7 +451,7 @@ func TestValidateEnvSecretsMultipleSecretsErrorMessage(t *testing.T) {
 func TestValidateEngineEnvSecrets(t *testing.T) {
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 		strictMode  bool
 		expectError bool
 		errorMsg    string

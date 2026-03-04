@@ -100,7 +100,7 @@ func (c *Compiler) validateAgentFile(workflowData *WorkflowData, markdownPath st
 }
 
 // validateMaxTurnsSupport validates that max-turns is only used with engines that support this feature
-func (c *Compiler) validateMaxTurnsSupport(frontmatter map[string]any, engine CodingAgentEngine) error {
+func (c *Compiler) validateMaxTurnsSupport(frontmatter Frontmatter, engine CodingAgentEngine) error {
 	// Check if max-turns is specified in the engine config
 	engineSetting, engineConfig := c.ExtractEngineConfig(frontmatter)
 	_ = engineSetting // Suppress unused variable warning
@@ -127,7 +127,7 @@ func (c *Compiler) validateMaxTurnsSupport(frontmatter map[string]any, engine Co
 }
 
 // validateMaxContinuationsSupport validates that max-continuations is only used with engines that support this feature
-func (c *Compiler) validateMaxContinuationsSupport(frontmatter map[string]any, engine CodingAgentEngine) error {
+func (c *Compiler) validateMaxContinuationsSupport(frontmatter Frontmatter, engine CodingAgentEngine) error {
 	// Check if max-continuations is specified in the engine config
 	_, engineConfig := c.ExtractEngineConfig(frontmatter)
 
@@ -148,7 +148,7 @@ func (c *Compiler) validateMaxContinuationsSupport(frontmatter map[string]any, e
 }
 
 // validateWebSearchSupport validates that web-search tool is only used with engines that support this feature
-func (c *Compiler) validateWebSearchSupport(tools map[string]any, engine CodingAgentEngine) {
+func (c *Compiler) validateWebSearchSupport(tools ToolsMap, engine CodingAgentEngine) {
 	// Check if web-search tool is requested
 	_, hasWebSearch := tools["web-search"]
 

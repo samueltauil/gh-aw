@@ -100,7 +100,7 @@ func (c *Compiler) normalizeScheduleString(scheduleStr string, itemIndex int) (p
 
 // preprocessScheduleFields converts human-friendly schedule expressions to cron expressions
 // in the frontmatter's "on" section. It modifies the frontmatter map in place.
-func (c *Compiler) preprocessScheduleFields(frontmatter map[string]any, markdownPath string, content string) error {
+func (c *Compiler) preprocessScheduleFields(frontmatter Frontmatter, markdownPath string, content string) error {
 	schedulePreprocessingLog.Print("Preprocessing schedule fields in frontmatter")
 
 	// Check if "on" field exists
@@ -375,7 +375,7 @@ func (c *Compiler) createTriggerParseError(filePath, content, triggerStr string,
 
 // addFriendlyScheduleComments adds comments showing the original friendly format for schedule cron expressions
 // This function is called after the YAML has been generated from the frontmatter
-func (c *Compiler) addFriendlyScheduleComments(yamlStr string, frontmatter map[string]any) string {
+func (c *Compiler) addFriendlyScheduleComments(yamlStr string, frontmatter Frontmatter) string {
 	// Retrieve the friendly formats for this compilation
 	if len(c.scheduleFriendlyFormats) == 0 {
 		return yamlStr

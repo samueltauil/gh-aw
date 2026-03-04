@@ -142,7 +142,7 @@ func (c *Compiler) parseFrontmatterSection(markdownPath string) (*frontmatterPar
 
 // copyFrontmatterWithoutInternalMarkers creates a deep copy of frontmatter without internal marker fields
 // This is used for schema validation while preserving markers in the original for YAML generation
-func (c *Compiler) copyFrontmatterWithoutInternalMarkers(frontmatter map[string]any) map[string]any {
+func (c *Compiler) copyFrontmatterWithoutInternalMarkers(frontmatter Frontmatter) map[string]any {
 	// Create a shallow copy of the top level
 	copy := make(map[string]any)
 	for k, v := range frontmatter {

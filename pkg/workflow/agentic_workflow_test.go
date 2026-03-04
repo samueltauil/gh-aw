@@ -352,7 +352,7 @@ func TestAgenticWorkflowsNilSafety(t *testing.T) {
 func TestAgenticWorkflowsExtractToolsEdgeCases(t *testing.T) {
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 		expectTools bool
 		description string
 	}{

@@ -148,7 +148,7 @@ func TestCheckoutMissingPersistCredentialsFalse(t *testing.T) {
 func TestValidateCheckoutPersistCredentials_FrontmatterSteps(t *testing.T) {
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 		mergedSteps string
 		strictMode  bool
 		expectError bool

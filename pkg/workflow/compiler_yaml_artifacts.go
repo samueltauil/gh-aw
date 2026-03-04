@@ -11,13 +11,13 @@ var compilerYamlArtifactsLog = logger.New("workflow:compiler_yaml_artifacts")
 
 // generateExtractAccessLogs is a legacy method that no longer does anything
 // Network filtering is now handled at the workflow level
-func (c *Compiler) generateExtractAccessLogs(yaml *strings.Builder, tools map[string]any) {
+func (c *Compiler) generateExtractAccessLogs(yaml *strings.Builder, tools ToolsMap) {
 	// No proxy tools anymore - network filtering is handled at workflow level
 }
 
 // generateUploadAccessLogs is a legacy method that no longer does anything
 // Network filtering is now handled at the workflow level
-func (c *Compiler) generateUploadAccessLogs(yaml *strings.Builder, tools map[string]any) {
+func (c *Compiler) generateUploadAccessLogs(yaml *strings.Builder, tools ToolsMap) {
 	// No proxy tools anymore - network filtering is handled at workflow level
 }
 

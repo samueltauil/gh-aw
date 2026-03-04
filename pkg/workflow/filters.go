@@ -9,7 +9,7 @@ import (
 var filtersLog = logger.New("workflow:filters")
 
 // applyPullRequestDraftFilter applies draft filter conditions for pull_request triggers
-func (c *Compiler) applyPullRequestDraftFilter(data *WorkflowData, frontmatter map[string]any) {
+func (c *Compiler) applyPullRequestDraftFilter(data *WorkflowData, frontmatter Frontmatter) {
 	filtersLog.Print("Applying pull request draft filter")
 
 	// Use cached On field from ParsedFrontmatter if available, otherwise fall back to map access
@@ -103,7 +103,7 @@ func (c *Compiler) applyPullRequestDraftFilter(data *WorkflowData, frontmatter m
 // applyPullRequestForkFilter applies fork filter conditions for pull_request triggers
 // Supports "forks: []string" with glob patterns
 // Default behavior: When forks field is not specified, only same-repo PRs are allowed (forks are disallowed by default)
-func (c *Compiler) applyPullRequestForkFilter(data *WorkflowData, frontmatter map[string]any) {
+func (c *Compiler) applyPullRequestForkFilter(data *WorkflowData, frontmatter Frontmatter) {
 	filtersLog.Print("Applying pull request fork filter")
 
 	// Use cached On field from ParsedFrontmatter if available, otherwise fall back to map access
@@ -194,7 +194,7 @@ func (c *Compiler) applyPullRequestForkFilter(data *WorkflowData, frontmatter ma
 
 // applyLabelFilter applies label name filter conditions for labeled/unlabeled triggers
 // Supports "names: []string" to filter which label changes trigger the workflow
-func (c *Compiler) applyLabelFilter(data *WorkflowData, frontmatter map[string]any) {
+func (c *Compiler) applyLabelFilter(data *WorkflowData, frontmatter Frontmatter) {
 	filtersLog.Print("Applying label filter")
 
 	// Use cached On field from ParsedFrontmatter if available, otherwise fall back to map access

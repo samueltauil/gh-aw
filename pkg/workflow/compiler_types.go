@@ -9,6 +9,12 @@ import (
 
 var logTypes = logger.New("workflow:compiler_types")
 
+// Frontmatter is a type alias for the raw YAML frontmatter map parsed from workflow markdown files.
+type Frontmatter = map[string]any
+
+// ToolsMap is a type alias for the tools configuration map within a workflow frontmatter.
+type ToolsMap = map[string]any
+
 // CompilerOption is a functional option for configuring a Compiler
 type CompilerOption func(*Compiler)
 

@@ -54,7 +54,7 @@ import (
 var strictModeValidationLog = logger.New("workflow:strict_mode_validation")
 
 // validateStrictPermissions refuses write permissions in strict mode
-func (c *Compiler) validateStrictPermissions(frontmatter map[string]any) error {
+func (c *Compiler) validateStrictPermissions(frontmatter Frontmatter) error {
 	permissionsValue, exists := frontmatter["permissions"]
 	if !exists {
 		// No permissions specified is fine
@@ -108,7 +108,7 @@ func (c *Compiler) validateStrictNetwork(networkPermissions *NetworkPermissions)
 }
 
 // validateStrictMCPNetwork requires top-level network configuration when custom MCP servers use containers
-func (c *Compiler) validateStrictMCPNetwork(frontmatter map[string]any, networkPermissions *NetworkPermissions) error {
+func (c *Compiler) validateStrictMCPNetwork(frontmatter Frontmatter, networkPermissions *NetworkPermissions) error {
 	// Check mcp-servers section (new format)
 	mcpServersValue, exists := frontmatter["mcp-servers"]
 	if !exists {
@@ -151,7 +151,7 @@ func (c *Compiler) validateStrictMCPNetwork(frontmatter map[string]any, networkP
 }
 
 // validateStrictTools validates tools configuration in strict mode
-func (c *Compiler) validateStrictTools(frontmatter map[string]any) error {
+func (c *Compiler) validateStrictTools(frontmatter Frontmatter) error {
 	// Check tools section
 	toolsValue, exists := frontmatter["tools"]
 	if !exists {
@@ -200,7 +200,7 @@ func (c *Compiler) validateStrictTools(frontmatter map[string]any) error {
 }
 
 // validateStrictDeprecatedFields refuses deprecated fields in strict mode
-func (c *Compiler) validateStrictDeprecatedFields(frontmatter map[string]any) error {
+func (c *Compiler) validateStrictDeprecatedFields(frontmatter Frontmatter) error {
 	// Get the list of deprecated fields from the schema
 	deprecatedFields, err := parser.GetMainWorkflowDeprecatedFields()
 	if err != nil {
@@ -242,7 +242,7 @@ func (c *Compiler) validateStrictDeprecatedFields(frontmatter map[string]any) er
 //	COPILOT_GITHUB_TOKEN: ${{ secrets.MY_ORG_COPILOT_TOKEN }}
 //
 // No other engine.env var is allowed to have secrets.
-func (c *Compiler) validateEnvSecrets(frontmatter map[string]any) error {
+func (c *Compiler) validateEnvSecrets(frontmatter Frontmatter) error {
 	// Check top-level env section (no allowed overrides here)
 	if err := c.validateEnvSecretsSection(frontmatter, "env", nil); err != nil {
 		return err
@@ -369,7 +369,7 @@ func (c *Compiler) validateEnvSecretsSection(config map[string]any, sectionName 
 // Note: Strict mode also affects zizmor security scanner behavior (see pkg/cli/zizmor.go)
 // When zizmor is enabled with --zizmor flag, strict mode will treat any security
 // findings as compilation errors rather than warnings.
-func (c *Compiler) validateStrictMode(frontmatter map[string]any, networkPermissions *NetworkPermissions) error {
+func (c *Compiler) validateStrictMode(frontmatter Frontmatter, networkPermissions *NetworkPermissions) error {
 	if !c.strictMode {
 		strictModeValidationLog.Printf("Strict mode disabled, skipping validation")
 		return nil

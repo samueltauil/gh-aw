@@ -41,7 +41,7 @@ import (
 var filterValidationLog = logger.New("workflow:filter_validation")
 
 // ValidateEventFilters checks for GitHub Actions filter mutual exclusivity rules
-func ValidateEventFilters(frontmatter map[string]any) error {
+func ValidateEventFilters(frontmatter Frontmatter) error {
 	filterValidationLog.Print("Validating event filter mutual exclusivity")
 
 	on, exists := frontmatter["on"]

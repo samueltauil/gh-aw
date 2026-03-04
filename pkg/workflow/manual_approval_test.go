@@ -9,7 +9,7 @@ import (
 func TestExtractManualApprovalFromOn(t *testing.T) {
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 		want        string
 		wantErr     bool
 	}{

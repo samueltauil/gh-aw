@@ -182,7 +182,7 @@ func (c *Compiler) buildJobs(data *WorkflowData, markdownPath string) error {
 	// Try to read frontmatter to determine event types for safe events check.
 	// Use contentOverride first (set by ParseWorkflowString for wasm/string API mode),
 	// then fall back to reading from disk.
-	var frontmatter map[string]any
+	var frontmatter Frontmatter
 	var rawContent string
 	if c.contentOverride != "" {
 		rawContent = c.contentOverride
@@ -233,7 +233,7 @@ func (c *Compiler) buildJobs(data *WorkflowData, markdownPath string) error {
 
 // buildPreActivationAndActivationJobs builds the pre-activation and activation jobs if needed.
 // Returns whether each job was created.
-func (c *Compiler) buildPreActivationAndActivationJobs(data *WorkflowData, frontmatter map[string]any, lockFilename string) (preActivationJobCreated bool, activationJobCreated bool, err error) {
+func (c *Compiler) buildPreActivationAndActivationJobs(data *WorkflowData, frontmatter Frontmatter, lockFilename string) (preActivationJobCreated bool, activationJobCreated bool, err error) {
 	// Determine if permission checks or stop-time checks are needed
 	needsPermissionCheck := c.needsRoleCheck(data, frontmatter)
 	hasStopTime := data.StopTime != ""
@@ -405,7 +405,7 @@ func (c *Compiler) updateConclusionJobDependencies(pushRepoMemoryJobName, update
 
 // extractJobsFromFrontmatter extracts job configuration from frontmatter
 // This now uses the structured extraction helper for consistency
-func (c *Compiler) extractJobsFromFrontmatter(frontmatter map[string]any) map[string]any {
+func (c *Compiler) extractJobsFromFrontmatter(frontmatter Frontmatter) map[string]any {
 	return ExtractMapField(frontmatter, "jobs")
 }
 

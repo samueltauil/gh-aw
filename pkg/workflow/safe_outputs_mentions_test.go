@@ -270,7 +270,7 @@ func TestGenerateSafeOutputsConfig_WithMentions(t *testing.T) {
 func TestExtractSafeOutputsConfig_WithMentions(t *testing.T) {
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 		expected    *MentionsConfig
 	}{
 		{

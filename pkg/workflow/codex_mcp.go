@@ -10,7 +10,7 @@ import (
 var codexMCPLog = logger.New("workflow:codex_mcp")
 
 // RenderMCPConfig generates MCP server configuration for Codex
-func (e *CodexEngine) RenderMCPConfig(yaml *strings.Builder, tools map[string]any, mcpTools []string, workflowData *WorkflowData) error {
+func (e *CodexEngine) RenderMCPConfig(yaml *strings.Builder, tools ToolsMap, mcpTools []string, workflowData *WorkflowData) error {
 	if codexMCPLog.Enabled() {
 		codexMCPLog.Printf("Rendering MCP config for Codex: mcp_tools=%v, tool_count=%d", mcpTools, len(tools))
 	}

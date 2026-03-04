@@ -216,7 +216,7 @@ func resolveInlinedImports(rawFrontmatter map[string]any) bool {
 }
 
 // extractYAMLSections extracts YAML configuration sections from frontmatter
-func (c *Compiler) extractYAMLSections(frontmatter map[string]any, workflowData *WorkflowData) {
+func (c *Compiler) extractYAMLSections(frontmatter Frontmatter, workflowData *WorkflowData) {
 	orchestratorWorkflowLog.Print("Extracting YAML sections from frontmatter")
 
 	workflowData.On = c.extractTopLevelYAMLSection(frontmatter, "on")
@@ -238,7 +238,7 @@ func (c *Compiler) extractYAMLSections(frontmatter map[string]any, workflowData 
 }
 
 // processAndMergeSteps handles the merging of imported steps with main workflow steps
-func (c *Compiler) processAndMergeSteps(frontmatter map[string]any, workflowData *WorkflowData, importsResult *parser.ImportsResult) {
+func (c *Compiler) processAndMergeSteps(frontmatter Frontmatter, workflowData *WorkflowData, importsResult *parser.ImportsResult) {
 	orchestratorWorkflowLog.Print("Processing and merging custom steps")
 
 	workflowData.CustomSteps = c.extractTopLevelYAMLSection(frontmatter, "steps")
@@ -323,7 +323,7 @@ func (c *Compiler) processAndMergeSteps(frontmatter map[string]any, workflowData
 }
 
 // processAndMergePostSteps handles the processing of post-steps with action pinning
-func (c *Compiler) processAndMergePostSteps(frontmatter map[string]any, workflowData *WorkflowData) {
+func (c *Compiler) processAndMergePostSteps(frontmatter Frontmatter, workflowData *WorkflowData) {
 	orchestratorWorkflowLog.Print("Processing post-steps")
 
 	workflowData.PostSteps = c.extractTopLevelYAMLSection(frontmatter, "post-steps")
@@ -359,7 +359,7 @@ func (c *Compiler) processAndMergePostSteps(frontmatter map[string]any, workflow
 }
 
 // processAndMergeServices handles the merging of imported services with main workflow services
-func (c *Compiler) processAndMergeServices(frontmatter map[string]any, workflowData *WorkflowData, importsResult *parser.ImportsResult) {
+func (c *Compiler) processAndMergeServices(frontmatter Frontmatter, workflowData *WorkflowData, importsResult *parser.ImportsResult) {
 	orchestratorWorkflowLog.Print("Processing and merging services")
 
 	workflowData.Services = c.extractTopLevelYAMLSection(frontmatter, "services")
@@ -449,8 +449,8 @@ func (c *Compiler) mergeJobsFromYAMLImports(mainJobs map[string]any, mergedJobsJ
 
 // extractAdditionalConfigurations extracts cache-memory, repo-memory, safe-inputs, and safe-outputs configurations
 func (c *Compiler) extractAdditionalConfigurations(
-	frontmatter map[string]any,
-	tools map[string]any,
+	frontmatter Frontmatter,
+	tools ToolsMap,
 	markdownDir string,
 	workflowData *WorkflowData,
 	importsResult *parser.ImportsResult,
@@ -565,7 +565,7 @@ func (c *Compiler) extractAdditionalConfigurations(
 
 // processOnSectionAndFilters processes the on section configuration and applies various filters
 func (c *Compiler) processOnSectionAndFilters(
-	frontmatter map[string]any,
+	frontmatter Frontmatter,
 	workflowData *WorkflowData,
 	cleanPath string,
 ) error {

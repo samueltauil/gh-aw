@@ -9,7 +9,7 @@ import (
 var manualApprovalLog = logger.New("workflow:manual_approval")
 
 // extractManualApprovalFromOn extracts the manual-approval value from the on: section
-func (c *Compiler) extractManualApprovalFromOn(frontmatter map[string]any) (string, error) {
+func (c *Compiler) extractManualApprovalFromOn(frontmatter Frontmatter) (string, error) {
 	onSection, exists := frontmatter["on"]
 	if !exists {
 		manualApprovalLog.Print("No on: section found in frontmatter")
@@ -39,7 +39,7 @@ func (c *Compiler) extractManualApprovalFromOn(frontmatter map[string]any) (stri
 }
 
 // processManualApprovalConfiguration extracts manual-approval configuration from frontmatter
-func (c *Compiler) processManualApprovalConfiguration(frontmatter map[string]any, workflowData *WorkflowData) error {
+func (c *Compiler) processManualApprovalConfiguration(frontmatter Frontmatter, workflowData *WorkflowData) error {
 	manualApprovalLog.Print("Processing manual-approval configuration")
 
 	// Extract manual-approval from the on: section

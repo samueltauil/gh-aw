@@ -12,7 +12,7 @@ import (
 func TestValidateRunsOn(t *testing.T) {
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 		wantErr     bool
 		errorInMsg  string
 		description string

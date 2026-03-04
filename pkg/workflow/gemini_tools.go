@@ -42,7 +42,7 @@ var geminiToolsLog = logger.New("workflow:gemini_tools")
 //
 // See: https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/file-system.md
 // See: https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/shell.md
-func computeGeminiToolsCore(tools map[string]any) []string {
+func computeGeminiToolsCore(tools ToolsMap) []string {
 	// Always include essential read-only file system tools
 	toolsCore := []string{
 		"glob",

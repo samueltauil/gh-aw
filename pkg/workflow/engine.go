@@ -72,7 +72,7 @@ type EngineNetworkConfig struct {
 }
 
 // ExtractEngineConfig extracts engine configuration from frontmatter, supporting both string and object formats
-func (c *Compiler) ExtractEngineConfig(frontmatter map[string]any) (string, *EngineConfig) {
+func (c *Compiler) ExtractEngineConfig(frontmatter Frontmatter) (string, *EngineConfig) {
 	if engine, exists := frontmatter["engine"]; exists {
 		engineLog.Print("Extracting engine configuration from frontmatter")
 

@@ -13,7 +13,7 @@ import (
 var claudeToolsLog = logger.New("workflow:claude_tools")
 
 // expandNeutralToolsToClaudeTools converts neutral tool names to Claude-specific tool configurations
-func (e *ClaudeEngine) expandNeutralToolsToClaudeTools(tools map[string]any) map[string]any {
+func (e *ClaudeEngine) expandNeutralToolsToClaudeTools(tools ToolsMap) map[string]any {
 	claudeToolsLog.Printf("Starting neutral tools expansion: input_tools=%d", len(tools))
 	result := make(map[string]any)
 
@@ -128,7 +128,7 @@ func (e *ClaudeEngine) expandNeutralToolsToClaudeTools(tools map[string]any) map
 // 2. converts neutral tools to Claude-specific tools format
 // 3. adds default Claude tools and git commands based on safe outputs configuration
 // 4. generates the allowed tools string for Claude
-func (e *ClaudeEngine) computeAllowedClaudeToolsString(tools map[string]any, safeOutputs *SafeOutputsConfig, cacheMemoryConfig *CacheMemoryConfig) string {
+func (e *ClaudeEngine) computeAllowedClaudeToolsString(tools ToolsMap, safeOutputs *SafeOutputsConfig, cacheMemoryConfig *CacheMemoryConfig) string {
 	claudeToolsLog.Print("Computing allowed Claude tools string")
 
 	// Initialize tools map if nil

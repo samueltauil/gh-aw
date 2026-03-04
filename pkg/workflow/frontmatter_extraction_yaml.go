@@ -15,7 +15,7 @@ import (
 var frontmatterLog = logger.New("workflow:frontmatter_extraction")
 
 // extractYAMLValue extracts a scalar value from the frontmatter map
-func (c *Compiler) extractYAMLValue(frontmatter map[string]any, key string) string {
+func (c *Compiler) extractYAMLValue(frontmatter Frontmatter, key string) string {
 	if value, exists := frontmatter[key]; exists {
 		if str, ok := value.(string); ok {
 			return str
@@ -62,7 +62,7 @@ func (c *Compiler) indentYAMLLines(yamlContent, indent string) string {
 }
 
 // extractTopLevelYAMLSection extracts a top-level YAML section from frontmatter
-func (c *Compiler) extractTopLevelYAMLSection(frontmatter map[string]any, key string) string {
+func (c *Compiler) extractTopLevelYAMLSection(frontmatter Frontmatter, key string) string {
 	value, exists := frontmatter[key]
 	if !exists {
 		return ""
@@ -126,7 +126,7 @@ func (c *Compiler) extractTopLevelYAMLSection(frontmatter map[string]any, key st
 // commentOutProcessedFieldsInOnSection comments out draft, fork, forks, names, manual-approval, stop-after, skip-if-match, skip-if-no-match, skip-roles, reaction, and lock-for-agent fields in the on section
 // These fields are processed separately and should be commented for documentation
 // Exception: names fields in sections with __gh_aw_native_label_filter__ marker in frontmatter are NOT commented out
-func (c *Compiler) commentOutProcessedFieldsInOnSection(yamlStr string, frontmatter map[string]any) string {
+func (c *Compiler) commentOutProcessedFieldsInOnSection(yamlStr string, frontmatter Frontmatter) string {
 	frontmatterLog.Print("Processing 'on' section to comment out processed fields")
 
 	// Check frontmatter for native label filter markers
@@ -582,7 +582,7 @@ func (c *Compiler) addZizmorIgnoreForWorkflowRun(yamlStr string) string {
 }
 
 // extractPermissions extracts permissions from frontmatter using the permission parser
-func (c *Compiler) extractPermissions(frontmatter map[string]any) string {
+func (c *Compiler) extractPermissions(frontmatter Frontmatter) string {
 	permissionsValue, exists := frontmatter["permissions"]
 	if !exists {
 		frontmatterLog.Print("No permissions field found in frontmatter")
@@ -615,7 +615,7 @@ func (c *Compiler) extractPermissions(frontmatter map[string]any) string {
 
 // extractIfCondition extracts the if condition from frontmatter, returning just the expression
 // without the "if: " prefix
-func (c *Compiler) extractIfCondition(frontmatter map[string]any) string {
+func (c *Compiler) extractIfCondition(frontmatter Frontmatter) string {
 	value, exists := frontmatter["if"]
 	if !exists {
 		return ""
@@ -646,7 +646,7 @@ func (c *Compiler) extractExpressionFromIfString(ifString string) string {
 }
 
 // extractCommandConfig extracts command configuration from frontmatter including name and events
-func (c *Compiler) extractCommandConfig(frontmatter map[string]any) (commandNames []string, commandEvents []string) {
+func (c *Compiler) extractCommandConfig(frontmatter Frontmatter) (commandNames []string, commandEvents []string) {
 	frontmatterLog.Print("Extracting command configuration from frontmatter")
 	// Check new format: on.slash_command or on.slash_command.name (preferred)
 	// Also check legacy format: on.command or on.command.name (deprecated)

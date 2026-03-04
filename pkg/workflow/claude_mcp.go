@@ -9,7 +9,7 @@ import (
 var claudeMCPLog = logger.New("workflow:claude_mcp")
 
 // RenderMCPConfig renders the MCP configuration for Claude engine
-func (e *ClaudeEngine) RenderMCPConfig(yaml *strings.Builder, tools map[string]any, mcpTools []string, workflowData *WorkflowData) error {
+func (e *ClaudeEngine) RenderMCPConfig(yaml *strings.Builder, tools ToolsMap, mcpTools []string, workflowData *WorkflowData) error {
 	claudeMCPLog.Printf("Rendering MCP config for Claude: tool_count=%d, mcp_tool_count=%d", len(tools), len(mcpTools))
 
 	// Create unified renderer with Claude-specific options

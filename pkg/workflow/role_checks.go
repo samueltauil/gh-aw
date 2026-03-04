@@ -89,7 +89,7 @@ func (c *Compiler) generateRateLimitCheck(data *WorkflowData, steps []string) []
 }
 
 // extractRoles extracts the 'roles' field from frontmatter to determine permission requirements
-func (c *Compiler) extractRoles(frontmatter map[string]any) []string {
+func (c *Compiler) extractRoles(frontmatter Frontmatter) []string {
 	// Check on.roles
 	if onValue, exists := frontmatter["on"]; exists {
 		if onMap, ok := onValue.(map[string]any); ok {
@@ -139,7 +139,7 @@ func parseRolesValue(rolesValue any, fieldName string) []string {
 }
 
 // extractBots extracts the 'bots' field from frontmatter to determine allowed bot identifiers
-func (c *Compiler) extractBots(frontmatter map[string]any) []string {
+func (c *Compiler) extractBots(frontmatter Frontmatter) []string {
 	// Check on.bots
 	if onValue, exists := frontmatter["on"]; exists {
 		if onMap, ok := onValue.(map[string]any); ok {
@@ -183,7 +183,7 @@ func parseBotsValue(botsValue any, fieldName string) []string {
 }
 
 // extractRateLimitConfig extracts the 'rate-limit' field from frontmatter
-func (c *Compiler) extractRateLimitConfig(frontmatter map[string]any) *RateLimitConfig {
+func (c *Compiler) extractRateLimitConfig(frontmatter Frontmatter) *RateLimitConfig {
 	if rateLimitValue, exists := frontmatter["rate-limit"]; exists && rateLimitValue != nil {
 		switch v := rateLimitValue.(type) {
 		case map[string]any:
@@ -268,7 +268,7 @@ func (c *Compiler) extractRateLimitConfig(frontmatter map[string]any) *RateLimit
 }
 
 // inferEventsFromTriggers infers rate-limit events from the workflow's 'on:' triggers
-func (c *Compiler) inferEventsFromTriggers(frontmatter map[string]any) []string {
+func (c *Compiler) inferEventsFromTriggers(frontmatter Frontmatter) []string {
 	onValue, exists := frontmatter["on"]
 	if !exists || onValue == nil {
 		return nil
@@ -314,7 +314,7 @@ func (c *Compiler) inferEventsFromTriggers(frontmatter map[string]any) []string 
 }
 
 // needsRoleCheck determines if the workflow needs permission checks with full context
-func (c *Compiler) needsRoleCheck(data *WorkflowData, frontmatter map[string]any) bool {
+func (c *Compiler) needsRoleCheck(data *WorkflowData, frontmatter Frontmatter) bool {
 	// If user explicitly specified "roles: all", no permission checks needed
 	if len(data.Roles) == 1 && data.Roles[0] == "all" {
 		roleLog.Print("Role check not needed: roles set to 'all'")
@@ -339,7 +339,7 @@ func (c *Compiler) needsRoleCheck(data *WorkflowData, frontmatter map[string]any
 }
 
 // hasSafeEventsOnly checks if the workflow uses only safe events that don't require permission checks
-func (c *Compiler) hasSafeEventsOnly(data *WorkflowData, frontmatter map[string]any) bool {
+func (c *Compiler) hasSafeEventsOnly(data *WorkflowData, frontmatter Frontmatter) bool {
 	// If user explicitly specified "roles: all", skip permission checks
 	if len(data.Roles) == 1 && data.Roles[0] == "all" {
 		return true
@@ -417,7 +417,7 @@ func (c *Compiler) hasSafeEventsOnly(data *WorkflowData, frontmatter map[string]
 }
 
 // hasWorkflowRunTrigger checks if the agentic workflow's frontmatter declares a workflow_run trigger
-func (c *Compiler) hasWorkflowRunTrigger(frontmatter map[string]any) bool {
+func (c *Compiler) hasWorkflowRunTrigger(frontmatter Frontmatter) bool {
 	if frontmatter == nil {
 		return false
 	}
@@ -496,7 +496,7 @@ func (c *Compiler) combineJobIfConditions(existingCondition, workflowRunRepoSafe
 
 // extractSkipRoles extracts the 'skip-roles' field from the 'on:' section of frontmatter
 // Returns nil if skip-roles is not configured
-func (c *Compiler) extractSkipRoles(frontmatter map[string]any) []string {
+func (c *Compiler) extractSkipRoles(frontmatter Frontmatter) []string {
 	// Check the "on" section in frontmatter
 	onValue, exists := frontmatter["on"]
 	if !exists || onValue == nil {
@@ -517,7 +517,7 @@ func (c *Compiler) extractSkipRoles(frontmatter map[string]any) []string {
 
 // extractSkipBots extracts the 'skip-bots' field from the 'on:' section of frontmatter
 // Returns nil if skip-bots is not configured
-func (c *Compiler) extractSkipBots(frontmatter map[string]any) []string {
+func (c *Compiler) extractSkipBots(frontmatter Frontmatter) []string {
 	// Check the "on" section in frontmatter
 	onValue, exists := frontmatter["on"]
 	if !exists || onValue == nil {
@@ -633,7 +633,7 @@ func (c *Compiler) mergeSkipBots(topSkipBots []string, importedSkipBots []string
 
 // extractActivationGitHubToken extracts the 'github-token' field from the 'on:' section of frontmatter.
 // This token is used for pre-activation reactions and activation status comments.
-func (c *Compiler) extractActivationGitHubToken(frontmatter map[string]any) string {
+func (c *Compiler) extractActivationGitHubToken(frontmatter Frontmatter) string {
 	if onValue, exists := frontmatter["on"]; exists {
 		if onMap, ok := onValue.(map[string]any); ok {
 			if tokenValue, hasToken := onMap["github-token"]; hasToken {
@@ -649,7 +649,7 @@ func (c *Compiler) extractActivationGitHubToken(frontmatter map[string]any) stri
 
 // extractActivationGitHubApp extracts the 'github-app' field from the 'on:' section of frontmatter.
 // When configured, a GitHub App installation access token is minted for use in reactions and status comments.
-func (c *Compiler) extractActivationGitHubApp(frontmatter map[string]any) *GitHubAppConfig {
+func (c *Compiler) extractActivationGitHubApp(frontmatter Frontmatter) *GitHubAppConfig {
 	if onValue, exists := frontmatter["on"]; exists {
 		if onMap, ok := onValue.(map[string]any); ok {
 			if appValue, hasApp := onMap["github-app"]; hasApp {

@@ -50,7 +50,7 @@ var safeOutputsConfigLog = logger.New("workflow:safe_outputs_config")
 //
 
 // extractSafeOutputsConfig extracts output configuration from frontmatter
-func (c *Compiler) extractSafeOutputsConfig(frontmatter map[string]any) *SafeOutputsConfig {
+func (c *Compiler) extractSafeOutputsConfig(frontmatter Frontmatter) *SafeOutputsConfig {
 	safeOutputsConfigLog.Print("Extracting safe-outputs configuration from frontmatter")
 
 	var config *SafeOutputsConfig

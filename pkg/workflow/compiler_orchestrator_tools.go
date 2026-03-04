@@ -67,7 +67,7 @@ func (c *Compiler) processToolsAndMarkdown(result *parser.FrontmatterResult, cle
 		}
 	}
 
-	var tools map[string]any
+	var tools ToolsMap
 
 	// Extract tools from the main file
 	topTools := extractToolsFromFrontmatter(result.Frontmatter)
@@ -370,7 +370,7 @@ func (c *Compiler) detectTextOutputUsage(markdownContent string) bool {
 // hasContentContext checks if the workflow is triggered by events that have text content
 // (issues, discussions, pull requests, or comments). These events can provide sanitized
 // text/title/body outputs via the sanitized step, even if not explicitly referenced.
-func (c *Compiler) hasContentContext(frontmatter map[string]any) bool {
+func (c *Compiler) hasContentContext(frontmatter Frontmatter) bool {
 	// Check if "on" field exists
 	onField, exists := frontmatter["on"]
 	if !exists || onField == nil {

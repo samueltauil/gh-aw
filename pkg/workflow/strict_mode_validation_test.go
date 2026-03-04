@@ -11,7 +11,7 @@ import (
 func TestValidateStrictPermissions(t *testing.T) {
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 		expectError bool
 		errorMsg    string
 	}{
@@ -556,7 +556,7 @@ func TestValidateStrictModeEdgeCases(t *testing.T) {
 func TestValidateStrictCacheMemoryScope(t *testing.T) {
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 		expectError bool
 		errorMsg    string
 	}{

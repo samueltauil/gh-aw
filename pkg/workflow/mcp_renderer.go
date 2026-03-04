@@ -598,7 +598,7 @@ type RenderCustomMCPToolConfigHandler func(yaml *strings.Builder, toolName strin
 func HandleCustomMCPToolInSwitch(
 	yaml *strings.Builder,
 	toolName string,
-	tools map[string]any,
+	tools ToolsMap,
 	isLast bool,
 	renderFunc RenderCustomMCPToolConfigHandler,
 ) bool {
@@ -909,7 +909,7 @@ func renderGuardPoliciesJSON(yaml *strings.Builder, policies map[string]any, ind
 //   - options: JSON MCP config rendering options
 func RenderJSONMCPConfig(
 	yaml *strings.Builder,
-	tools map[string]any,
+	tools ToolsMap,
 	mcpTools []string,
 	workflowData *WorkflowData,
 	options JSONMCPConfigOptions,

@@ -407,7 +407,7 @@ func (e *CodexEngine) expandNeutralToolsToCodexTools(toolsConfig *ToolsConfig) *
 
 // expandNeutralToolsToCodexToolsFromMap is a backward compatibility wrapper
 // that accepts map[string]any instead of *ToolsConfig
-func (e *CodexEngine) expandNeutralToolsToCodexToolsFromMap(tools map[string]any) map[string]any {
+func (e *CodexEngine) expandNeutralToolsToCodexToolsFromMap(tools ToolsMap) map[string]any {
 	toolsConfig, _ := ParseToolsConfig(tools)
 	result := e.expandNeutralToolsToCodexTools(toolsConfig)
 	return result.ToMap()
@@ -415,7 +415,7 @@ func (e *CodexEngine) expandNeutralToolsToCodexToolsFromMap(tools map[string]any
 
 // renderShellEnvironmentPolicy generates the [shell_environment_policy] section for config.toml
 // This controls which environment variables are passed through to MCP servers for security
-func (e *CodexEngine) renderShellEnvironmentPolicy(yaml *strings.Builder, tools map[string]any, mcpTools []string, workflowData *WorkflowData) {
+func (e *CodexEngine) renderShellEnvironmentPolicy(yaml *strings.Builder, tools ToolsMap, mcpTools []string, workflowData *WorkflowData) {
 	// Collect all environment variables needed by MCP servers
 	envVars := make(map[string]bool)
 

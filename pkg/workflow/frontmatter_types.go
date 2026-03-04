@@ -191,7 +191,7 @@ type FrontmatterConfig struct {
 //	var name string
 //	err := unmarshalFromMap(frontmatter, "name", &name)
 //
-//	var tools map[string]any
+//	var tools ToolsMap
 //	err := unmarshalFromMap(frontmatter, "tools", &tools)
 func unmarshalFromMap(data map[string]any, key string, dest any) error {
 	value, exists := data[key]
@@ -216,7 +216,7 @@ func unmarshalFromMap(data map[string]any, key string, dest any) error {
 // ParseFrontmatterConfig creates a FrontmatterConfig from a raw frontmatter map
 // This provides a single entry point for converting untyped frontmatter into
 // a structured configuration with better error handling.
-func ParseFrontmatterConfig(frontmatter map[string]any) (*FrontmatterConfig, error) {
+func ParseFrontmatterConfig(frontmatter Frontmatter) (*FrontmatterConfig, error) {
 	frontmatterTypesLog.Printf("Parsing frontmatter config with %d fields", len(frontmatter))
 	var config FrontmatterConfig
 
@@ -494,7 +494,7 @@ func countRuntimes(config *RuntimesConfig) int {
 // convert all numbers to float64).
 //
 // Returns an empty map if the key doesn't exist (for backward compatibility).
-func ExtractMapField(frontmatter map[string]any, key string) map[string]any {
+func ExtractMapField(frontmatter Frontmatter, key string) map[string]any {
 	// Check if key exists and value is not nil
 	value, exists := frontmatter[key]
 	if !exists || value == nil {

@@ -529,7 +529,7 @@ func renderSharedMCPConfig(yaml *strings.Builder, toolName string, toolConfig ma
 
 // collectHTTPMCPHeaderSecrets collects all secrets from HTTP MCP tool headers
 // Returns a map of environment variable names to their secret expressions
-func collectHTTPMCPHeaderSecrets(tools map[string]any) map[string]string {
+func collectHTTPMCPHeaderSecrets(tools ToolsMap) map[string]string {
 	allSecrets := make(map[string]string)
 
 	for toolName, toolValue := range tools {

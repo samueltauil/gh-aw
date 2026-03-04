@@ -292,7 +292,7 @@ func TestIsSafeInputsEnabledWithEnv(t *testing.T) {
 func TestParseSafeInputsAndExtractSafeInputsConfigConsistency(t *testing.T) {
 	tests := []struct {
 		name        string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 	}{
 		{
 			name:        "nil frontmatter",

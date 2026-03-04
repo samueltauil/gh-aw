@@ -90,7 +90,7 @@ func TestIsFeatureEnabledWithData(t *testing.T) {
 	tests := []struct {
 		name        string
 		envValue    string
-		frontmatter map[string]any
+		frontmatter Frontmatter
 		flag        constants.FeatureFlag
 		expected    bool
 		description string

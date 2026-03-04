@@ -207,7 +207,7 @@ func parseSafeInputsMap(safeInputsMap map[string]any) (*SafeInputsConfig, bool) 
 }
 
 // ParseSafeInputs parses safe-inputs configuration from frontmatter (standalone function for testing)
-func ParseSafeInputs(frontmatter map[string]any) *SafeInputsConfig {
+func ParseSafeInputs(frontmatter Frontmatter) *SafeInputsConfig {
 	if frontmatter == nil {
 		return nil
 	}
@@ -227,7 +227,7 @@ func ParseSafeInputs(frontmatter map[string]any) *SafeInputsConfig {
 }
 
 // extractSafeInputsConfig extracts safe-inputs configuration from frontmatter
-func (c *Compiler) extractSafeInputsConfig(frontmatter map[string]any) *SafeInputsConfig {
+func (c *Compiler) extractSafeInputsConfig(frontmatter Frontmatter) *SafeInputsConfig {
 	safeInputsLog.Print("Extracting safe-inputs configuration from frontmatter")
 
 	safeInputs, exists := frontmatter["safe-inputs"]

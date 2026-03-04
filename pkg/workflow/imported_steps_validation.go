@@ -55,7 +55,7 @@ func (c *Compiler) validateImportedStepsNoAgenticSecrets(engineConfig *EngineCon
 //
 // In strict mode this returns an error; in non-strict mode it emits a warning.
 // Only applies to the agent job. Custom jobs under 'jobs:' are not checked.
-func (c *Compiler) validateCheckoutPersistCredentials(frontmatter map[string]any, mergedSteps string) error {
+func (c *Compiler) validateCheckoutPersistCredentials(frontmatter Frontmatter, mergedSteps string) error {
 	importedStepsValidationLog.Printf("Validating checkout persist-credentials in agent job steps (strict=%v)", c.strictMode)
 
 	var offendingStepNames []string

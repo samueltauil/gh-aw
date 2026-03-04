@@ -6,7 +6,7 @@ import (
 )
 
 // extractSecretMaskingConfig extracts secret-masking configuration from frontmatter
-func (c *Compiler) extractSecretMaskingConfig(frontmatter map[string]any) *SecretMaskingConfig {
+func (c *Compiler) extractSecretMaskingConfig(frontmatter Frontmatter) *SecretMaskingConfig {
 	secretMaskingLog.Print("Extracting secret-masking configuration from frontmatter")
 
 	if secretMasking, exists := frontmatter["secret-masking"]; exists {

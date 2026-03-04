@@ -9,7 +9,7 @@ import (
 var copilotMCPLog = logger.New("workflow:copilot_mcp")
 
 // RenderMCPConfig generates MCP server configuration for Copilot CLI
-func (e *CopilotEngine) RenderMCPConfig(yaml *strings.Builder, tools map[string]any, mcpTools []string, workflowData *WorkflowData) error {
+func (e *CopilotEngine) RenderMCPConfig(yaml *strings.Builder, tools ToolsMap, mcpTools []string, workflowData *WorkflowData) error {
 	copilotMCPLog.Printf("Rendering MCP config for Copilot engine: mcpTools=%d", len(mcpTools))
 
 	// Create the directory first
