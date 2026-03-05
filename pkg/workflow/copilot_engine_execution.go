@@ -196,7 +196,12 @@ func (e *CopilotEngine) GetExecutionSteps(workflowData *WorkflowData, logFile st
 			WorkflowData:   workflowData,
 			UsesTTY:        false, // Copilot doesn't require TTY
 			AllowedDomains: allowedDomains,
-			PathSetup:      "", // No path setup needed on host side
+			// Mount the session-state directory so events.jsonl written inside the container
+			// is accessible on the host at /tmp/gh-aw/session-state/ for artifact collection.
+			AdditionalMounts: []string{"/tmp/gh-aw/session-state/:/home/runner/.copilot/session-state/:rw"},
+			// Create the host-side session-state directory before AWF starts so Docker
+			// can bind-mount it into the container.
+			PathSetup: "mkdir -p /tmp/gh-aw/session-state/",
 		})
 	} else {
 		// Run copilot command without AWF wrapper
@@ -389,8 +394,10 @@ func extractAddDirPaths(args []string) []string {
 }
 
 // generateCopilotSessionFileCopyStep generates a step to copy Copilot session state files
-// from ~/.copilot/session-state/ to /tmp/gh-aw/sandbox/agent/logs/
-// This ensures session files are in /tmp/gh-aw/ where secret redaction can scan them
+// from /tmp/gh-aw/session-state/ to /tmp/gh-aw/sandbox/agent/logs/
+// The session-state directory is bind-mounted from the host into the AWF container so that
+// events.jsonl written by the Copilot CLI inside the container is accessible on the host.
+// This ensures session files are in /tmp/gh-aw/ where secret redaction can scan them.
 func generateCopilotSessionFileCopyStep() GitHubActionStep {
 	var step []string
 
@@ -399,8 +406,9 @@ func generateCopilotSessionFileCopyStep() GitHubActionStep {
 	step = append(step, "        continue-on-error: true")
 	step = append(step, "        run: |")
 	step = append(step, "          # Copy Copilot session state files to logs folder for artifact collection")
-	step = append(step, "          # This ensures they are in /tmp/gh-aw/ where secret redaction can scan them")
-	step = append(step, "          SESSION_STATE_DIR=\"$HOME/.copilot/session-state\"")
+	step = append(step, "          # /tmp/gh-aw/session-state/ is bind-mounted into the AWF container at")
+	step = append(step, "          # $HOME/.copilot/session-state/ so events.jsonl is written here by the CLI")
+	step = append(step, "          SESSION_STATE_DIR=\"/tmp/gh-aw/session-state\"")
 	step = append(step, "          LOGS_DIR=\"/tmp/gh-aw/sandbox/agent/logs\"")
 	step = append(step, "          ")
 	step = append(step, "          if [ -d \"$SESSION_STATE_DIR\" ]; then")

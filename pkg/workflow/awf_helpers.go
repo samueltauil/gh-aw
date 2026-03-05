@@ -57,6 +57,10 @@ type AWFCommandConfig struct {
 	// PathSetup is optional shell commands to run before the engine command
 	// (e.g., npm PATH setup)
 	PathSetup string
+
+	// AdditionalMounts is optional engine-specific volume mounts to add to the AWF container.
+	// These are added before user-configured mounts (format: "source:dest:mode").
+	AdditionalMounts []string
 }
 
 // BuildAWFCommand builds a complete AWF command with all arguments.
@@ -148,6 +152,14 @@ func BuildAWFArgs(config AWFCommandConfig) []string {
 			awfArgs = append(awfArgs, "--mount", mount)
 		}
 		awfHelpersLog.Printf("Added %d custom mounts from agent config", len(sortedMounts))
+	}
+
+	// Add engine-specific mounts (e.g., session-state volume for Copilot)
+	for _, mount := range config.AdditionalMounts {
+		awfArgs = append(awfArgs, "--mount", mount)
+	}
+	if len(config.AdditionalMounts) > 0 {
+		awfHelpersLog.Printf("Added %d engine-specific mounts", len(config.AdditionalMounts))
 	}
 
 	// Add allowed domains
