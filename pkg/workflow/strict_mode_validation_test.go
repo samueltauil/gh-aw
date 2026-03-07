@@ -662,3 +662,109 @@ func TestValidateStrictCacheMemoryScope(t *testing.T) {
 		})
 	}
 }
+
+// TestValidateStrictTrigger tests the validateStrictTrigger function
+func TestValidateStrictTrigger(t *testing.T) {
+	tests := []struct {
+		name        string
+		frontmatter map[string]any
+		expectError bool
+		errorMsg    string
+	}{
+		{
+			name: "push trigger is allowed",
+			frontmatter: map[string]any{
+				"on": "push",
+			},
+			expectError: false,
+		},
+		{
+			name: "pull_request trigger is allowed",
+			frontmatter: map[string]any{
+				"on": "pull_request",
+			},
+			expectError: false,
+		},
+		{
+			name: "pull_request_target as string is refused",
+			frontmatter: map[string]any{
+				"on": "pull_request_target",
+			},
+			expectError: true,
+			errorMsg:    "strict mode: 'pull_request_target' trigger is not allowed for security reasons",
+		},
+		{
+			name: "pull_request_target as map key is refused",
+			frontmatter: map[string]any{
+				"on": map[string]any{
+					"pull_request_target": map[string]any{
+						"types": []string{"opened"},
+					},
+				},
+			},
+			expectError: true,
+			errorMsg:    "strict mode: 'pull_request_target' trigger is not allowed for security reasons",
+		},
+		{
+			name: "pull_request_target in array is refused",
+			frontmatter: map[string]any{
+				"on": []any{"push", "pull_request_target"},
+			},
+			expectError: true,
+			errorMsg:    "strict mode: 'pull_request_target' trigger is not allowed for security reasons",
+		},
+		{
+			name: "pull_request_target mixed with other triggers in map is refused",
+			frontmatter: map[string]any{
+				"on": map[string]any{
+					"push":                map[string]any{},
+					"pull_request_target": map[string]any{},
+				},
+			},
+			expectError: true,
+			errorMsg:    "strict mode: 'pull_request_target' trigger is not allowed for security reasons",
+		},
+		{
+			name: "no on field is allowed",
+			frontmatter: map[string]any{
+				"engine": "copilot",
+			},
+			expectError: false,
+		},
+		{
+			name: "pull_request trigger as map key is allowed",
+			frontmatter: map[string]any{
+				"on": map[string]any{
+					"pull_request": map[string]any{
+						"types": []string{"opened"},
+					},
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "multiple safe triggers in array are allowed",
+			frontmatter: map[string]any{
+				"on": []any{"push", "pull_request"},
+			},
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			compiler := NewCompiler()
+			err := compiler.validateStrictTrigger(tt.frontmatter)
+
+			if tt.expectError && err == nil {
+				t.Error("Expected validation to fail but it succeeded")
+			} else if !tt.expectError && err != nil {
+				t.Errorf("Expected validation to succeed but it failed: %v", err)
+			} else if tt.expectError && err != nil && tt.errorMsg != "" {
+				if !strings.Contains(err.Error(), tt.errorMsg) {
+					t.Errorf("Expected error containing '%s', got '%s'", tt.errorMsg, err.Error())
+				}
+			}
+		})
+	}
+}

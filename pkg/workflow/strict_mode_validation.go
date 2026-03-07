@@ -11,6 +11,7 @@
 //   - Network access configuration
 //   - Top-level network configuration required for container-based MCP servers
 //   - Bash wildcard tool usage
+//   - Dangerous trigger events (e.g. pull_request_target)
 //
 // # Validation Functions
 //
@@ -19,6 +20,7 @@
 //  2. validateStrictPermissions() - Refuses write permissions on sensitive scopes
 //  3. validateStrictNetwork() - Requires explicit network configuration
 //  4. validateStrictMCPNetwork() - Requires top-level network config for container-based MCP servers
+//  5. validateStrictTrigger() - Refuses dangerous trigger events (e.g. pull_request_target)
 //
 // # Integration with Security Scanners
 //
@@ -198,6 +200,53 @@ func (c *Compiler) validateStrictTools(frontmatter map[string]any) error {
 	return nil
 }
 
+// validateStrictTrigger refuses the use of pull_request_target trigger in strict mode.
+//
+// pull_request_target runs in the context of the base repository and has access to
+// repository secrets, even when triggered from a forked pull request. This makes it
+// a common vector for "pwn request" attacks where untrusted code from a fork can be
+// executed with elevated privileges. Strict mode disallows this trigger to prevent
+// accidental exposure of secrets to untrusted code.
+//
+// See: https://securitylab.github.com/research/github-actions-preventing-pwn-requests/
+func (c *Compiler) validateStrictTrigger(frontmatter map[string]any) error {
+	onValue, exists := frontmatter["on"]
+	if !exists {
+		return nil
+	}
+
+	hasPRT := false
+
+	switch on := onValue.(type) {
+	case string:
+		// on: pull_request_target
+		hasPRT = on == "pull_request_target"
+	case map[string]any:
+		// on:
+		//   pull_request_target: ...
+		_, hasPRT = on["pull_request_target"]
+	case []any:
+		// on: [push, pull_request_target]
+		for _, item := range on {
+			if s, ok := item.(string); ok && s == "pull_request_target" {
+				hasPRT = true
+				break
+			}
+		}
+	}
+
+	if hasPRT {
+		strictModeValidationLog.Printf("Trigger validation failed: pull_request_target is not allowed in strict mode")
+		return errors.New("strict mode: 'pull_request_target' trigger is not allowed for security reasons. " +
+			"This trigger runs with the privileges of the base repository and has access to repository secrets, " +
+			"even when triggered from a forked pull request, making it a common vector for supply chain attacks. " +
+			"Use 'pull_request' instead. See: https://securitylab.github.com/research/github-actions-preventing-pwn-requests/")
+	}
+
+	strictModeValidationLog.Printf("Trigger validation passed")
+	return nil
+}
+
 // validateStrictDeprecatedFields refuses deprecated fields in strict mode
 func (c *Compiler) validateStrictDeprecatedFields(frontmatter map[string]any) error {
 	// Get the list of deprecated fields from the schema
@@ -361,6 +410,7 @@ func (c *Compiler) validateEnvSecretsSection(config map[string]any, sectionName 
 //  3. validateStrictMCPNetwork() - Requires top-level network config for container-based MCP servers
 //  4. validateStrictTools() - Validates tools configuration (e.g., serena local mode)
 //  5. validateStrictDeprecatedFields() - Refuses deprecated fields
+//  6. validateStrictTrigger() - Refuses dangerous trigger events (e.g. pull_request_target)
 //
 // Note: Env secrets validation (validateEnvSecrets) is called separately outside of strict mode
 // to emit warnings in non-strict mode and errors in strict mode.
@@ -409,6 +459,13 @@ func (c *Compiler) validateStrictMode(frontmatter map[string]any, networkPermiss
 
 	// 5. Refuse deprecated fields
 	if err := c.validateStrictDeprecatedFields(frontmatter); err != nil {
+		if returnErr := collector.Add(err); returnErr != nil {
+			return returnErr // Fail-fast mode
+		}
+	}
+
+	// 6. Refuse dangerous trigger events
+	if err := c.validateStrictTrigger(frontmatter); err != nil {
 		if returnErr := collector.Add(err); returnErr != nil {
 			return returnErr // Fail-fast mode
 		}
