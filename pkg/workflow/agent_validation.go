@@ -83,7 +83,7 @@ func (c *Compiler) validateAgentFile(workflowData *WorkflowData, markdownPath st
 	if _, err := os.Stat(fullAgentPath); err != nil {
 		if os.IsNotExist(err) {
 			return formatCompilerError(markdownPath, "error",
-				fmt.Sprintf("agent file '%s' does not exist. Ensure the file exists in the repository and is properly imported.", agentPath), nil)
+				fmt.Sprintf("agent file '%s' does not exist. Check your workflow frontmatter: the 'agent:' field should reference a valid file path (e.g., '.github/agents/custom.agent.md')", agentPath), nil)
 		}
 		// Other error (permissions, etc.)
 		return formatCompilerError(markdownPath, "error",
