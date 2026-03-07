@@ -890,10 +890,11 @@ engine: copilot
 
 func TestStrictModePullRequestTarget(t *testing.T) {
 	tests := []struct {
-		name        string
-		content     string
-		expectError bool
-		errorMsg    string
+		name             string
+		content          string
+		setCLIStrictMode bool
+		expectError      bool
+		errorMsg         string
 	}{
 		{
 			name: "pull_request_target trigger is refused in strict mode",
@@ -905,8 +906,9 @@ engine: copilot
 ---
 
 # Test Workflow`,
-			expectError: true,
-			errorMsg:    "strict mode: 'pull_request_target' trigger is not allowed for security reasons",
+			setCLIStrictMode: true,
+			expectError:      true,
+			errorMsg:         "strict mode: 'pull_request_target' trigger is not allowed for security reasons",
 		},
 		{
 			name: "pull_request_target with types is refused in strict mode",
@@ -920,8 +922,9 @@ engine: copilot
 ---
 
 # Test Workflow`,
-			expectError: true,
-			errorMsg:    "strict mode: 'pull_request_target' trigger is not allowed for security reasons",
+			setCLIStrictMode: true,
+			expectError:      true,
+			errorMsg:         "strict mode: 'pull_request_target' trigger is not allowed for security reasons",
 		},
 		{
 			name: "pull_request trigger is allowed in strict mode",
@@ -933,7 +936,8 @@ engine: copilot
 ---
 
 # Test Workflow`,
-			expectError: false,
+			setCLIStrictMode: true,
+			expectError:      false,
 		},
 		{
 			name: "pull_request_target is allowed in non-strict mode",
@@ -946,7 +950,8 @@ engine: copilot
 ---
 
 # Test Workflow`,
-			expectError: false,
+			setCLIStrictMode: false,
+			expectError:      false,
 		},
 	}
 
@@ -960,7 +965,9 @@ engine: copilot
 			}
 
 			compiler := NewCompiler()
-			compiler.SetStrictMode(true)
+			if tt.setCLIStrictMode {
+				compiler.SetStrictMode(true)
+			}
 			err := compiler.CompileWorkflow(testFile)
 
 			if tt.expectError && err == nil {
