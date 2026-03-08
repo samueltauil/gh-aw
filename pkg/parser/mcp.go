@@ -610,12 +610,16 @@ func ParseMCPConfig(toolName string, mcpSection any, toolConfig map[string]any) 
 
 				// Add entrypoint args after the container image
 				if entrypointArgs, hasEntrypointArgs := mcpConfig["entrypointArgs"]; hasEntrypointArgs {
-					if entrypointArgsSlice, ok := entrypointArgs.([]any); ok {
-						for _, arg := range entrypointArgsSlice {
+					switch v := entrypointArgs.(type) {
+					case []any:
+						for _, arg := range v {
 							if argStr, ok := arg.(string); ok {
 								config.Args = append(config.Args, argStr)
 							}
 						}
+					case string:
+						// Support single-string format: entrypointArgs: "serve --port 8080"
+						config.Args = append(config.Args, strings.Fields(v)...)
 					}
 				}
 			}
@@ -646,12 +650,16 @@ func ParseMCPConfig(toolName string, mcpSection any, toolConfig map[string]any) 
 			}
 
 			if args, hasArgs := mcpConfig["args"]; hasArgs {
-				if argsSlice, ok := args.([]any); ok {
-					for _, arg := range argsSlice {
+				switch v := args.(type) {
+				case []any:
+					for _, arg := range v {
 						if argStr, ok := arg.(string); ok {
 							config.Args = append(config.Args, argStr)
 						}
 					}
+				case string:
+					// Support single-string format: args: "run --rm -i image:tag"
+					config.Args = append(config.Args, strings.Fields(v)...)
 				}
 			}
 		}

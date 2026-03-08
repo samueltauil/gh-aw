@@ -467,6 +467,24 @@ func TestParseMCPConfig(t *testing.T) {
 			},
 		},
 		{
+			name:     "Stdio with command and args as single string",
+			toolName: "docker-cmd-server",
+			mcpSection: map[string]any{
+				"type":    "stdio",
+				"command": "docker",
+				"args":    "run --rm -i my-image:latest",
+			},
+			toolConfig: map[string]any{},
+			expected: MCPServerConfig{BaseMCPServerConfig: types.BaseMCPServerConfig{Type: "stdio",
+				Command: "docker",
+				Args:    []string{"run", "--rm", "-i", "my-image:latest"},
+				Env:     map[string]string{},
+				Headers: map[string]string{}}, Name: "docker-cmd-server",
+
+				Allowed: []string{},
+			},
+		},
+		{
 			name:     "Stdio with container",
 			toolName: "docker-server",
 			mcpSection: map[string]any{
@@ -487,6 +505,25 @@ func TestParseMCPConfig(t *testing.T) {
 					"API_URL": "https://api.example.com",
 				},
 				Headers: map[string]string{}}, Name: "docker-server",
+
+				Allowed: []string{},
+			},
+		},
+		{
+			name:     "Stdio with container and entrypointArgs as string",
+			toolName: "docker-server-string",
+			mcpSection: map[string]any{
+				"type":           "stdio",
+				"container":      "myregistry/server:latest",
+				"entrypointArgs": "serve --port 8080",
+			},
+			toolConfig: map[string]any{},
+			expected: MCPServerConfig{BaseMCPServerConfig: types.BaseMCPServerConfig{Type: "stdio",
+				Container: "myregistry/server:latest",
+				Command:   "docker",
+				Args:      []string{"run", "--rm", "-i", "myregistry/server:latest", "serve", "--port", "8080"},
+				Env:       map[string]string{},
+				Headers:   map[string]string{}}, Name: "docker-server-string",
 
 				Allowed: []string{},
 			},

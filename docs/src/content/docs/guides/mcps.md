@@ -56,6 +56,29 @@ mcp-servers:
     allowed: ["*"]
 ```
 
+You can also provide `args` as a single space-separated string instead of an array:
+
+```yaml wrap
+mcp-servers:
+  serena:
+    command: "uvx"
+    args: "--from git+https://github.com/oraios/serena serena"
+    allowed: ["*"]
+```
+
+This is particularly useful for Docker-based stdio servers:
+
+```yaml wrap
+mcp-servers:
+  my-server:
+    command: "docker"
+    args: "run --rm -i my-image:latest"
+    allowed: ["*"]
+```
+
+> [!NOTE]
+> The single-string format splits on whitespace. Use the array format when any argument contains spaces (for example, file paths like `/path with spaces:/mount`).
+
 ### Docker Container MCP Servers
 
 Run containerized MCP servers with environment variables, volume mounts, and network restrictions:
@@ -80,7 +103,22 @@ network:
     - api.example.com  # Restricts egress to allowed domains
 ```
 
-The `container` field generates `docker run --rm -i <args> <image> <entrypointArgs>`. 
+The `container` field generates `docker run --rm -i <args> <image> <entrypointArgs>`.
+
+Both `args` and `entrypointArgs` also accept a single space-separated string:
+
+```yaml wrap
+mcp-servers:
+  custom-tool:
+    container: "mcp/custom-tool:v1.0"
+    entrypointArgs: "serve --port 8080"
+    env:
+      API_KEY: "${{ secrets.API_KEY }}"
+    allowed: ["tool1", "tool2"]
+```
+
+> [!NOTE]
+> The single-string format splits on whitespace. Use the array format when any argument contains spaces (for example, volume mounts with spaces in paths).
 
 ### HTTP MCP Servers
 
