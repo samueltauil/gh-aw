@@ -192,7 +192,7 @@ git checkout --orphan "$BRANCH_NAME"
 - `BRANCH_NAME` - Branch name (e.g., `memory/default`)
 - `MAX_FILE_SIZE` - Maximum bytes per file (default: `10240`)
 - `MAX_FILE_COUNT` - Maximum files per commit (default: `100`)
-- `MAX_PATCH_SIZE` - Maximum total patch size in bytes (default: `10240`)
+- `MAX_PATCH_SIZE` - Maximum total patch size in bytes (default: `39936`)
 - `FILE_GLOB_FILTER` - Space-separated glob patterns (e.g., `*.md metrics/**`)
 - `GH_AW_CAMPAIGN_ID` - Campaign ID for campaign mode validation
 - `GH_TOKEN` - GitHub authentication token
@@ -234,7 +234,7 @@ tools:
     #   file-glob: string[] (default: all files)
     #   max-file-size: int (default: 10240, max: 104857600)
     #   max-file-count: int (default: 100, max: 1000)
-    #   max-patch-size: int (default: 10240, max: 102400)
+    #   max-patch-size: int (default: 39936, max: 102400)
     #   description: string (optional)
     #   create-orphan: boolean (default: true)
     #   campaign-id: string (optional)
@@ -248,7 +248,7 @@ tools:
     #   file-glob: string[] (default: all files)
     #   max-file-size: int (default: 10240, max: 104857600)
     #   max-file-count: int (default: 100, max: 1000)
-    #   max-patch-size: int (default: 10240, max: 102400)
+    #   max-patch-size: int (default: 39936, max: 102400)
     #   description: string (optional)
     #   create-orphan: boolean (default: true)
     #   campaign-id: string (optional)
@@ -384,7 +384,7 @@ The total size of all changes (git diff) in a single repo-memory push MUST not e
 
 - **Minimum**: 1 byte
 - **Maximum**: 102400 bytes (100 KB)
-- **Default**: 10240 bytes (10 KB)
+- **Default**: 39936 bytes (39 KB)
 - **Configuration**: `max-patch-size` (in bytes)
 - Validated during config parsing (Go layer)
 - Enforced after staging changes, before committing (JavaScript layer)
@@ -403,7 +403,7 @@ Patch size (N KB, X bytes) exceeds maximum allowed size (M KB, Y bytes). Reduce 
 ```yaml
 tools:
   repo-memory:
-    max-patch-size: 51200  # 50 KB (default: 10240 = 10 KB)
+    max-patch-size: 51200  # 50 KB (default: 39936 = 39 KB)
 ```
 
 ### 6. Campaign Mode Validation

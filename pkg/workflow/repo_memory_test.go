@@ -650,7 +650,7 @@ func TestRepoMemoryMaxFileCountValidationArray(t *testing.T) {
 	}
 }
 
-// TestRepoMemoryMaxPatchSizeDefault tests that max-patch-size defaults to 10KB
+// TestRepoMemoryMaxPatchSizeDefault tests that max-patch-size defaults to 39KB
 func TestRepoMemoryMaxPatchSizeDefault(t *testing.T) {
 	toolsMap := map[string]any{
 		"repo-memory": true,
@@ -665,7 +665,7 @@ func TestRepoMemoryMaxPatchSizeDefault(t *testing.T) {
 	require.NotNil(t, config, "Config should not be nil")
 	require.Len(t, config.Memories, 1, "Should have 1 memory")
 
-	assert.Equal(t, 10240, config.Memories[0].MaxPatchSize, "Default max patch size should be 10240 bytes (10KB)")
+	assert.Equal(t, 39936, config.Memories[0].MaxPatchSize, "Default max patch size should be 39936 bytes (39KB)")
 }
 
 // TestRepoMemoryMaxPatchSizeValidation tests max-patch-size boundary validation
@@ -687,8 +687,8 @@ func TestRepoMemoryMaxPatchSizeValidation(t *testing.T) {
 			wantError:    false,
 		},
 		{
-			name:         "valid default size (10240 bytes)",
-			maxPatchSize: 10240,
+			name:         "valid default size (39936 bytes)",
+			maxPatchSize: 39936,
 			wantError:    false,
 		},
 		{

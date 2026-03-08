@@ -31,8 +31,8 @@ import (
 var repoMemoryLog = logger.New("workflow:repo_memory")
 
 const (
-	// defaultRepoMemoryMaxPatchSize is the default maximum total patch size in bytes (10KB).
-	defaultRepoMemoryMaxPatchSize = 10240
+	// defaultRepoMemoryMaxPatchSize is the default maximum total patch size in bytes (39KB).
+	defaultRepoMemoryMaxPatchSize = 39936
 	// maxRepoMemoryPatchSize is the maximum allowed value for max-patch-size (100KB).
 	maxRepoMemoryPatchSize = 102400
 )
@@ -139,7 +139,7 @@ func (c *Compiler) extractRepoMemoryConfig(toolsConfig *ToolsConfig, workflowID 
 				BranchName:        generateDefaultBranchName(defaultMemoryBranchID(), config.BranchPrefix),
 				MaxFileSize:       10240, // 10KB
 				MaxFileCount:      100,
-				MaxPatchSize:      defaultRepoMemoryMaxPatchSize, // 10KB
+				MaxPatchSize:      defaultRepoMemoryMaxPatchSize, // 39KB
 				CreateOrphan:      true,
 				AllowedExtensions: constants.DefaultAllowedMemoryExtensions,
 			},
@@ -158,7 +158,7 @@ func (c *Compiler) extractRepoMemoryConfig(toolsConfig *ToolsConfig, workflowID 
 					BranchName:        generateDefaultBranchName(defaultMemoryBranchID(), config.BranchPrefix),
 					MaxFileSize:       10240, // 10KB
 					MaxFileCount:      100,
-					MaxPatchSize:      defaultRepoMemoryMaxPatchSize, // 10KB
+					MaxPatchSize:      defaultRepoMemoryMaxPatchSize, // 39KB
 					CreateOrphan:      true,
 					AllowedExtensions: constants.DefaultAllowedMemoryExtensions,
 				},
@@ -196,7 +196,7 @@ func (c *Compiler) extractRepoMemoryConfig(toolsConfig *ToolsConfig, workflowID 
 				entry := RepoMemoryEntry{
 					MaxFileSize:  10240,                         // 10KB default
 					MaxFileCount: 100,                           // 100 files default
-					MaxPatchSize: defaultRepoMemoryMaxPatchSize, // 10KB default
+					MaxPatchSize: defaultRepoMemoryMaxPatchSize, // 39KB default
 					CreateOrphan: true,                          // create orphan by default
 				}
 
@@ -375,7 +375,7 @@ func (c *Compiler) extractRepoMemoryConfig(toolsConfig *ToolsConfig, workflowID 
 			BranchName:   generateDefaultBranchName(defaultMemoryBranchID(), config.BranchPrefix),
 			MaxFileSize:  10240,                         // 10KB default
 			MaxFileCount: 100,                           // 100 files default
-			MaxPatchSize: defaultRepoMemoryMaxPatchSize, // 10KB default
+			MaxPatchSize: defaultRepoMemoryMaxPatchSize, // 39KB default
 			CreateOrphan: true,                          // create orphan by default
 		}
 
