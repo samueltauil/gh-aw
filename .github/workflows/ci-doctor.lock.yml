@@ -1135,9 +1135,9 @@ jobs:
           HAS_PATCH: ${{ steps.collect_output.outputs.has_patch }}
         with:
           script: |
-            const { setupGlobals } = require('${GH_AW_HOME}/actions/setup_globals.cjs');
+            const { setupGlobals } = require(process.env.GH_AW_HOME + '/actions/setup_globals.cjs');
             setupGlobals(core, github, context, exec, io);
-            const { main } = require('${GH_AW_HOME}/actions/setup_threat_detection.cjs');
+            const { main } = require(process.env.GH_AW_HOME + '/actions/setup_threat_detection.cjs');
             await main();
       - name: Ensure threat-detection directory and log
         if: always() && steps.detection_guard.outputs.run_detection == 'true'
@@ -1272,9 +1272,9 @@ jobs:
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
-            const { setupGlobals } = require('${GH_AW_HOME}/actions/setup_globals.cjs');
+            const { setupGlobals } = require(process.env.GH_AW_HOME + '/actions/setup_globals.cjs');
             setupGlobals(core, github, context, exec, io);
-            const { main } = require('${GH_AW_HOME}/actions/noop.cjs');
+            const { main } = require(process.env.GH_AW_HOME + '/actions/noop.cjs');
             await main();
       - name: Record Missing Tool
         id: missing_tool
@@ -1287,9 +1287,9 @@ jobs:
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
-            const { setupGlobals } = require('${GH_AW_HOME}/actions/setup_globals.cjs');
+            const { setupGlobals } = require(process.env.GH_AW_HOME + '/actions/setup_globals.cjs');
             setupGlobals(core, github, context, exec, io);
-            const { main } = require('${GH_AW_HOME}/actions/missing_tool.cjs');
+            const { main } = require(process.env.GH_AW_HOME + '/actions/missing_tool.cjs');
             await main();
       - name: Handle Agent Failure
         id: handle_agent_failure
@@ -1311,9 +1311,9 @@ jobs:
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
-            const { setupGlobals } = require('${GH_AW_HOME}/actions/setup_globals.cjs');
+            const { setupGlobals } = require(process.env.GH_AW_HOME + '/actions/setup_globals.cjs');
             setupGlobals(core, github, context, exec, io);
-            const { main } = require('${GH_AW_HOME}/actions/handle_agent_failure.cjs');
+            const { main } = require(process.env.GH_AW_HOME + '/actions/handle_agent_failure.cjs');
             await main();
       - name: Handle No-Op Message
         id: handle_noop_message
@@ -1330,9 +1330,9 @@ jobs:
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
-            const { setupGlobals } = require('${GH_AW_HOME}/actions/setup_globals.cjs');
+            const { setupGlobals } = require(process.env.GH_AW_HOME + '/actions/setup_globals.cjs');
             setupGlobals(core, github, context, exec, io);
-            const { main } = require('${GH_AW_HOME}/actions/handle_noop_message.cjs');
+            const { main } = require(process.env.GH_AW_HOME + '/actions/handle_noop_message.cjs');
             await main();
 
   pre_activation:
