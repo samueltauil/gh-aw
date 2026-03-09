@@ -264,7 +264,7 @@ func generateInlineGitHubScriptStep(stepName, script, condition string) string {
 //
 // Parameters:
 //   - setupActionRef: The action reference for setup action (e.g., "./actions/setup" or "github/gh-aw/actions/setup@sha")
-//   - destination: The destination path where files should be copied (e.g., SetupActionDestination)
+//   - destination: Unused. Kept for API compatibility. The setup action defaults to /opt/gh-aw/actions.
 //   - enableCustomTokens: Whether to enable custom-token support (installs @actions/github so handler_auth.cjs can create per-handler Octokit clients)
 //
 // Returns a slice of strings representing the YAML lines for the setup step.
@@ -275,23 +275,23 @@ func (c *Compiler) generateSetupStep(setupActionRef string, destination string, 
 			"      - name: Setup Scripts\n",
 			"        run: |\n",
 			"          bash /tmp/gh-aw/actions-source/actions/setup/setup.sh\n",
-			"        env:\n",
-			fmt.Sprintf("          INPUT_DESTINATION: %s\n", destination),
 		}
 		if enableCustomTokens {
+			lines = append(lines, "        env:\n")
 			lines = append(lines, "          INPUT_SAFE_OUTPUT_CUSTOM_TOKENS: 'true'\n")
 		}
 		return lines
 	}
 
-	// Dev/Release mode: use the setup action
+	// Dev/Release mode: use the setup action.
+	// The destination defaults to /opt/gh-aw/actions in action.yml, which setup.sh uses
+	// to derive GH_AW_HOME and export it to $GITHUB_ENV for subsequent steps.
 	lines := []string{
 		"      - name: Setup Scripts\n",
 		fmt.Sprintf("        uses: %s\n", setupActionRef),
-		"        with:\n",
-		fmt.Sprintf("          destination: %s\n", destination),
 	}
 	if enableCustomTokens {
+		lines = append(lines, "        with:\n")
 		lines = append(lines, "          safe-output-custom-tokens: 'true'\n")
 	}
 	return lines

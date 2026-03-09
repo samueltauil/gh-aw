@@ -53,8 +53,6 @@ jobs:
     steps:
       - name: Setup Scripts
         uses: github/gh-aw/actions/setup@a70c5eada06553e3510ac27f2c3bda9d3705bccb # a70c5eada06553e3510ac27f2c3bda9d3705bccb
-        with:
-          destination: ${GH_AW_HOME}/actions
       - name: Generate agentic run info
         id: generate_aw_info
         env:
@@ -248,8 +246,6 @@ jobs:
     steps:
       - name: Setup Scripts
         uses: github/gh-aw/actions/setup@a70c5eada06553e3510ac27f2c3bda9d3705bccb # a70c5eada06553e3510ac27f2c3bda9d3705bccb
-        with:
-          destination: ${GH_AW_HOME}/actions
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -931,8 +927,6 @@ jobs:
     steps:
       - name: Setup Scripts
         uses: github/gh-aw/actions/setup@a70c5eada06553e3510ac27f2c3bda9d3705bccb # a70c5eada06553e3510ac27f2c3bda9d3705bccb
-        with:
-          destination: ${GH_AW_HOME}/actions
       - name: Download agent output artifact
         id: download-agent-output
         continue-on-error: true
@@ -1047,8 +1041,6 @@ jobs:
     steps:
       - name: Setup Scripts
         uses: github/gh-aw/actions/setup@a70c5eada06553e3510ac27f2c3bda9d3705bccb # a70c5eada06553e3510ac27f2c3bda9d3705bccb
-        with:
-          destination: ${GH_AW_HOME}/actions
       - name: Download agent output artifact
         id: download-agent-output
         continue-on-error: true
