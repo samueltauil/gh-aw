@@ -12,6 +12,15 @@ import (
 
 var maintenanceLog = logger.New("workflow:maintenance_workflow")
 
+// maintenanceRequireScript generates the 4-line JavaScript snippet for a maintenance step
+// that requires and invokes a .cjs module from the gh-aw actions directory.
+func maintenanceRequireScript(cjsFile string) string {
+	return "            const { setupGlobals } = require(" + JsRequireGhAw("actions/setup_globals.cjs") + ");\n" +
+		"            setupGlobals(core, github, context, exec, io);\n" +
+		"            const { main } = require(" + JsRequireGhAw("actions/"+cjsFile) + ");\n" +
+		"            await main();\n"
+}
+
 // generateInstallCLISteps generates YAML steps to install or build the gh-aw CLI.
 // In dev mode: builds from source using Setup Go + Build gh-aw (./gh-aw binary available)
 // In release mode: installs the released CLI via the setup-cli action (gh aw available)
@@ -234,35 +243,21 @@ jobs:
 `)
 
 	// Add the close expired discussions script using require()
-	yaml.WriteString(`            const { setupGlobals } = require(" + JsRequireGhAw("actions/setup_globals.cjs") + ");
-            setupGlobals(core, github, context, exec, io);
-            const { main } = require(" + JsRequireGhAw("actions/close_expired_discussions.cjs") + ");
-            await main();
-
-      - name: Close expired issues
-        uses: ` + GetActionPin("actions/github-script") + `
-        with:
-          script: |
-`)
+	yaml.WriteString(maintenanceRequireScript("close_expired_discussions.cjs") + "\n" +
+		"      - name: Close expired issues\n" +
+		"        uses: " + GetActionPin("actions/github-script") + "\n" +
+		"        with:\n" +
+		"          script: |\n")
 
 	// Add the close expired issues script using require()
-	yaml.WriteString(`            const { setupGlobals } = require(" + JsRequireGhAw("actions/setup_globals.cjs") + ");
-            setupGlobals(core, github, context, exec, io);
-            const { main } = require(" + JsRequireGhAw("actions/close_expired_issues.cjs") + ");
-            await main();
-
-      - name: Close expired pull requests
-        uses: ` + GetActionPin("actions/github-script") + `
-        with:
-          script: |
-`)
+	yaml.WriteString(maintenanceRequireScript("close_expired_issues.cjs") + "\n" +
+		"      - name: Close expired pull requests\n" +
+		"        uses: " + GetActionPin("actions/github-script") + "\n" +
+		"        with:\n" +
+		"          script: |\n")
 
 	// Add the close expired pull requests script using require()
-	yaml.WriteString(`            const { setupGlobals } = require(" + JsRequireGhAw("actions/setup_globals.cjs") + ");
-            setupGlobals(core, github, context, exec, io);
-            const { main } = require(" + JsRequireGhAw("actions/close_expired_pull_requests.cjs") + ");
-            await main();
-`)
+	yaml.WriteString(maintenanceRequireScript("close_expired_pull_requests.cjs"))
 
 	// Add unified run_operation job for all dispatch operations
 	yaml.WriteString(`
@@ -289,11 +284,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { setupGlobals } = require(" + JsRequireGhAw("actions/setup_globals.cjs") + ");
-            setupGlobals(core, github, context, exec, io);
-            const { main } = require(" + JsRequireGhAw("actions/check_team_member.cjs") + ");
-            await main();
-
+` + maintenanceRequireScript("check_team_member.cjs") + `
 `)
 
 	yaml.WriteString(generateInstallCLISteps(actionMode, version, actionTag))
@@ -306,11 +297,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { setupGlobals } = require(" + JsRequireGhAw("actions/setup_globals.cjs") + ");
-            setupGlobals(core, github, context, exec, io);
-            const { main } = require(" + JsRequireGhAw("actions/run_operation_update_upgrade.cjs") + ");
-            await main();
-`)
+` + maintenanceRequireScript("run_operation_update_upgrade.cjs"))
 
 	// Add compile-workflows and zizmor-scan jobs only in dev mode
 	// These jobs are specific to the gh-aw repository and require go.mod, make build, etc.
@@ -350,11 +337,7 @@ jobs:
         uses: ` + GetActionPin("actions/github-script") + `
         with:
           script: |
-            const { setupGlobals } = require(" + JsRequireGhAw("actions/setup_globals.cjs") + ");
-            setupGlobals(core, github, context, exec, io);
-            const { main } = require(" + JsRequireGhAw("actions/check_workflow_recompile_needed.cjs") + ");
-            await main();
-
+` + maintenanceRequireScript("check_workflow_recompile_needed.cjs") + `
   zizmor-scan:
     if: ${{ !github.event.repository.fork && (github.event_name != 'workflow_dispatch' || github.event.inputs.operation == '') }}
     runs-on: ubuntu-slim
@@ -425,11 +408,7 @@ jobs:
           NOTION_API_TOKEN: ${{ secrets.NOTION_API_TOKEN }}
         with:
           script: |
-            const { setupGlobals } = require(" + JsRequireGhAw("actions/setup_globals.cjs") + ");
-            setupGlobals(core, github, context, exec, io);
-            const { main } = require(" + JsRequireGhAw("actions/validate_secrets.cjs") + ");
-            await main();
-
+` + maintenanceRequireScript("validate_secrets.cjs") + `
       - name: Upload secret validation report
         if: always()
         uses: ` + GetActionPin("actions/upload-artifact") + `
