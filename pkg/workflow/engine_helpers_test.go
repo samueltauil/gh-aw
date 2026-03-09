@@ -273,6 +273,19 @@ func TestShellEscapeArgWithFullyQuotedAgentPath(t *testing.T) {
 func TestGetNpmBinPathSetup(t *testing.T) {
 	pathSetup := GetNpmBinPathSetup()
 
+	// Should prepend npm global prefix bin directory so the workflow-installed (latest)
+	// binary takes precedence over any vendored/system-installed binary on self-hosted runners
+	if !strings.Contains(pathSetup, "npm config get prefix") {
+		t.Errorf("PATH setup should include npm config get prefix for self-hosted runner support, got: %s", pathSetup)
+	}
+
+	// npm prefix should come before hostedtoolcache entries
+	npmPrefixIdx := strings.Index(pathSetup, "npm config get prefix")
+	hostedToolcacheIdx := strings.Index(pathSetup, "/opt/hostedtoolcache")
+	if npmPrefixIdx > hostedToolcacheIdx {
+		t.Errorf("npm config get prefix should come before /opt/hostedtoolcache in PATH, got: %s", pathSetup)
+	}
+
 	// Should use find command to locate bin directories in hostedtoolcache
 	if !strings.Contains(pathSetup, "/opt/hostedtoolcache") {
 		t.Errorf("PATH setup should reference /opt/hostedtoolcache, got: %s", pathSetup)
@@ -350,7 +363,8 @@ func TestGetNpmBinPathSetup_NoGorootDoesNotBreakChain(t *testing.T) {
 	//   GetNpmBinPathSetup() && INSTRUCTION="..." && codex exec ...
 	// When GOROOT is empty, [ -n "$GOROOT" ] is false. Without || true,
 	// the && chain short-circuits and INSTRUCTION is never set.
-	shellCmd := `unset GOROOT; export PATH="$(find /opt/hostedtoolcache -maxdepth 4 -type d -name bin 2>/dev/null | tr '\n' ':')$PATH"; [ -n "$GOROOT" ] && export PATH="$GOROOT/bin:$PATH" || true && echo "chain-continued"`
+	npmPathSetup := GetNpmBinPathSetup()
+	shellCmd := fmt.Sprintf(`unset GOROOT; %s && echo "chain-continued"`, npmPathSetup)
 
 	cmd := exec.Command("bash", "-c", shellCmd)
 	output, err := cmd.Output()

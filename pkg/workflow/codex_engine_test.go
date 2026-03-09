@@ -89,10 +89,69 @@ func TestCodexEngine(t *testing.T) {
 		t.Errorf("Expected command to contain 'set -o pipefail' to preserve exit codes in step content:\n%s", stepContent)
 	}
 
+	// Check that npm prefix PATH setup is included to ensure npm-installed codex takes
+	// precedence over any vendored/system-installed binary on self-hosted runners
+	if !strings.Contains(stepContent, "npm config get prefix") {
+		t.Errorf("Expected command to include npm PATH setup (npm config get prefix) in step content:\n%s", stepContent)
+	}
+
 	// Check environment variables
 	if !strings.Contains(stepContent, "CODEX_API_KEY: ${{ secrets.CODEX_API_KEY || secrets.OPENAI_API_KEY }}") {
 		t.Errorf("Expected CODEX_API_KEY environment variable in step content:\n%s", stepContent)
 	}
+}
+
+// TestCodexEngineNonAWFNpmPathSetup verifies that non-AWF (non-firewall) execution
+// commands include npm global prefix PATH setup. This ensures the workflow-installed
+// (latest) codex binary takes precedence over any vendored/system-installed binary
+// on self-hosted runners, preventing failures with unrecognized flags like
+// --dangerously-bypass-approvals-and-sandbox.
+func TestCodexEngineNonAWFNpmPathSetup(t *testing.T) {
+	engine := NewCodexEngine()
+
+	t.Run("non-AWF execution includes npm prefix PATH setup", func(t *testing.T) {
+		// WorkflowData without firewall (no sandbox config) - triggers non-AWF path
+		workflowData := &WorkflowData{
+			Name: "test-workflow",
+		}
+
+		steps := engine.GetExecutionSteps(workflowData, "/tmp/gh-aw/test.log")
+		if len(steps) == 0 {
+			t.Fatal("Expected at least one execution step")
+		}
+
+		stepContent := strings.Join([]string(steps[0]), "\n")
+
+		// Must include npm config get prefix so the npm-installed binary is found first
+		if !strings.Contains(stepContent, "npm config get prefix") {
+			t.Errorf("Non-AWF execution should include 'npm config get prefix' PATH setup to ensure npm-installed codex takes precedence over vendored binaries on self-hosted runners.\nStep content:\n%s", stepContent)
+		}
+
+		// PATH setup should appear before the codex exec command
+		npmPrefixIdx := strings.Index(stepContent, "npm config get prefix")
+		codexExecIdx := strings.Index(stepContent, "codex")
+		if npmPrefixIdx > codexExecIdx {
+			t.Errorf("npm PATH setup should appear before the codex exec command, but got codex at index %d and npm prefix at index %d.\nStep content:\n%s", codexExecIdx, npmPrefixIdx, stepContent)
+		}
+	})
+
+	t.Run("non-AWF execution with agent file includes npm prefix PATH setup", func(t *testing.T) {
+		workflowData := &WorkflowData{
+			Name:      "test-workflow",
+			AgentFile: ".github/agents/my-agent.md",
+		}
+
+		steps := engine.GetExecutionSteps(workflowData, "/tmp/gh-aw/test.log")
+		if len(steps) == 0 {
+			t.Fatal("Expected at least one execution step")
+		}
+
+		stepContent := strings.Join([]string(steps[0]), "\n")
+
+		if !strings.Contains(stepContent, "npm config get prefix") {
+			t.Errorf("Non-AWF execution with agent file should include 'npm config get prefix' PATH setup.\nStep content:\n%s", stepContent)
+		}
+	})
 }
 
 func TestCodexEngineWithVersion(t *testing.T) {
