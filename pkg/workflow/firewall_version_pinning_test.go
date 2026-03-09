@@ -28,7 +28,7 @@ func TestAWFInstallationStepDefaultVersion(t *testing.T) {
 		}
 
 		// Verify it uses the script from /opt/gh-aw/actions/
-		if !strings.Contains(stepStr, "/opt/gh-aw/actions/install_awf_binary.sh") {
+		if !strings.Contains(stepStr, "${GH_AW_HOME}/actions/install_awf_binary.sh") {
 			t.Error("Expected to call script from /opt/gh-aw/actions/ directory")
 		}
 

@@ -432,9 +432,9 @@ func (c *Compiler) buildWorkflowContextEnvVars(data *WorkflowData) []string {
 // buildResultsParsingScriptRequire creates the parsing script that requires the .cjs module
 func (c *Compiler) buildResultsParsingScriptRequire() string {
 	// Build a simple require statement that calls the main function
-	script := `const { setupGlobals } = require('` + SetupActionDestination + `/setup_globals.cjs');
+	script := `const { setupGlobals } = require(` + JsRequireGhAw("actions/setup_globals.cjs") + `);
 setupGlobals(core, github, context, exec, io);
-const { main } = require('` + SetupActionDestination + `/parse_threat_detection_results.cjs');
+const { main } = require(` + JsRequireGhAw("actions/parse_threat_detection_results.cjs") + `);
 await main();`
 
 	return script

@@ -419,7 +419,7 @@ func (r *MCPConfigRendererUnified) renderAgenticWorkflowsTOML(yaml *strings.Buil
 		mounts = []string{constants.DefaultWorkspaceMount, constants.DefaultTmpGhAwMount}
 	} else {
 		// Release mode: Use minimal Alpine image with mounted binaries
-		entrypoint = "/opt/gh-aw/gh-aw"
+		entrypoint = GhAwHome + "/gh-aw"
 		entrypointArgs = []string{"mcp-server", "--validate-actor"}
 		// Mount gh-aw binary, gh CLI binary, workspace, and temp directory
 		mounts = []string{constants.DefaultGhAwMount, constants.DefaultGhBinaryMount, constants.DefaultWorkspaceMount, constants.DefaultTmpGhAwMount}
@@ -997,7 +997,7 @@ func RenderJSONMCPConfig(
 
 	delimiter := GenerateHeredocDelimiter("MCP_CONFIG")
 	// Write the configuration to the YAML output
-	yaml.WriteString("          cat << " + delimiter + " | bash /opt/gh-aw/actions/start_mcp_gateway.sh\n")
+	yaml.WriteString("          cat << " + delimiter + " | bash " + GhAwHome + "/actions/start_mcp_gateway.sh\n")
 	yaml.WriteString(generatedConfig)
 	yaml.WriteString("          " + delimiter + "\n")
 
