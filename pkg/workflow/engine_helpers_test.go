@@ -273,10 +273,17 @@ func TestShellEscapeArgWithFullyQuotedAgentPath(t *testing.T) {
 func TestGetNpmBinPathSetup(t *testing.T) {
 	pathSetup := GetNpmBinPathSetup()
 
-	// Should prepend npm global prefix bin directory so the workflow-installed (latest)
-	// binary takes precedence over any vendored/system-installed binary on self-hosted runners
+	// Should capture the npm prefix in a temp variable and use parameter expansion
+	// to guard against an empty value (avoids injecting a bare "/bin" into PATH)
+	if !strings.Contains(pathSetup, "_npm_prefix") {
+		t.Errorf("PATH setup should use a temp variable for the npm prefix, got: %s", pathSetup)
+	}
 	if !strings.Contains(pathSetup, "npm config get prefix") {
 		t.Errorf("PATH setup should include npm config get prefix for self-hosted runner support, got: %s", pathSetup)
+	}
+	// Parameter expansion ${_npm_prefix:+...} must be present to guard against empty prefix
+	if !strings.Contains(pathSetup, "${_npm_prefix:+") {
+		t.Errorf("PATH setup should use ${_npm_prefix:+...} expansion to guard against empty prefix, got: %s", pathSetup)
 	}
 
 	// npm prefix should come before hostedtoolcache entries
@@ -333,11 +340,15 @@ func TestGetNpmBinPathSetup_GorootOrdering(t *testing.T) {
 	os.WriteFile(filepath.Join(goOld, "go"), []byte("#!/bin/bash\necho 'go version go1.23.12 linux/amd64'\n"), 0o755)
 	os.WriteFile(filepath.Join(goNew, "go"), []byte("#!/bin/bash\necho 'go version go1.25.0 linux/amd64'\n"), 0o755)
 
+	// Use the actual function, substituting the real hostedtoolcache with our tmpDir
+	npmPathSetup := GetNpmBinPathSetup()
+	adjustedSetup := strings.ReplaceAll(npmPathSetup, "/opt/hostedtoolcache", tmpDir)
+
 	// Simulate the PATH setup with GOROOT pointing to the newer version
 	shellCmd := fmt.Sprintf(
-		`export GOROOT=%q; export PATH="$(find %q -maxdepth 4 -type d -name bin 2>/dev/null | tr '\n' ':')$PATH"; [ -n "$GOROOT" ] && export PATH="$GOROOT/bin:$PATH" || true; go version`,
+		`export GOROOT=%q; %s; go version`,
 		filepath.Join(tmpDir, "go", "1.25.0", "x64"),
-		tmpDir,
+		adjustedSetup,
 	)
 
 	cmd := exec.Command("bash", "-c", shellCmd)
@@ -349,6 +360,34 @@ func TestGetNpmBinPathSetup_GorootOrdering(t *testing.T) {
 	result := strings.TrimSpace(string(output))
 	if !strings.Contains(result, "go1.25.0") {
 		t.Errorf("Expected go1.25.0 to take precedence, but got: %s", result)
+	}
+}
+
+// TestGetNpmBinPathSetup_EmptyNpmPrefixDoesNotInjectBin verifies that when the npm
+// prefix is empty, the PATH setup does not inject a bare "/bin" into PATH, which could
+// unintentionally change command resolution on runners where npm is unavailable.
+func TestGetNpmBinPathSetup_EmptyNpmPrefixDoesNotInjectBin(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("Skipping shell-based test on non-Linux platform")
+	}
+
+	// Directly test the ${_npm_prefix:+${_npm_prefix}/bin:} expansion with an empty prefix.
+	// This mirrors what happens when `npm config get prefix` returns an empty string.
+	shellCmd := `_npm_prefix=""; result="${_npm_prefix:+${_npm_prefix}/bin:}other_path"; echo "$result"`
+
+	cmd := exec.Command("bash", "-c", shellCmd)
+	output, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("Shell parameter expansion test failed: %v", err)
+	}
+
+	result := strings.TrimSpace(string(output))
+	// When prefix is empty, the expansion should contribute nothing - no bare "/bin:"
+	if strings.Contains(result, "/bin:") {
+		t.Errorf("Empty npm prefix must not inject '/bin:' into PATH, got: %s", result)
+	}
+	if result != "other_path" {
+		t.Errorf("Expected 'other_path' when prefix is empty, got: %s", result)
 	}
 }
 

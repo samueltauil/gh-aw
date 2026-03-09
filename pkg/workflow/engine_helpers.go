@@ -265,7 +265,7 @@ func FilterEnvForSecrets(env map[string]string, allowedNamesAndKeys []string) ma
 	return filtered
 }
 
-// GetNpmBinPathSetup returns a simple shell command that adds npm global bin and
+// GetNpmBinPathSetup returns a shell snippet that prepends the npm global bin and
 // hostedtoolcache bin directories to PATH. This is specifically for npm-installed CLIs
 // (like Claude and Codex) that need to find their binaries installed via `npm install -g`.
 //
@@ -279,21 +279,22 @@ func FilterEnvForSecrets(env map[string]string, allowedNamesAndKeys []string) ma
 // hostedtoolcache bin directories for npm packages.
 //
 // Returns:
-//   - string: A shell command that exports PATH with npm global and hostedtoolcache bin directories prepended
+//   - string: A shell snippet that exports PATH with npm global and hostedtoolcache bin directories prepended
 func GetNpmBinPathSetup() string {
-	// Prepend the npm global prefix bin directory first so the workflow-installed (latest)
-	// binary takes precedence over any vendored/system-installed binary on self-hosted runners.
-	// This resolves the issue where `codex-x86_64-unknown-linux-musl` (older vendored binary)
-	// is found before the npm-installed version and fails with unrecognized flag errors.
+	// 1. Capture the npm global prefix in a temp variable so we can safely guard against
+	//    an empty value. Without this guard, an empty prefix would inject a bare "/bin"
+	//    into PATH and silently change command resolution.
+	//    The ${_npm_prefix:+...} expansion yields the suffix only when the variable is non-empty.
 	//
-	// Find all bin directories in hostedtoolcache (Node.js, Python, etc.)
-	// This finds paths like /opt/hostedtoolcache/node/22.13.0/x64/bin
+	// 2. Append hostedtoolcache bin directories (Node.js, Python, etc.).
+	//    This finds paths like /opt/hostedtoolcache/node/22.13.0/x64/bin
+	//    On self-hosted runners without this directory the find returns nothing (no-op).
 	//
-	// After the find, re-prepend GOROOT/bin if set. The find returns directories
-	// alphabetically, so go/1.23.12 shadows go/1.25.0. Re-prepending GOROOT/bin
-	// ensures the Go version set by actions/setup-go takes precedence.
-	// AWF's entrypoint.sh exports GOROOT before the user command runs.
-	return `export PATH="$(npm config get prefix 2>/dev/null)/bin:$(find /opt/hostedtoolcache -maxdepth 4 -type d -name bin 2>/dev/null | tr '\n' ':')$PATH"; [ -n "$GOROOT" ] && export PATH="$GOROOT/bin:$PATH" || true`
+	// 3. Re-prepend GOROOT/bin if set. The find returns directories alphabetically, so
+	//    go/1.23.12 shadows go/1.25.0. Re-prepending GOROOT/bin ensures the Go version
+	//    set by actions/setup-go takes precedence.
+	//    AWF's entrypoint.sh exports GOROOT before the user command runs.
+	return `_npm_prefix="$(npm config get prefix 2>/dev/null || true)"; export PATH="${_npm_prefix:+${_npm_prefix}/bin:}$(find /opt/hostedtoolcache -maxdepth 4 -type d -name bin 2>/dev/null | tr '\n' ':')$PATH"; [ -n "$GOROOT" ] && export PATH="$GOROOT/bin:$PATH" || true`
 }
 
 // EngineHasValidateSecretStep checks if the engine provides a validate-secret step.

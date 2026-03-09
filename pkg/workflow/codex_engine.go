@@ -250,10 +250,10 @@ func (e *CodexEngine) GetExecutionSteps(workflowData *WorkflowData, logFile stri
 		// Build the command without AWF wrapping
 		// Reuse commandName already determined above
 		//
-		// Prepend the npm global prefix bin to PATH so the workflow-installed (latest) codex
-		// binary takes precedence over any vendored/system-installed binary on self-hosted runners.
-		// This mirrors the PATH setup used in AWF mode via GetNpmBinPathSetup().
-		npmPrefixSetup := `export PATH="$(npm config get prefix 2>/dev/null)/bin:$PATH"`
+		// Use GetNpmBinPathSetup() so the npm-installed binary takes precedence over any
+		// vendored/system-installed binary on self-hosted runners. This is the same PATH
+		// setup used in AWF mode and ensures a single source of truth.
+		npmPathSetup := GetNpmBinPathSetup()
 		if workflowData.AgentFile != "" {
 			agentPath := ResolveAgentFilePath(workflowData.AgentFile)
 			command = fmt.Sprintf(`set -o pipefail
@@ -262,14 +262,14 @@ touch %s
 AGENT_CONTENT="$(awk 'BEGIN{skip=1} /^---$/{if(skip){skip=0;next}else{skip=1;next}} !skip' %s)"
 INSTRUCTION="$(printf "%%s\n\n%%s" "$AGENT_CONTENT" "$(cat "$GH_AW_PROMPT")")"
 mkdir -p "$CODEX_HOME/logs"
-%s %sexec%s%s%s"$INSTRUCTION" 2>&1 | tee %s`, npmPrefixSetup, AgentStepSummaryPath, agentPath, commandName, modelParam, webSearchParam, fullAutoParam, customArgsParam, logFile)
+%s %sexec%s%s%s"$INSTRUCTION" 2>&1 | tee %s`, npmPathSetup, AgentStepSummaryPath, agentPath, commandName, modelParam, webSearchParam, fullAutoParam, customArgsParam, logFile)
 		} else {
 			command = fmt.Sprintf(`set -o pipefail
 %s
 touch %s
 INSTRUCTION="$(cat "$GH_AW_PROMPT")"
 mkdir -p "$CODEX_HOME/logs"
-%s %sexec%s%s%s"$INSTRUCTION" 2>&1 | tee %s`, npmPrefixSetup, AgentStepSummaryPath, commandName, modelParam, webSearchParam, fullAutoParam, customArgsParam, logFile)
+%s %sexec%s%s%s"$INSTRUCTION" 2>&1 | tee %s`, npmPathSetup, AgentStepSummaryPath, commandName, modelParam, webSearchParam, fullAutoParam, customArgsParam, logFile)
 		}
 	}
 
