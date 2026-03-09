@@ -1469,9 +1469,9 @@ func TestUpdateCacheMemoryJobHasWorkflowIDEnv(t *testing.T) {
 	if !ok {
 		t.Error("update_cache_memory job is missing GH_AW_WORKFLOW_ID_SANITIZED env var; cache keys will not match")
 	}
-	// "daily-repo-status" -> lowercase + hyphens removed -> "dailyrepostatus"
-	if sanitizedID != "dailyrepostatus" {
-		t.Errorf("GH_AW_WORKFLOW_ID_SANITIZED = %q, want %q", sanitizedID, "dailyrepostatus")
+	// "daily-repo-status" -> lowercase + hyphens to underscores -> "daily_repo_status"
+	if sanitizedID != "daily_repo_status" {
+		t.Errorf("GH_AW_WORKFLOW_ID_SANITIZED = %q, want %q", sanitizedID, "daily_repo_status")
 	}
 }
 

@@ -44,13 +44,18 @@ func GetWorkflowIDFromPath(markdownPath string) string {
 }
 
 // SanitizeWorkflowIDForCacheKey sanitizes a workflow ID for use in cache keys.
-// It removes all hyphens and converts to lowercase to create a filesystem-safe identifier.
-// Example: "Smoke-Copilot" -> "smokecopilot"
+// It converts to lowercase, replaces hyphens with underscores, and collapses
+// consecutive underscores to a single underscore.
+// Example: "Smoke-Copilot" -> "smoke_copilot", "my__workflow" -> "my_workflow"
 func SanitizeWorkflowIDForCacheKey(workflowID string) string {
 	// Convert to lowercase
 	sanitized := strings.ToLower(workflowID)
-	// Remove all hyphens
-	sanitized = strings.ReplaceAll(sanitized, "-", "")
+	// Replace hyphens with underscores
+	sanitized = strings.ReplaceAll(sanitized, "-", "_")
+	// Collapse consecutive underscores to a single underscore
+	for strings.Contains(sanitized, "__") {
+		sanitized = strings.ReplaceAll(sanitized, "__", "_")
+	}
 	return sanitized
 }
 

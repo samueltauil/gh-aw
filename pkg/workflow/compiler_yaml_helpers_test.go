@@ -54,17 +54,17 @@ func TestSanitizeWorkflowIDForCacheKey(t *testing.T) {
 		{
 			name:       "smoke-copilot with hyphens",
 			workflowID: "smoke-copilot",
-			expected:   "smokecopilot",
+			expected:   "smoke_copilot",
 		},
 		{
 			name:       "Smoke-Copilot with capital letters",
 			workflowID: "Smoke-Copilot",
-			expected:   "smokecopilot",
+			expected:   "smoke_copilot",
 		},
 		{
 			name:       "multiple hyphens",
 			workflowID: "daily-code-metrics",
-			expected:   "dailycodemetrics",
+			expected:   "daily_code_metrics",
 		},
 		{
 			name:       "no hyphens",
@@ -79,7 +79,22 @@ func TestSanitizeWorkflowIDForCacheKey(t *testing.T) {
 		{
 			name:       "mixed case with many hyphens",
 			workflowID: "Test-Workflow-With-Many-Parts",
-			expected:   "testworkflowwithmanyparts",
+			expected:   "test_workflow_with_many_parts",
+		},
+		{
+			name:       "with underscore",
+			workflowID: "my_workflow",
+			expected:   "my_workflow",
+		},
+		{
+			name:       "consecutive underscores collapsed",
+			workflowID: "my__workflow",
+			expected:   "my_workflow",
+		},
+		{
+			name:       "hyphen adjacent to underscore",
+			workflowID: "my-_workflow",
+			expected:   "my_workflow",
 		},
 	}
 

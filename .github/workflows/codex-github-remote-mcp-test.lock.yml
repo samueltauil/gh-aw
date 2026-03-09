@@ -231,7 +231,7 @@ jobs:
       contents: read
       issues: read
     env:
-      GH_AW_WORKFLOW_ID_SANITIZED: codexgithubremotemcptest
+      GH_AW_WORKFLOW_ID_SANITIZED: codex_github_remote_mcp_test
     outputs:
       checkout_pr_success: ${{ steps.checkout-pr.outputs.checkout_pr_success || 'true' }}
       model: ${{ needs.activation.outputs.model }}

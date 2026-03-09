@@ -272,7 +272,7 @@ jobs:
           issues: read
           pull-requests: read
     env:
-      GH_AW_WORKFLOW_ID_SANITIZED: aceeditor
+      GH_AW_WORKFLOW_ID_SANITIZED: ace_editor
     outputs:
       inference_access_error: ${{ steps.detect-inference-error.outputs.inference_access_error || 'false' }}
       model: ${{ needs.activation.outputs.model }}

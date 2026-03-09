@@ -255,7 +255,7 @@ jobs:
     concurrency:
       group: "gh-aw-copilot-${{ github.workflow }}"
     env:
-      GH_AW_WORKFLOW_ID_SANITIZED: metricscollector
+      GH_AW_WORKFLOW_ID_SANITIZED: metrics_collector
     outputs:
       checkout_pr_success: ${{ steps.checkout-pr.outputs.checkout_pr_success || 'true' }}
       inference_access_error: ${{ steps.detect-inference-error.outputs.inference_access_error || 'false' }}

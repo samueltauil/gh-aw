@@ -35,7 +35,7 @@ type CacheMemoryEntry struct {
 }
 
 // generateDefaultCacheKey generates a default cache key for a given cache ID
-// Uses GH_AW_WORKFLOW_ID_SANITIZED (workflow ID with hyphens removed) instead of github.workflow
+// Uses GH_AW_WORKFLOW_ID_SANITIZED (workflow ID lowercased with hyphens replaced by underscores) instead of github.workflow
 func generateDefaultCacheKey(cacheID string) string {
 	if cacheID == "default" {
 		return "memory-${{ env.GH_AW_WORKFLOW_ID_SANITIZED }}-${{ github.run_id }}"

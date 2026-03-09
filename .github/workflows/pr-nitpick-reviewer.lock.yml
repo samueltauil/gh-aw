@@ -339,7 +339,7 @@ jobs:
       GH_AW_SAFE_OUTPUTS: /opt/gh-aw/safeoutputs/outputs.jsonl
       GH_AW_SAFE_OUTPUTS_CONFIG_PATH: /opt/gh-aw/safeoutputs/config.json
       GH_AW_SAFE_OUTPUTS_TOOLS_PATH: /opt/gh-aw/safeoutputs/tools.json
-      GH_AW_WORKFLOW_ID_SANITIZED: prnitpickreviewer
+      GH_AW_WORKFLOW_ID_SANITIZED: pr_nitpick_reviewer
     outputs:
       checkout_pr_success: ${{ steps.checkout-pr.outputs.checkout_pr_success || 'true' }}
       detection_conclusion: ${{ steps.detection_conclusion.outputs.conclusion }}
@@ -1428,7 +1428,7 @@ jobs:
     permissions:
       contents: read
     env:
-      GH_AW_WORKFLOW_ID_SANITIZED: prnitpickreviewer
+      GH_AW_WORKFLOW_ID_SANITIZED: pr_nitpick_reviewer
     steps:
       - name: Checkout actions folder
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
