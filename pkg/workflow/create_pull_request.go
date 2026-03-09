@@ -64,7 +64,10 @@ func (c *Compiler) parsePullRequestsConfig(outputMap map[string]any) *CreatePull
 	// Pre-process the expires field (convert to hours before unmarshaling)
 	// Use preprocessExpiresField to handle all types: integers (days), strings (time specs), and boolean false
 	// This is consistent with how parseIssuesConfig and parseDiscussionsConfig handle expires
-	preprocessExpiresField(configData, createPRLog)
+	expiresDisabled := preprocessExpiresField(configData, createPRLog)
+	if expiresDisabled {
+		createPRLog.Print("Pull request expiration disabled")
+	}
 
 	// Pre-process templatable bool fields: convert literal booleans to strings so that
 	// GitHub Actions expression strings (e.g. "${{ inputs.draft-prs }}") are also accepted.
