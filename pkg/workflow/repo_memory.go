@@ -533,7 +533,7 @@ func generateRepoMemoryArtifactUpload(builder *strings.Builder, data *WorkflowDa
 		// Determine the memory directory
 		memoryDir := "/tmp/gh-aw/repo-memory/" + memory.ID
 
-		// Sanitize memory ID for artifact naming (remove hyphens, lowercase)
+		// Sanitize memory ID for artifact naming (replace hyphens with underscores, lowercase)
 		sanitizedID := SanitizeWorkflowIDForCacheKey(memory.ID)
 
 		// Step: Upload repo-memory directory as artifact
@@ -631,7 +631,7 @@ func (c *Compiler) buildPushRepoMemoryJob(data *WorkflowData, threatDetectionEna
 
 	// Build steps as complete YAML strings
 	for _, memory := range data.RepoMemoryConfig.Memories {
-		// Sanitize memory ID for artifact naming (remove hyphens, lowercase)
+		// Sanitize memory ID for artifact naming (replace hyphens with underscores, lowercase)
 		sanitizedID := SanitizeWorkflowIDForCacheKey(memory.ID)
 
 		// Download artifact step

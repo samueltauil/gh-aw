@@ -203,7 +203,7 @@ func (c *Compiler) buildMainJob(data *WorkflowData, activationJobCreated bool) (
 	}
 
 	// Set GH_AW_WORKFLOW_ID_SANITIZED for cache-memory keys
-	// This contains the workflow ID with all hyphens removed and lowercased
+	// This contains the workflow ID lowercased with hyphens replaced by underscores
 	// Used in cache keys to avoid spaces and special characters
 	if data.WorkflowID != "" {
 		if env == nil {

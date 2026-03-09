@@ -273,7 +273,7 @@ jobs:
       issues: read
       pull-requests: read
     env:
-      GH_AW_WORKFLOW_ID_SANITIZED: smoketesttools
+      GH_AW_WORKFLOW_ID_SANITIZED: smoke_test_tools
     outputs:
       checkout_pr_success: ${{ steps.checkout-pr.outputs.checkout_pr_success || 'true' }}
       model: ${{ steps.generate_aw_info.outputs.model }}
