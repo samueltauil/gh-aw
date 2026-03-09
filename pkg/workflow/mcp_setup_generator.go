@@ -280,8 +280,8 @@ func (c *Compiler) generateMCPSetup(yaml *strings.Builder, tools map[string]any,
 		yaml.WriteString("          DEBUG: '*'\n")
 		yaml.WriteString("          GH_AW_SAFE_OUTPUTS_PORT: ${{ steps.safe-outputs-config.outputs.safe_outputs_port }}\n")
 		yaml.WriteString("          GH_AW_SAFE_OUTPUTS_API_KEY: ${{ steps.safe-outputs-config.outputs.safe_outputs_api_key }}\n")
-		yaml.WriteString("          GH_AW_SAFE_OUTPUTS_TOOLS_PATH: " + GhAwHome + "/safeoutputs/tools.json\n")
-		yaml.WriteString("          GH_AW_SAFE_OUTPUTS_CONFIG_PATH: " + GhAwHome + "/safeoutputs/config.json\n")
+		yaml.WriteString("          GH_AW_SAFE_OUTPUTS_TOOLS_PATH: " + GhAwHomeExpr + "/safeoutputs/tools.json\n")
+		yaml.WriteString("          GH_AW_SAFE_OUTPUTS_CONFIG_PATH: " + GhAwHomeExpr + "/safeoutputs/config.json\n")
 		yaml.WriteString("          GH_AW_MCP_LOG_DIR: /tmp/gh-aw/mcp-logs/safeoutputs\n")
 
 		yaml.WriteString("        run: |\n")

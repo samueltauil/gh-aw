@@ -12,6 +12,11 @@ const GhAwHome = "${GH_AW_HOME}"
 // The job-level env sets GH_AW_HOME to /opt/gh-aw by default.
 const GhAwHomeJS = "process.env.GH_AW_HOME"
 
+// GhAwHomeExpr is the GitHub Actions expression for GH_AW_HOME.
+// Use this in YAML env: blocks where shell variable expansion does NOT occur.
+// GitHub Actions evaluates ${{ env.VAR }} before passing values to steps.
+const GhAwHomeExpr = "${{ env.GH_AW_HOME }}"
+
 // SetupActionDestination is the path where the setup action copies script files
 // on the agent runner (e.g. /opt/gh-aw/actions).
 // This is a shell expression expanded at runtime.
