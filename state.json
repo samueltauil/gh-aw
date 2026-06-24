@@ -1,0 +1,16 @@
+{
+  "counts": {
+    "prompt_compression": {
+      "verbose": 1
+    }
+  },
+  "runs": [
+    {
+      "run_id": "28109299300",
+      "timestamp": "2026-06-24T15:20:36.389Z",
+      "assignments": {
+        "prompt_compression": "verbose"
+      }
+    }
+  ]
+}
